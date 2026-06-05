@@ -9,7 +9,11 @@ export type CandidatePayload = {
   birth_date?: string | null
   birth_time?: string | null
   birth_place?: string | null
+  birth_city_label?: string | null
   birth_timezone?: string | null
+  birth_latitude?: number | null
+  birth_longitude?: number | null
+  birth_city_source?: string | null
   notes?: string | null
 }
 
@@ -106,6 +110,22 @@ export async function upsertSingleCandidateForCompany(
     birth_timezone: payload.birth_timezone?.trim() || null,
   }
 
+  if (payload.birth_city_label !== undefined) {
+    row.birth_city_label = payload.birth_city_label?.trim() || null
+  }
+
+  if (payload.birth_latitude !== undefined) {
+    row.birth_latitude = payload.birth_latitude
+  }
+
+  if (payload.birth_longitude !== undefined) {
+    row.birth_longitude = payload.birth_longitude
+  }
+
+  if (payload.birth_city_source !== undefined) {
+    row.birth_city_source = payload.birth_city_source?.trim() || null
+  }
+
   if (payload.email !== undefined) {
     row.email = payload.email?.trim() || null
   }
@@ -141,7 +161,11 @@ export async function upsertSingleCandidateForCompany(
     birth_date: payload.birth_date || null,
     birth_time: payload.birth_time || null,
     birth_place: payload.birth_place?.trim() || null,
+    birth_city_label: payload.birth_city_label?.trim() || null,
     birth_timezone: payload.birth_timezone?.trim() || null,
+    birth_latitude: payload.birth_latitude ?? null,
+    birth_longitude: payload.birth_longitude ?? null,
+    birth_city_source: payload.birth_city_source?.trim() || null,
     notes: payload.notes?.trim() || null,
   }
 

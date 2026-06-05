@@ -15,7 +15,11 @@ export type Candidate = {
   birth_date: string | null
   birth_time: string | null
   birth_place: string | null
+  birth_city_label: string | null
   birth_timezone: string | null
+  birth_latitude: number | null
+  birth_longitude: number | null
+  birth_city_source: string | null
   notes: string | null
   created_at: string
   updated_at: string

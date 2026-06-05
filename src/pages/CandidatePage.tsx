@@ -65,13 +65,72 @@ function candidateToFormValues(candidate: Candidate | null): FormValues {
   }
 }
 
-function formValuesToPayload(values: FormValues): CandidatePayload {
-  return {
+function formValuesToPayload(values: FormValues, selectedCity: SelectedCity | null): CandidatePayload {
+  const payload: CandidatePayload = {
     name: values.name,
     birth_date: values.birth_date || null,
     birth_time: values.birth_time || null,
     birth_place: values.birth_place || null,
     birth_timezone: values.birth_timezone || null,
+  }
+
+  if (selectedCity) {
+    payload.birth_city_label = selectedCity.displayLabel
+    payload.birth_latitude = selectedCity.latitude
+    payload.birth_longitude = selectedCity.longitude
+    payload.birth_city_source = 'open_meteo'
+  } else if (!values.birth_place.trim()) {
+    payload.birth_city_label = null
+    payload.birth_latitude = null
+    payload.birth_longitude = null
+    payload.birth_city_source = null
+  }
+
+  return payload
+}
+
+type BirthInputSnapshot = {
+  city_label: string | null
+  timezone: string | null
+  latitude: number | null
+  longitude: number | null
+}
+
+function rehydrateSelectedCity(
+  candidate: Candidate | null,
+  chartBirthInput: BirthInputSnapshot | null,
+): SelectedCity | null {
+  const label =
+    candidate?.birth_city_label ??
+    candidate?.birth_place ??
+    chartBirthInput?.city_label ??
+    null
+  const timezone = candidate?.birth_timezone ?? chartBirthInput?.timezone ?? null
+  const latitude = candidate?.birth_latitude ?? chartBirthInput?.latitude ?? null
+  const longitude = candidate?.birth_longitude ?? chartBirthInput?.longitude ?? null
+
+  if (
+    !label ||
+    !timezone ||
+    latitude === null ||
+    longitude === null ||
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude)
+  ) {
+    return null
+  }
+
+  const name = label.split(',')[0]?.trim() || label
+
+  return {
+    id: 0,
+    displayLabel: label,
+    name,
+    latitude,
+    longitude,
+    timezone,
+    country: '',
+    admin1: null,
   }
 }
 
@@ -154,6 +213,8 @@ export function CandidatePage() {
       setElementCounts(null)
       setChartUiStatus('not_calculated')
     }
+
+    return latestChart
   }
 
   useEffect(() => {
@@ -169,8 +230,14 @@ export function CandidatePage() {
           setValues(formValues)
           setState({ status: 'ready', company, candidate, values: formValues })
 
+          let latestChart: CandidateChart | null = null
           if (candidate) {
-            await loadChartData(candidate.id)
+            latestChart = await loadChartData(candidate.id)
+          }
+
+          if (!cancelled) {
+            const birthInput = readBirthInputFromChart(latestChart)
+            setSelectedCity(rehydrateSelectedCity(candidate, birthInput))
           }
         }
       } catch (error) {
@@ -243,10 +310,11 @@ export function CandidatePage() {
     try {
       const candidate = await upsertSingleCandidateForCompany(
         state.company.id,
-        formValuesToPayload(values),
+        formValuesToPayload(values, selectedCity),
       )
       const formValues = candidateToFormValues(candidate)
       setValues(formValues)
+      setSelectedCity(rehydrateSelectedCity(candidate, readBirthInputFromChart(chart)))
       setState({ status: 'ready', company: state.company, candidate, values: formValues })
       setSaved(true)
     } catch (error) {

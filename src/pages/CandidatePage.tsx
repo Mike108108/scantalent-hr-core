@@ -93,6 +93,25 @@ function readBirthInputFromChart(chart: CandidateChart | null) {
   }
 }
 
+function readCenterCountsFromChart(chart: CandidateChart | null) {
+  if (!chart?.normalized_chart_data || typeof chart.normalized_chart_data !== 'object') {
+    return null
+  }
+
+  const centers = (chart.normalized_chart_data as { centers?: { defined?: unknown[]; open?: unknown[]; all?: unknown[] } })
+    .centers
+
+  if (!centers) {
+    return null
+  }
+
+  return {
+    defined: Array.isArray(centers.defined) ? centers.defined.length : null,
+    open: Array.isArray(centers.open) ? centers.open.length : null,
+    all: Array.isArray(centers.all) ? centers.all.length : null,
+  }
+}
+
 async function copyJson(value: unknown) {
   await navigator.clipboard.writeText(JSON.stringify(value, null, 2))
 }
@@ -318,6 +337,9 @@ export function CandidatePage() {
   const displayTimezone = selectedCity?.timezone ?? birthInput?.timezone ?? values.birth_timezone
   const displayLatitude = selectedCity?.latitude ?? birthInput?.latitude
   const displayLongitude = selectedCity?.longitude ?? birthInput?.longitude
+  const centerCounts = readCenterCountsFromChart(chart)
+  const definedCentersCount = centerCounts?.defined ?? elementCounts?.defined_centers ?? 0
+  const openCentersCount = centerCounts?.open ?? elementCounts?.open_centers ?? 0
 
   return (
     <div className="stack">
@@ -462,9 +484,16 @@ export function CandidatePage() {
                     <dd>{elementCounts?.total ?? 0}</dd>
                   </div>
                   <div className="info-list__row">
-                    <dt>centers / channels / gates / activations</dt>
+                    <dt>defined centers</dt>
+                    <dd>{definedCentersCount}</dd>
+                  </div>
+                  <div className="info-list__row">
+                    <dt>open centers</dt>
+                    <dd>{openCentersCount}</dd>
+                  </div>
+                  <div className="info-list__row">
+                    <dt>channels / gates / activations</dt>
                     <dd>
-                      {(elementCounts?.defined_centers ?? 0) + (elementCounts?.open_centers ?? 0)} /{' '}
                       {elementCounts?.channels ?? 0} / {elementCounts?.gates ?? 0} /{' '}
                       {elementCounts?.activations ?? 0}
                     </dd>
@@ -531,6 +560,14 @@ export function CandidatePage() {
                     <dd>
                       {displayLatitude ?? '—'} / {displayLongitude ?? '—'}
                     </dd>
+                  </div>
+                  <div className="info-list__row">
+                    <dt>defined centers</dt>
+                    <dd>{definedCentersCount}</dd>
+                  </div>
+                  <div className="info-list__row">
+                    <dt>open centers</dt>
+                    <dd>{openCentersCount}</dd>
                   </div>
                   <div className="info-list__row">
                     <dt>elements count</dt>

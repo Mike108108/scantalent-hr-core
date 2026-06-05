@@ -1,4 +1,5 @@
 import type { NormalizedChartData } from './normalizeChart'
+import { getCenterLabel } from './centerKeys'
 
 export type ChartElementInsert = {
   element_kind: string
@@ -55,34 +56,36 @@ export function extractCandidateChartElements(
   pushScalar('profile', normalizedChart.profile, 'normalized.profile')
   pushScalar('definition', normalizedChart.definition, 'normalized.definition')
 
-  for (const center of normalizedChart.centers.defined) {
+  for (const centerKey of normalizedChart.centers.defined) {
+    const label = getCenterLabel(centerKey)
     elements.push({
       element_kind: 'defined_center',
-      element_key: slug(center),
-      element_label: center,
-      element_value: center,
+      element_key: centerKey,
+      element_label: label,
+      element_value: label,
       side: null,
       planet: null,
       gate: null,
       line: null,
-      center,
+      center: centerKey,
       channel: null,
       source_path: 'normalized.centers.defined',
       metadata_json: { defined: true },
     })
   }
 
-  for (const center of normalizedChart.centers.open) {
+  for (const centerKey of normalizedChart.centers.open) {
+    const label = getCenterLabel(centerKey)
     elements.push({
       element_kind: 'open_center',
-      element_key: slug(center),
-      element_label: center,
-      element_value: center,
+      element_key: centerKey,
+      element_label: label,
+      element_value: label,
       side: null,
       planet: null,
       gate: null,
       line: null,
-      center,
+      center: centerKey,
       channel: null,
       source_path: 'normalized.centers.open',
       metadata_json: { defined: false },

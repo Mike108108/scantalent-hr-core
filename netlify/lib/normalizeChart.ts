@@ -1,4 +1,5 @@
 import type { ChartBirthInput } from './inputHash'
+import { buildNormalizedCenters, resolveCenterKeyOrNull, type CenterKey } from './centerKeys'
 
 export type NormalizedChartData = {
   type: string | null
@@ -7,9 +8,9 @@ export type NormalizedChartData = {
   profile: string | null
   definition: string | null
   centers: {
-    defined: string[]
-    open: string[]
-    all: Array<{ name: string; defined: boolean }>
+    defined: CenterKey[]
+    open: CenterKey[]
+    all: Array<{ key: CenterKey; label: string; defined: boolean }>
   }
   channels: Array<{ key: string; label: string | null; gates: string[]; metadata: Record<string, unknown> }>
   gates: Array<{
@@ -129,11 +130,12 @@ function normalizeCenters(root: Record<string, unknown>, properties: Record<stri
       ? properties.Centers
       : []
 
-  const all: Array<{ name: string; defined: boolean }> = []
+  const definedFromObjects: string[] = []
+  const openFromObjects: string[] = []
 
   for (const item of centerObjects) {
     if (typeof item === 'string') {
-      all.push({ name: item, defined: definedFromList.includes(item) })
+      definedFromObjects.push(item)
       continue
     }
 
@@ -153,18 +155,18 @@ function normalizeCenters(root: Record<string, unknown>, properties: Record<stri
           ? item.is_defined
           : definedFromList.includes(name)
 
-    all.push({ name, defined })
+    if (defined) {
+      definedFromObjects.push(name)
+    } else {
+      openFromObjects.push(name)
+    }
   }
 
-  const defined = definedFromList.length
-    ? definedFromList
-    : all.filter((center) => center.defined).map((center) => center.name)
+  const definedProviderValues =
+    definedFromList.length > 0 ? definedFromList : definedFromObjects
+  const openProviderValues = openFromList.length > 0 ? openFromList : openFromObjects
 
-  const open = openFromList.length
-    ? openFromList
-    : all.filter((center) => !center.defined).map((center) => center.name)
-
-  return { defined, open, all }
+  return buildNormalizedCenters(definedProviderValues, openProviderValues)
 }
 
 function normalizeChannels(root: Record<string, unknown>, properties: Record<string, unknown>) {
@@ -268,7 +270,9 @@ function normalizeGates(root: Record<string, unknown>, properties: Record<string
         line: pickString(item.line) ?? pickString(item.Line),
         planet: pickString(item.planet) ?? pickString(item.Planet),
         side: pickString(item.side) ?? pickString(item.Side),
-        center: pickString(item.center) ?? pickString(item.Center),
+        center: resolveCenterKeyOrNull(
+          pickString(item.center) ?? pickString(item.Center) ?? null,
+        ),
         metadata: item,
       })
     }

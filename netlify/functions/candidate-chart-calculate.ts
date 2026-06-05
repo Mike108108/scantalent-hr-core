@@ -1,5 +1,6 @@
 import type { Handler } from '@netlify/functions'
 import { countElementsByKind, extractCandidateChartElements } from '../lib/extractCandidateChartElements'
+import { isNormalizedCentersCacheValid } from '../lib/chartCacheValidation'
 import { fetchHumanDesignChart, HdApiError } from '../lib/hdApiClient'
 import { computeChartInputHash, type ChartBirthInput } from '../lib/inputHash'
 import { normalizeChartData } from '../lib/normalizeChart'
@@ -138,7 +139,7 @@ export const handler: Handler = async (event) => {
       throw new Error(existingError.message)
     }
 
-    if (existingChart) {
+    if (existingChart && isNormalizedCentersCacheValid(existingChart.normalized_chart_data)) {
       const { count, error: countError } = await admin
         .from('hr_candidate_chart_elements')
         .select('*', { count: 'exact', head: true })

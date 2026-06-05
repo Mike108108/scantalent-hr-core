@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
+import { AuthGuard } from '../components/auth/AuthGuard'
 import { AppShell } from '../components/layout/AppShell'
 import { AppHomePage } from '../pages/AppHomePage'
 import { CandidatePage } from '../pages/CandidatePage'
@@ -14,9 +15,11 @@ export function AppRoutes() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
-        <Route path="/app" element={<AppHomePage />} />
-        <Route path="/app/candidate" element={<CandidatePage />} />
-        <Route path="/app/candidate/talent-map" element={<TalentMapPage />} />
+        <Route element={<AuthGuard />}>
+          <Route path="/app" element={<AppHomePage />} />
+          <Route path="/app/candidate" element={<CandidatePage />} />
+          <Route path="/app/candidate/talent-map" element={<TalentMapPage />} />
+        </Route>
       </Route>
     </Routes>
   )

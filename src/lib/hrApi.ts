@@ -1,6 +1,6 @@
 import type { User } from '@supabase/supabase-js'
 import { getSupabaseClient } from './supabaseClient'
-import type { Candidate, Company } from './types'
+import type { Candidate, CandidateChart, ChartElementCounts, Company } from './types'
 
 export type CandidatePayload = {
   name: string
@@ -97,16 +97,25 @@ export async function upsertSingleCandidateForCompany(
   const client = getClientOrThrow()
   const existing = await getFirstCandidateForCompany(companyId)
 
-  const row = {
+  const row: Record<string, unknown> = {
     company_id: companyId,
     name: payload.name.trim(),
-    email: payload.email?.trim() || null,
-    phone: payload.phone?.trim() || null,
     birth_date: payload.birth_date || null,
     birth_time: payload.birth_time || null,
     birth_place: payload.birth_place?.trim() || null,
     birth_timezone: payload.birth_timezone?.trim() || null,
-    notes: payload.notes?.trim() || null,
+  }
+
+  if (payload.email !== undefined) {
+    row.email = payload.email?.trim() || null
+  }
+
+  if (payload.phone !== undefined) {
+    row.phone = payload.phone?.trim() || null
+  }
+
+  if (payload.notes !== undefined) {
+    row.notes = payload.notes?.trim() || null
   }
 
   if (existing) {
@@ -124,11 +133,89 @@ export async function upsertSingleCandidateForCompany(
     return data as Candidate
   }
 
-  const { data, error } = await client.from('hr_candidates').insert(row).select('*').single()
+  const insertRow = {
+    company_id: companyId,
+    name: payload.name.trim(),
+    email: payload.email?.trim() || null,
+    phone: payload.phone?.trim() || null,
+    birth_date: payload.birth_date || null,
+    birth_time: payload.birth_time || null,
+    birth_place: payload.birth_place?.trim() || null,
+    birth_timezone: payload.birth_timezone?.trim() || null,
+    notes: payload.notes?.trim() || null,
+  }
+
+  const { data, error } = await client.from('hr_candidates').insert(insertRow).select('*').single()
 
   if (error) {
     throw new Error(error.message)
   }
 
   return data as Candidate
+}
+
+export async function getLatestChartForCandidate(
+  candidateId: string,
+): Promise<CandidateChart | null> {
+  const client = getClientOrThrow()
+
+  const { data, error } = await client
+    .from('hr_candidate_charts')
+    .select('*')
+    .eq('candidate_id', candidateId)
+    .order('calculated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return (data as CandidateChart | null) ?? null
+}
+
+export async function getChartElementCounts(chartId: string): Promise<ChartElementCounts> {
+  const client = getClientOrThrow()
+
+  const { data, error } = await client
+    .from('hr_candidate_chart_elements')
+    .select('element_kind')
+    .eq('chart_id', chartId)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  const counts: ChartElementCounts = {
+    total: data?.length ?? 0,
+    defined_centers: 0,
+    open_centers: 0,
+    channels: 0,
+    gates: 0,
+    activations: 0,
+  }
+
+  for (const row of data ?? []) {
+    switch (row.element_kind) {
+      case 'defined_center':
+        counts.defined_centers += 1
+        break
+      case 'open_center':
+        counts.open_centers += 1
+        break
+      case 'channel':
+        counts.channels += 1
+        break
+      case 'gate':
+        counts.gates += 1
+        break
+      case 'activation':
+        counts.activations += 1
+        break
+      default:
+        break
+    }
+  }
+
+  return counts
 }

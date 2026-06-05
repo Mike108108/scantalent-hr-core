@@ -21,6 +21,28 @@ export type Candidate = {
   updated_at: string
 }
 
+export type CandidateChart = {
+  id: string
+  company_id: string
+  candidate_id: string
+  input_hash: string | null
+  chart_source: string | null
+  raw_chart_data: unknown
+  normalized_chart_data: unknown
+  calculated_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type ChartElementCounts = {
+  total: number
+  defined_centers: number
+  open_centers: number
+  channels: number
+  gates: number
+  activations: number
+}
+
 export type TalentMapStatus = 'draft' | 'processing' | 'ready' | 'error'
 
 export type LayerKey =

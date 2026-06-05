@@ -67,11 +67,14 @@ export type ReferenceInterpretationLayers = {
   classical_keywords?: string | string[]
   source_logic?: string
   pro_not_self?: string
+  composition_components?: string[]
+  composition_mode?: string
   primary_context?: string | string[]
   secondary_context?: string | string[]
   depends_on?: string
   related_element_kinds?: string | string[]
   context_note?: string
+  source_component_keys?: string[]
   base?: string
   pro?: string
   warning_signals?: string | string[]

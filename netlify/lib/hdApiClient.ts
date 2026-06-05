@@ -13,6 +13,44 @@ export type HdChartResponse = {
   chartSource: string
 }
 
+export class HdApiError extends Error {
+  provider: string
+  endpoint: string
+  status: number
+  providerMessage: string
+  requestBodyKeys: string[]
+
+  constructor(details: {
+    provider: string
+    endpoint: string
+    status: number
+    providerMessage: string
+    requestBodyKeys: string[]
+  }) {
+    super(details.providerMessage)
+    this.name = 'HdApiError'
+    this.provider = details.provider
+    this.endpoint = details.endpoint
+    this.status = details.status
+    this.providerMessage = details.providerMessage
+    this.requestBodyKeys = details.requestBodyKeys
+  }
+}
+
+function extractProviderMessage(payload: unknown, fallback: string): string {
+  if (typeof payload === 'object' && payload !== null) {
+    const record = payload as Record<string, unknown>
+    for (const key of ['message', 'error', 'errorMessage', 'detail']) {
+      const value = record[key]
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim()
+      }
+    }
+  }
+
+  return fallback
+}
+
 function getHdConfig() {
   const apiKey = process.env.HD_API_KEY?.trim()
   const baseUrl = process.env.HD_API_BASE_URL?.trim().replace(/\/$/, '')
@@ -95,6 +133,12 @@ async function fetchCoordinatesChart(
   request: HdChartRequest,
 ): Promise<unknown> {
   const endpoint = resolveCoordinatesEndpoint(baseUrl)
+  const requestBody = {
+    birthdate: request.birthDate,
+    birthtime: request.birthTime.slice(0, 5),
+    lat: request.birthLatitude,
+    lng: request.birthLongitude,
+  }
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -102,22 +146,19 @@ async function fetchCoordinatesChart(
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      birthdate: request.birthDate,
-      birthtime: request.birthTime.slice(0, 5),
-      latitude: request.birthLatitude,
-      longitude: request.birthLongitude,
-    }),
+    body: JSON.stringify(requestBody),
   })
 
   const payload = await readJsonResponse(response)
 
   if (!response.ok) {
-    const message =
-      typeof payload === 'object' && payload !== null && 'message' in payload
-        ? String((payload as { message: unknown }).message)
-        : `HD API error (${response.status}).`
-    throw new Error(message)
+    throw new HdApiError({
+      provider: 'humandesignapi.nl',
+      endpoint,
+      status: response.status,
+      providerMessage: extractProviderMessage(payload, `HD API error (${response.status}).`),
+      requestBodyKeys: Object.keys(requestBody),
+    })
   }
 
   return payload

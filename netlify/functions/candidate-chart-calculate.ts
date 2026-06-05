@@ -1,6 +1,6 @@
 import type { Handler } from '@netlify/functions'
 import { countElementsByKind, extractCandidateChartElements } from '../lib/extractCandidateChartElements'
-import { fetchHumanDesignChart } from '../lib/hdApiClient'
+import { fetchHumanDesignChart, HdApiError } from '../lib/hdApiClient'
 import { computeChartInputHash, type ChartBirthInput } from '../lib/inputHash'
 import { normalizeChartData } from '../lib/normalizeChart'
 import { AuthError, getSupabaseAdmin, verifyBearerUser } from '../lib/supabaseAdmin'
@@ -238,6 +238,20 @@ export const handler: Handler = async (event) => {
   } catch (error) {
     if (error instanceof AuthError) {
       return jsonResponse(error.statusCode, { ok: false, error: error.message })
+    }
+
+    if (error instanceof HdApiError) {
+      return jsonResponse(502, {
+        ok: false,
+        error: error.providerMessage,
+        hd_api: {
+          provider: error.provider,
+          endpoint: error.endpoint,
+          status: error.status,
+          message: error.providerMessage,
+          request_body_keys: error.requestBodyKeys,
+        },
+      })
     }
 
     const message = error instanceof Error ? error.message : 'Chart calculation failed.'

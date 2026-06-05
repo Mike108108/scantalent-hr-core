@@ -86,14 +86,6 @@ export const handler: Handler = async (event) => {
 
     const elements = (elementRows ?? []) as ChartElementRow[]
 
-    const uniquePairs = new Map<string, { element_kind: string; element_key: string }>()
-    for (const element of elements) {
-      uniquePairs.set(`${element.element_kind}::${element.element_key}`, {
-        element_kind: element.element_kind,
-        element_key: element.element_key,
-      })
-    }
-
     const { data: interpretationRows, error: interpretationsError } = await admin
       .from('hd_reference_interpretations')
       .select(
@@ -107,12 +99,8 @@ export const handler: Handler = async (event) => {
     }
 
     const interpretations = (interpretationRows ?? []) as ReferenceInterpretationRow[]
-    const neededKeys = new Set(uniquePairs.keys())
-    const matchedInterpretations = interpretations.filter((row) =>
-      neededKeys.has(`${row.element_kind}::${row.element_key}`),
-    )
 
-    const { bundle, coverage } = buildReferenceBundle(elements, matchedInterpretations)
+    const { bundle, coverage } = buildReferenceBundle(elements, interpretations)
 
     return jsonResponse(200, {
       ok: true,

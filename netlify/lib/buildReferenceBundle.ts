@@ -1,3 +1,4 @@
+import { composeActivationInterpretation } from './buildActivationInterpretation'
 import type { ChartElementInsert } from './extractCandidateChartElements'
 
 export type ChartElementRow = ChartElementInsert & { id: string }
@@ -255,13 +256,32 @@ function buildRelatedContextElements(
     related.push(...findGlobalContext(allElements, element.id, ['type', 'strategy', 'authority', 'profile']))
 
     if (element.gate) {
+      const gateKey = element.gate
       const gateElement = allElements.find(
         (row) =>
-          row.element_kind === 'gate' &&
-          (row.gate === element.gate || row.element_key === element.gate),
+          row.element_kind === 'gate' && (row.gate === gateKey || row.element_key === gateKey),
       )
       if (gateElement) {
         related.push(toRelated(gateElement, 'activation_gate'))
+
+        const channels = allElements.filter((row) => {
+          if (row.element_kind !== 'channel') {
+            return false
+          }
+          return getMetadataGates(row.metadata_json).includes(gateKey)
+        })
+        related.push(...channels.map((row) => toRelated(row, 'activation_channel')))
+
+        if (gateElement.center) {
+          const centerElement = allElements.find(
+            (row) =>
+              (row.element_kind === 'defined_center' || row.element_kind === 'open_center') &&
+              (row.center === gateElement.center || row.element_key === gateElement.center),
+          )
+          if (centerElement) {
+            related.push(toRelated(centerElement, 'activation_center'))
+          }
+        }
       }
     }
 
@@ -320,15 +340,55 @@ export function buildReferenceBundle(
   }
 
   const items: BundleItem[] = elements.map((element) => {
-    const interpretation =
+    const directInterpretation =
       interpretationMap.get(interpretationKey(element.element_kind, element.element_key)) ?? null
+
+    if (element.element_kind === 'activation') {
+      if (directInterpretation) {
+        return {
+          element,
+          matched: true,
+          interpretation: directInterpretation,
+          related_context_elements: buildRelatedContextElements(element, elements),
+          missing_reason: null,
+        }
+      }
+
+      const { interpretation, missingComponents } = composeActivationInterpretation(
+        element,
+        interpretationMap,
+      )
+
+      if (interpretation) {
+        return {
+          element,
+          matched: true,
+          interpretation,
+          related_context_elements: buildRelatedContextElements(element, elements),
+          missing_reason: null,
+        }
+      }
+
+      const missingReason =
+        missingComponents.length > 0
+          ? `Missing activation components: ${missingComponents.join(', ')}`
+          : MISSING_REASON
+
+      return {
+        element,
+        matched: false,
+        interpretation: null,
+        related_context_elements: buildRelatedContextElements(element, elements),
+        missing_reason: missingReason,
+      }
+    }
 
     return {
       element,
-      matched: interpretation !== null,
-      interpretation,
+      matched: directInterpretation !== null,
+      interpretation: directInterpretation,
       related_context_elements: buildRelatedContextElements(element, elements),
-      missing_reason: interpretation ? null : MISSING_REASON,
+      missing_reason: directInterpretation ? null : MISSING_REASON,
     }
   })
 
@@ -338,7 +398,7 @@ export function buildReferenceBundle(
       element_kind: item.element.element_kind,
       element_key: item.element.element_key,
       element_label: item.element.element_label,
-      reason: MISSING_REASON,
+      reason: item.missing_reason ?? MISSING_REASON,
     }))
 
   const bundle: SourceInterpretationBundle = {

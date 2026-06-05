@@ -6,6 +6,7 @@ import { Input } from '../components/ui/Input'
 import { StatusBadge } from '../components/ui/StatusBadge'
 import { calculateCandidateChart } from '../lib/chartApi'
 import type { SelectedCity } from '../lib/geocoding'
+import { buildReferenceBundle } from '../lib/referenceBundleApi'
 import {
   getChartElementCounts,
   getFirstCandidateForCompany,
@@ -14,7 +15,13 @@ import {
   upsertSingleCandidateForCompany,
   type CandidatePayload,
 } from '../lib/hrApi'
-import type { Candidate, CandidateChart, ChartElementCounts, Company } from '../lib/types'
+import type {
+  Candidate,
+  CandidateChart,
+  ChartElementCounts,
+  Company,
+  ReferenceBundleResponse,
+} from '../lib/types'
 
 type FormValues = {
   name: string
@@ -130,6 +137,10 @@ export function CandidatePage() {
   const [chartError, setChartError] = useState<string | null>(null)
   const [debugOpen, setDebugOpen] = useState(false)
   const [copyMessage, setCopyMessage] = useState<string | null>(null)
+
+  const [bundleLoading, setBundleLoading] = useState(false)
+  const [bundleError, setBundleError] = useState<string | null>(null)
+  const [bundleResult, setBundleResult] = useState<ReferenceBundleResponse | null>(null)
 
   async function loadChartData(candidateId: string) {
     const latestChart = await getLatestChartForCandidate(candidateId)
@@ -305,6 +316,27 @@ export function CandidatePage() {
       window.setTimeout(() => setCopyMessage(null), 2000)
     } catch {
       setCopyMessage('Не удалось скопировать JSON')
+    }
+  }
+
+  async function handleBuildReferenceBundle() {
+    if (!chart?.id) {
+      return
+    }
+
+    setBundleLoading(true)
+    setBundleError(null)
+
+    try {
+      const result = await buildReferenceBundle(chart.id)
+      setBundleResult(result)
+    } catch (error) {
+      setBundleError(
+        error instanceof Error ? error.message : 'Не удалось собрать bundle расшифровок.',
+      )
+      setBundleResult(null)
+    } finally {
+      setBundleLoading(false)
     }
   }
 
@@ -518,6 +550,105 @@ export function CandidatePage() {
           )}
         </div>
       </Card>
+
+      {chart ? (
+        <Card title="Debug: справочник расшифровок">
+          <div className="stack">
+            <Button
+              type="button"
+              disabled={bundleLoading}
+              onClick={() => void handleBuildReferenceBundle()}
+            >
+              {bundleLoading ? 'Сборка bundle…' : 'Собрать bundle расшифровок'}
+            </Button>
+
+            {bundleError ? (
+              <div className="alert alert--error" role="alert">
+                {bundleError}
+              </div>
+            ) : null}
+
+            {bundleResult?.coverage ? (
+              <div className="bundle-coverage">
+                <h3 className="bundle-coverage__title">Coverage</h3>
+                <dl className="info-list">
+                  <div className="info-list__row">
+                    <dt>всего элементов</dt>
+                    <dd>{bundleResult.coverage.total_elements}</dd>
+                  </div>
+                  <div className="info-list__row">
+                    <dt>найдено расшифровок</dt>
+                    <dd>{bundleResult.coverage.matched_elements}</dd>
+                  </div>
+                  <div className="info-list__row">
+                    <dt>не найдено</dt>
+                    <dd>{bundleResult.coverage.missing_elements}</dd>
+                  </div>
+                  <div className="info-list__row">
+                    <dt>coverage %</dt>
+                    <dd>{bundleResult.coverage.coverage_percent}%</dd>
+                  </div>
+                </dl>
+
+                {Object.keys(bundleResult.coverage.by_kind).length > 0 ? (
+                  <div className="bundle-coverage__by-kind">
+                    <h4 className="bundle-coverage__subtitle">Coverage by kind</h4>
+                    <ul className="bundle-coverage__kind-list">
+                      {Object.entries(bundleResult.coverage.by_kind)
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([kind, stats]) => (
+                          <li key={kind} className="bundle-coverage__kind-item">
+                            <span className="bundle-coverage__kind-name">{kind}</span>
+                            <span className="bundle-coverage__kind-stats">
+                              {stats.matched}/{stats.total} matched, {stats.missing} missing
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {bundleResult.bundle?.missing_items.length ? (
+                  <div className="bundle-missing">
+                    <h4 className="bundle-coverage__subtitle">Missing items</h4>
+                    <ul className="bundle-missing__list">
+                      {bundleResult.bundle.missing_items.map((item) => (
+                        <li key={`${item.element_kind}:${item.element_key}`} className="bundle-missing__item">
+                          <span className="mono-text">
+                            {item.element_kind}/{item.element_key}
+                          </span>
+                          {item.element_label ? (
+                            <span className="bundle-missing__label"> — {item.element_label}</span>
+                          ) : null}
+                          <span className="bundle-missing__reason"> ({item.reason})</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {bundleResult?.bundle ? (
+              <div className="debug-json-block">
+                <div className="debug-json-block__header">
+                  <h3 className="debug-json-block__title">source_interpretation_bundle</h3>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => void handleCopy('interpretation bundle JSON', bundleResult.bundle)}
+                  >
+                    Скопировать interpretation bundle JSON
+                  </Button>
+                </div>
+                <pre className="debug-json-block__pre">
+                  {JSON.stringify(bundleResult.bundle, null, 2)}
+                </pre>
+              </div>
+            ) : null}
+          </div>
+        </Card>
+      ) : null}
 
       {chart ? (
         <Card title="Debug: техническая карта">

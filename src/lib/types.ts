@@ -54,3 +54,118 @@ export type LayerKey =
   | 'risks'
   | 'management'
   | 'development_potential'
+
+export type ReferenceInterpretationLayers = {
+  plain_meaning?: string
+  work_manifestation?: string
+  strengths?: string
+  risks?: string
+  when_it_works_best?: string
+  when_talent_is_not_revealed?: string
+  hd_meaning?: string
+  mechanics?: string
+  classical_keywords?: string | string[]
+  source_logic?: string
+  pro_not_self?: string
+  primary_context?: string | string[]
+  secondary_context?: string | string[]
+  depends_on?: string
+  related_element_kinds?: string | string[]
+  context_note?: string
+  base?: string
+  pro?: string
+  warning_signals?: string | string[]
+  recovery_conditions?: string | string[]
+}
+
+export type ReferenceContrastExample = {
+  contrast_context: string
+  how_it_would_read: string
+  why_current_context_is_different: string
+}
+
+export type ReferenceInterpretation = {
+  element_label: string | null
+  classic_markdown: string | null
+  hr_translation_markdown: string | null
+  pro_markdown: string | null
+  talent_hints: string[]
+  risk_hints: string[]
+  management_hints: string[]
+  environment_hints: string[]
+  limitations: string[]
+  base_layers: ReferenceInterpretationLayers
+  pro_layers: ReferenceInterpretationLayers
+  context_rules: ReferenceInterpretationLayers
+  not_self_layers: ReferenceInterpretationLayers
+  contrast_examples: ReferenceContrastExample[]
+  source_quality: string
+}
+
+export type ReferenceBundleChartElement = {
+  id: string
+  element_kind: string
+  element_key: string
+  element_label: string | null
+  element_value: string | null
+  side: string | null
+  planet: string | null
+  gate: string | null
+  line: string | null
+  center: string | null
+  channel: string | null
+  source_path: string | null
+  metadata_json: Record<string, unknown>
+}
+
+export type ReferenceBundleRelatedElement = {
+  id: string
+  element_kind: string
+  element_key: string
+  element_label: string | null
+  relation: string
+}
+
+export type ReferenceBundleItem = {
+  element: ReferenceBundleChartElement
+  matched: boolean
+  interpretation: ReferenceInterpretation | null
+  related_context_elements: ReferenceBundleRelatedElement[]
+  missing_reason: string | null
+}
+
+export type ReferenceBundleMissingItem = {
+  element_kind: string
+  element_key: string
+  element_label: string | null
+  reason: string
+}
+
+export type ReferenceBundleCoverageByKind = {
+  total: number
+  matched: number
+  missing: number
+}
+
+export type ReferenceBundleCoverage = {
+  total_elements: number
+  matched_elements: number
+  missing_elements: number
+  coverage_percent: number
+  by_kind: Record<string, ReferenceBundleCoverageByKind>
+}
+
+export type SourceInterpretationBundle = {
+  language: string
+  version: string
+  items: ReferenceBundleItem[]
+  missing_items: ReferenceBundleMissingItem[]
+}
+
+export type ReferenceBundleResponse = {
+  ok: boolean
+  chart_id?: string
+  coverage?: ReferenceBundleCoverage
+  bundle?: SourceInterpretationBundle
+  error?: string
+}

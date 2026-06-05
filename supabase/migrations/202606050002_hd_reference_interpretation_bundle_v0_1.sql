@@ -50,22 +50,22 @@ insert into public.hd_reference_interpretations (
   jsonb_build_object(
     'hd_meaning', 'Projector — аура фокусированная и проникающая; предназначен управлять, направлять и видеть других.',
     'mechanics', 'Отсутствие стабильного Sacral; решения и энергия не для непрерывного производства, а для корректного направления.',
-    'classical_keywords', '["invitation", "recognition", "guidance", "success", "bitterness"]',
+    'classical_keywords', '["invitation", "recognition", "guidance", "success", "bitterness"]'::jsonb,
     'source_logic', 'Тип берётся из определённых центров и каналов карты; для Projector Sacral не определён.',
     'pro_not_self', 'Bitterness — когда действует без приглашения или не получает признания за вклад.'
   ),
   jsonb_build_object(
-    'primary_context', '["strategy", "authority", "profile", "defined_centers", "open_centers"]',
-    'secondary_context', '["channels", "gates"]',
+    'primary_context', '["strategy", "authority", "profile", "defined_centers", "open_centers"]'::jsonb,
+    'secondary_context', '["channels", "gates"]'::jsonb,
     'depends_on', 'Стратегия приглашения и авторитет определяют, как проектор входит в задачи и принимает решения.',
-    'related_element_kinds', '["strategy", "authority", "profile", "defined_center", "open_center", "channel"]',
+    'related_element_kinds', '["strategy", "authority", "profile", "defined_center", "open_center", "channel"]'::jsonb,
     'context_note', 'Тип читается только вместе с тем, как человек входит в работу (стратегия) и как принимает решения (авторитет).'
   ),
   jsonb_build_object(
     'base', 'Искажение: человек берёт на себя чужую рабочую нагрузку и ждёт, что его «заметят сами».',
     'pro', 'Not-Self тема Projector — горечь (Bitterness) от непризнанного руководства и действий без приглашения.',
-    'warning_signals', '["хроническая усталость при «нормальной» нагрузке", "раздражение, что «никто не слушает»", "попытки доказать ценность через переработки"]',
-    'recovery_conditions', '["явное приглашение в зону ответственности", "снижение операционной нагрузки", "регулярная обратная связь о ценности вклада"]'
+    'warning_signals', '["хроническая усталость при «нормальной» нагрузке", "раздражение, что «никто не слушает»", "попытки доказать ценность через переработки"]'::jsonb,
+    'recovery_conditions', '["явное приглашение в зону ответственности", "снижение операционной нагрузки", "регулярная обратная связь о ценности вклада"]'::jsonb
   ),
   jsonb_build_array(
     jsonb_build_object(
@@ -99,22 +99,22 @@ insert into public.hd_reference_interpretations (
   jsonb_build_object(
     'hd_meaning', 'Стратегия определяет корректный способ взаимодействия с миром для данного типа.',
     'mechanics', 'Для Projector приглашение открывает доступ к энергии взаимодействия и снижает несигнатуру.',
-    'classical_keywords', '["invitation", "recognition"]',
+    'classical_keywords', '["invitation", "recognition"]'::jsonb,
     'source_logic', 'Стратегия выводится из типа карты.',
     'pro_not_self', 'Действие без приглашения ведёт к Bitterness.'
   ),
   jsonb_build_object(
-    'primary_context', '["type"]',
-    'secondary_context', '["authority", "profile"]',
+    'primary_context', '["type"]'::jsonb,
+    'secondary_context', '["authority", "profile"]'::jsonb,
     'depends_on', 'Стратегия всегда читается в паре с типом.',
-    'related_element_kinds', '["type", "authority"]',
+    'related_element_kinds', '["type", "authority"]'::jsonb,
     'context_note', 'Приглашение — про значимые решения, не про бытовые мелочи.'
   ),
   jsonb_build_object(
     'base', 'Человек лезет с советами и решениями без запроса.',
     'pro', 'Нарушение стратегии Projector — классический путь в Not-Self.',
-    'warning_signals', '["советы не слушают", "ощущение «меня обходят»"]',
-    'recovery_conditions', '["договориться о формате приглашения", "снизить навязчивые инициативы"]'
+    'warning_signals', '["советы не слушают", "ощущение «меня обходят»"]'::jsonb,
+    'recovery_conditions', '["договориться о формате приглашения", "снизить навязчивые инициативы"]'::jsonb
   ),
   '[]'::jsonb,
   'draft'
@@ -142,22 +142,22 @@ insert into public.hd_reference_interpretations (
   jsonb_build_object(
     'hd_meaning', 'Splenic Authority — самый старый инстинктивный авторитет; связан с Spleen center.',
     'mechanics', 'Сигнал одноразовый и тихий; повторный анализ умом часто искажает.',
-    'classical_keywords', '["intuition", "in the now", "survival awareness"]',
+    'classical_keywords', '["intuition", "in the now", "survival awareness"]'::jsonb,
     'source_logic', 'Авторитет определяется определёнными центрами; здесь определён Spleen без эмоциональной волны.',
     'pro_not_self', 'Игнорирование мгновенного «нет» ведёт к здоровью и безопасности рискам.'
   ),
   jsonb_build_object(
-    'primary_context', '["type", "defined_center"]',
-    'secondary_context', '["channels", "gates"]',
+    'primary_context', '["type", "defined_center"]'::jsonb,
+    'secondary_context', '["channels", "gates"]'::jsonb,
     'depends_on', 'Наличие определённого Spleen center.',
-    'related_element_kinds', '["type", "defined_center", "channel"]',
+    'related_element_kinds', '["type", "defined_center", "channel"]'::jsonb,
     'context_note', 'Спленический ответ нельзя «переспрашивать» тем же способом на следующий день.'
   ),
   jsonb_build_object(
     'base', 'Человек соглашается против внутреннего «нет», чтобы не обидеть.',
     'pro', 'Not-Self Splenic — жить в режиме, где интуиция систематически подавлена.',
-    'warning_signals', '["частые болезни/стресс", "согласие с последующим сожалением"]',
-    'recovery_conditions', '["право на мгновенный отказ", "решения в живом контакте с контекстом"]'
+    'warning_signals', '["частые болезни/стресс", "согласие с последующим сожалением"]'::jsonb,
+    'recovery_conditions', '["право на мгновенный отказ", "решения в живом контакте с контекстом"]'::jsonb
   ),
   jsonb_build_array(
     jsonb_build_object(
@@ -191,22 +191,22 @@ insert into public.hd_reference_interpretations (
   jsonb_build_object(
     'hd_meaning', '1/3 — классический путь «фундамент + trial and error».',
     'mechanics', 'Линия 1 требует безопасной базы; линия 3 учится через столкновение с реальностью.',
-    'classical_keywords', '["investigator", "martyr", "foundation", "trial and error"]',
+    'classical_keywords', '["investigator", "martyr", "foundation", "trial and error"]'::jsonb,
     'source_logic', 'Профиль из Sun/Earth personality и design линий.',
     'pro_not_self', 'Страх эксперимента или отсутствие базы знаний.'
   ),
   jsonb_build_object(
-    'primary_context', '["type", "authority"]',
-    'secondary_context', '["definition", "channels"]',
+    'primary_context', '["type", "authority"]'::jsonb,
+    'secondary_context', '["definition", "channels"]'::jsonb,
     'depends_on', 'Профиль модифицирует проявление типа и авторитета.',
-    'related_element_kinds', '["type", "authority", "definition"]',
+    'related_element_kinds', '["type", "authority", "definition"]'::jsonb,
     'context_note', '1/3 не «неуверенность», а метод познания.'
   ),
   jsonb_build_object(
     'base', 'Притворяется экспертом без базы или боится пробовать.',
     'pro', 'Not-Self 3-й линии — избегание эксперимента из-за стыда.',
-    'warning_signals', '["скрывает ошибки", "не задаёт вопросов"]',
-    'recovery_conditions', '["психологически безопасные пилоты", "доступ к наставникам"]'
+    'warning_signals', '["скрывает ошибки", "не задаёт вопросов"]'::jsonb,
+    'recovery_conditions', '["психологически безопасные пилоты", "доступ к наставникам"]'::jsonb
   ),
   '[]'::jsonb,
   'draft'
@@ -234,22 +234,22 @@ insert into public.hd_reference_interpretations (
   jsonb_build_object(
     'hd_meaning', 'Split Definition — два defined areas без собственного канала между ними.',
     'mechanics', 'Тема моста часто приходит через транзиты или ауры других людей.',
-    'classical_keywords', '["bridge", "split", "connection theme"]',
+    'classical_keywords', '["bridge", "split", "connection theme"]'::jsonb,
     'source_logic', 'Определяется топологией defined centers и channels.',
     'pro_not_self', 'Попытка «быть цельным» без признания split.'
   ),
   jsonb_build_object(
-    'primary_context', '["type", "defined_center", "channel"]',
-    'secondary_context', '["profile"]',
+    'primary_context', '["type", "defined_center", "channel"]'::jsonb,
+    'secondary_context', '["profile"]'::jsonb,
     'depends_on', 'Какие центры и каналы образуют два кластера.',
-    'related_element_kinds', '["defined_center", "channel"]',
+    'related_element_kinds', '["defined_center", "channel"]'::jsonb,
     'context_note', 'Мост — не слабость, а механика карты.'
   ),
   jsonb_build_object(
     'base', 'Требует от себя универсальности без опоры на команду.',
     'pro', 'Not-Self split — игнорирование темы моста.',
-    'warning_signals', '["внутренний разрыв", "зависимость от одного человека"]',
-    'recovery_conditions', '["осознанный подбор мостов", "кросс-функциональные связи"]'
+    'warning_signals', '["внутренний разрыв", "зависимость от одного человека"]'::jsonb,
+    'recovery_conditions', '["осознанный подбор мостов", "кросс-функциональные связи"]'::jsonb
   ),
   '[]'::jsonb,
   'draft'
@@ -292,9 +292,9 @@ insert into public.hd_reference_interpretations (
  '["время на обдумывание", "уважение к методологии"]'::jsonb,
  '[]'::jsonb,
  jsonb_build_object('plain_meaning', 'Стабильный стиль мышления и формирования мнений.', 'work_manifestation', 'Даёт структурированные концепции и держит линию аргументации.', 'strengths', 'Последовательность в анализе.', 'risks', 'Сложно менять угол без новых фактов.', 'when_it_works_best', 'Роли с концептом и стратегией.', 'when_talent_is_not_revealed', 'Среда, где мнение постоянно обесценивают.'),
- jsonb_build_object('hd_meaning', 'Defined Ajna — фиксированная mental awareness.', 'mechanics', 'Не усиливается чужими мнениями как open.', 'classical_keywords', '["certainty", "conceptual mind"]', 'source_logic', 'Ajna в defined centers.', 'pro_not_self', 'Догматизм ради уверенности.'),
- jsonb_build_object('primary_context', '["type", "channels"]', 'secondary_context', '["gates"]', 'depends_on', 'Связанные каналы и ворота Ajna.', 'related_element_kinds', '["channel", "gate"]', 'context_note', 'Читается с каналом 11-56 при наличии.'),
- jsonb_build_object('base', 'Цепляется за мнение, чтобы не потерять опору.', 'pro', 'Fixed mind Not-Self.', 'warning_signals', '["споры ради споров"]', 'recovery_conditions', '["факты вместо давления"]'),
+ jsonb_build_object('hd_meaning', 'Defined Ajna — фиксированная mental awareness.', 'mechanics', 'Не усиливается чужими мнениями как open.', 'classical_keywords', '["certainty", "conceptual mind"]'::jsonb, 'source_logic', 'Ajna в defined centers.', 'pro_not_self', 'Догматизм ради уверенности.'),
+ jsonb_build_object('primary_context', '["type", "channels"]'::jsonb, 'secondary_context', '["gates"]'::jsonb, 'depends_on', 'Связанные каналы и ворота Ajna.', 'related_element_kinds', '["channel", "gate"]'::jsonb, 'context_note', 'Читается с каналом 11-56 при наличии.'),
+ jsonb_build_object('base', 'Цепляется за мнение, чтобы не потерять опору.', 'pro', 'Fixed mind Not-Self.', 'warning_signals', '["споры ради споров"]'::jsonb, 'recovery_conditions', '["факты вместо давления"]'::jsonb),
  '[]'::jsonb, 'draft'),
 
 ('defined_center', 'throat', 'Throat', 'ru', 'v1',
@@ -317,22 +317,22 @@ insert into public.hd_reference_interpretations (
  jsonb_build_object(
    'hd_meaning', 'Throat — центр manifestation и expression; defined даёт постоянный доступ.',
    'mechanics', 'Связан с каналами к Throat (например 11-56 Curiosity).',
-   'classical_keywords', '["expression", "manifestation", "communication"]',
+   'classical_keywords', '["expression", "manifestation", "communication"]'::jsonb,
    'source_logic', 'Throat в defined centers + связанные gates/channels.',
    'pro_not_self', 'Говорит, чтобы сбросить давление, а не по смыслу.'
  ),
  jsonb_build_object(
-   'primary_context', '["type", "channel", "gate"]',
-   'secondary_context', '["profile"]',
+   'primary_context', '["type", "channel", "gate"]'::jsonb,
+   'secondary_context', '["profile"]'::jsonb,
    'depends_on', 'Какие каналы подключены к Throat.',
-   'related_element_kinds', '["channel", "gate", "type"]',
+   'related_element_kinds', '["channel", "gate", "type"]'::jsonb,
    'context_note', 'С defined Throat коммуникация — опора, не уязвимость.'
  ),
  jsonb_build_object(
    'base', 'Говорит без запроса, заполняет тишину тревогой.',
    'pro', 'Not-Self Throat — лишние слова как разрядка.',
-   'warning_signals', '["монологи", "усталость голоса/присутствия"]',
-   'recovery_conditions', '["ритм выступлений", "роли слушания"]'
+   'warning_signals', '["монологи", "усталость голоса/присутствия"]'::jsonb,
+   'recovery_conditions', '["ритм выступлений", "роли слушания"]'::jsonb
  ),
  jsonb_build_array(
    jsonb_build_object(
@@ -363,22 +363,22 @@ insert into public.hd_reference_interpretations (
  jsonb_build_object(
    'hd_meaning', 'Spleen — oldest awareness center; splenic hits are quiet and instant.',
    'mechanics', 'Связан с каналами 18-58, 28-38 при их наличии; поддерживает Splenic authority.',
-   'classical_keywords', '["intuition", "immune system", "in the now"]',
+   'classical_keywords', '["intuition", "immune system", "in the now"]'::jsonb,
    'source_logic', 'Spleen defined + authority Splenic.',
    'pro_not_self', 'Жить в страхе вместо доверия телесному сигналу.'
  ),
  jsonb_build_object(
-   'primary_context', '["authority", "channel"]',
-   'secondary_context', '["type", "gate"]',
+   'primary_context', '["authority", "channel"]'::jsonb,
+   'secondary_context', '["type", "gate"]'::jsonb,
    'depends_on', 'Splenic authority и каналы через Spleen.',
-   'related_element_kinds', '["authority", "channel", "gate"]',
+   'related_element_kinds', '["authority", "channel", "gate"]'::jsonb,
    'context_note', 'Спленический сигнал не повторяется — важен первый отклик.'
  ),
  jsonb_build_object(
    'base', 'Игнорирует тревогу и идёт «через силу».',
    'pro', 'Not-Self Spleen — хронический страх и небезопасность.',
-   'warning_signals', '["частые болезни", "согласие вопреки телу"]',
-   'recovery_conditions', '["уважение к «нет»", "снижение токсичной нагрузки"]'
+   'warning_signals', '["частые болезни", "согласие вопреки телу"]'::jsonb,
+   'recovery_conditions', '["уважение к «нет»", "снижение токсичной нагрузки"]'::jsonb
  ),
  jsonb_build_array(
    jsonb_build_object(
@@ -399,9 +399,9 @@ insert into public.hd_reference_interpretations (
  '["реалистичные сроки"]'::jsonb,
  '[]'::jsonb,
  jsonb_build_object('plain_meaning', 'Свой источник «драйва» и давления.', 'work_manifestation', 'Может ускорять или замедлять темп осознанно.', 'strengths', 'Не срывается от чужой срочности.', 'risks', 'Давит на окружение.', 'when_it_works_best', 'Проекты с ясными дедлайнами.', 'when_talent_is_not_revealed', 'Хаотичная срочность без приоритетов.'),
- jsonb_build_object('hd_meaning', 'Root motor of pressure.', 'mechanics', 'Связан с каналами 18-58, 28-38 к Root.', 'classical_keywords', '["pressure", "adrenaline", "drive"]', 'source_logic', 'Root в defined.', 'pro_not_self', 'Гонка ради сброса давления.'),
- jsonb_build_object('primary_context', '["channel"]', 'secondary_context', '["type"]', 'depends_on', 'Каналы к Root.', 'related_element_kinds', '["channel"]', 'context_note', 'Root задаёт fuel, не мотивацию смыслом.'),
- jsonb_build_object('base', 'Живёт в постоянной гонке.', 'pro', 'Root Not-Self — адреналиновая зависимость.', 'warning_signals', '["выгорание на адреналине"]', 'recovery_conditions', '["паузы", "приоритизация"]'),
+ jsonb_build_object('hd_meaning', 'Root motor of pressure.', 'mechanics', 'Связан с каналами 18-58, 28-38 к Root.', 'classical_keywords', '["pressure", "adrenaline", "drive"]'::jsonb, 'source_logic', 'Root в defined.', 'pro_not_self', 'Гонка ради сброса давления.'),
+ jsonb_build_object('primary_context', '["channel"]'::jsonb, 'secondary_context', '["type"]'::jsonb, 'depends_on', 'Каналы к Root.', 'related_element_kinds', '["channel"]'::jsonb, 'context_note', 'Root задаёт fuel, не мотивацию смыслом.'),
+ jsonb_build_object('base', 'Живёт в постоянной гонке.', 'pro', 'Root Not-Self — адреналиновая зависимость.', 'warning_signals', '["выгорание на адреналине"]'::jsonb, 'recovery_conditions', '["паузы", "приоритизация"]'::jsonb),
  '[]'::jsonb, 'draft')
 
 on conflict (element_kind, element_key, language, version) do update set
@@ -441,9 +441,9 @@ insert into public.hd_reference_interpretations (
  '["спокойный information diet"]'::jsonb,
  '[]'::jsonb,
  jsonb_build_object('plain_meaning', 'Вдохновляется вопросами других, не генерирует давление «думать» сам.', 'work_manifestation', 'Может быть отличным sounding board, если не давить.', 'strengths', 'Гибкость ума.', 'risks', 'Ментальная усталость.', 'when_it_works_best', 'Brainstorm с рамкой.', 'when_talent_is_not_revealed', 'Бесконечные «придумай идею сейчас».'),
- jsonb_build_object('hd_meaning', 'Open Head amplifies others'' inspiration.', 'mechanics', 'Не свой генератор вопросов.', 'classical_keywords', '["inspiration", "questions"]', 'source_logic', 'Head не в defined.', 'pro_not_self', 'Погоня за чужими вопросами.'),
- jsonb_build_object('primary_context', '["type"]', 'secondary_context', '[]', 'depends_on', 'Тип и нагрузка вопросами.', 'related_element_kinds', '["type"]', 'context_note', 'Open Head ≠ глупость.'),
- jsonb_build_object('base', 'Берёт на себя все вопросы команды.', 'pro', 'Mental anxiety.', 'warning_signals', '["бессонница от мыслей"]', 'recovery_conditions', '["лимиты на входящие"]'),
+ jsonb_build_object('hd_meaning', 'Open Head amplifies others'' inspiration.', 'mechanics', 'Не свой генератор вопросов.', 'classical_keywords', '["inspiration", "questions"]'::jsonb, 'source_logic', 'Head не в defined.', 'pro_not_self', 'Погоня за чужими вопросами.'),
+ jsonb_build_object('primary_context', '["type"]'::jsonb, 'secondary_context', '[]'::jsonb, 'depends_on', 'Тип и нагрузка вопросами.', 'related_element_kinds', '["type"]'::jsonb, 'context_note', 'Open Head ≠ глупость.'),
+ jsonb_build_object('base', 'Берёт на себя все вопросы команды.', 'pro', 'Mental anxiety.', 'warning_signals', '["бессонница от мыслей"]'::jsonb, 'recovery_conditions', '["лимиты на входящие"]'::jsonb),
  '[]'::jsonb, 'draft'),
 
 ('open_center', 'g', 'G', 'ru', 'v1',
@@ -456,9 +456,9 @@ insert into public.hd_reference_interpretations (
  '["стабильные ценности организации"]'::jsonb,
  '[]'::jsonb,
  jsonb_build_object('plain_meaning', 'Гибко чувствует направление, но не держит его жёстко сам.', 'work_manifestation', 'Может быть «барометром» культуры.', 'strengths', 'Адаптация.', 'risks', 'Дрейф идентичности.', 'when_it_works_best', 'Чёткая миссия.', 'when_talent_is_not_revealed', 'Хаотичные смены стратегии.'),
- jsonb_build_object('hd_meaning', 'Open G — sampling identity/direction.', 'mechanics', 'Усиливает окружение.', 'classical_keywords', '["direction", "identity"]', 'source_logic', 'G не defined.', 'pro_not_self', 'Ложная идентичность.'),
- jsonb_build_object('primary_context', '["type"]', 'secondary_context', '[]', 'depends_on', 'Культура компании.', 'related_element_kinds', '["type"]', 'context_note', 'Нужна внешняя опора направления.'),
- jsonb_build_object('base', 'Цепляется за чужую миссию как свою.', 'pro', 'Lost direction.', 'warning_signals', '["«не знаю, кто я в работе»"]', 'recovery_conditions', '["личные KPI", "наставник"]'),
+ jsonb_build_object('hd_meaning', 'Open G — sampling identity/direction.', 'mechanics', 'Усиливает окружение.', 'classical_keywords', '["direction", "identity"]'::jsonb, 'source_logic', 'G не defined.', 'pro_not_self', 'Ложная идентичность.'),
+ jsonb_build_object('primary_context', '["type"]'::jsonb, 'secondary_context', '[]'::jsonb, 'depends_on', 'Культура компании.', 'related_element_kinds', '["type"]'::jsonb, 'context_note', 'Нужна внешняя опора направления.'),
+ jsonb_build_object('base', 'Цепляется за чужую миссию как свою.', 'pro', 'Lost direction.', 'warning_signals', '["«не знаю, кто я в работе»"]'::jsonb, 'recovery_conditions', '["личные KPI", "наставник"]'::jsonb),
  '[]'::jsonb, 'draft'),
 
 ('open_center', 'ego', 'Ego', 'ru', 'v1',
@@ -471,9 +471,9 @@ insert into public.hd_reference_interpretations (
  '["культура без токсичного heroism"]'::jsonb,
  '[]'::jsonb,
  jsonb_build_object('plain_meaning', 'Самооценка и обещания зависят от контекста и давления.', 'work_manifestation', 'Может брать лишнее, чтобы заслужить уважение.', 'strengths', 'Чуткость к ожиданиям.', 'risks', 'Переобещание.', 'when_it_works_best', 'Поддерживающая культура.', 'when_talent_is_not_revealed', 'Культура «докажи или уйди».'),
- jsonb_build_object('hd_meaning', 'Open Heart — нет постоянного will.', 'mechanics', 'Усиливает чужие обещания.', 'classical_keywords', '["will", "worth"]', 'source_logic', 'Ego не defined.', 'pro_not_self', 'Доказательство ценности.'),
- jsonb_build_object('primary_context', '["type"]', 'secondary_context', '[]', 'depends_on', 'Давление KPI.', 'related_element_kinds', '["type"]', 'context_note', 'Open Ego чувствителен к сравнению.'),
- jsonb_build_object('base', 'Обещает ради одобрения.', 'pro', 'Worthlessness.', 'warning_signals', '["невыполненные обещания"]', 'recovery_conditions', '["реалистичные коммиты"]'),
+ jsonb_build_object('hd_meaning', 'Open Heart — нет постоянного will.', 'mechanics', 'Усиливает чужие обещания.', 'classical_keywords', '["will", "worth"]'::jsonb, 'source_logic', 'Ego не defined.', 'pro_not_self', 'Доказательство ценности.'),
+ jsonb_build_object('primary_context', '["type"]'::jsonb, 'secondary_context', '[]'::jsonb, 'depends_on', 'Давление KPI.', 'related_element_kinds', '["type"]'::jsonb, 'context_note', 'Open Ego чувствителен к сравнению.'),
+ jsonb_build_object('base', 'Обещает ради одобрения.', 'pro', 'Worthlessness.', 'warning_signals', '["невыполненные обещания"]'::jsonb, 'recovery_conditions', '["реалистичные коммиты"]'::jsonb),
  '[]'::jsonb, 'draft'),
 
 ('open_center', 'solar_plexus', 'Solar Plexus', 'ru', 'v1',
@@ -486,9 +486,9 @@ insert into public.hd_reference_interpretations (
  '["эмоционально зрелая команда"]'::jsonb,
  '[]'::jsonb,
  jsonb_build_object('plain_meaning', 'Усиливает эмоции окружения, сам не несёт волну.', 'work_manifestation', 'Может быть «барометром» команды.', 'strengths', 'Эмпатия.', 'risks', 'Переполнение чужими эмоциями.', 'when_it_works_best', 'Здоровая культура.', 'when_talent_is_not_revealed', 'Токсичные эмоциональные качели.'),
- jsonb_build_object('hd_meaning', 'Open Solar Plexus — не emotional authority.', 'mechanics', 'Amplifies feelings.', 'classical_keywords', '["empathy", "wave"]', 'source_logic', 'Solar Plexus open.', 'pro_not_self', 'Избегание правды ради мира.'),
- jsonb_build_object('primary_context', '["type", "authority"]', 'secondary_context', '[]', 'depends_on', 'Splenic authority — нет своей волны.', 'related_element_kinds', '["authority"]', 'context_note', 'Чужие эмоции не «его правда».'),
- jsonb_build_object('base', 'Подавляет правду, лишь бы не злить.', 'pro', 'People-pleasing.', 'warning_signals', '["усталость после встреч"]', 'recovery_conditions', '["дебриф", "границы"]'),
+ jsonb_build_object('hd_meaning', 'Open Solar Plexus — не emotional authority.', 'mechanics', 'Amplifies feelings.', 'classical_keywords', '["empathy", "wave"]'::jsonb, 'source_logic', 'Solar Plexus open.', 'pro_not_self', 'Избегание правды ради мира.'),
+ jsonb_build_object('primary_context', '["type", "authority"]'::jsonb, 'secondary_context', '[]'::jsonb, 'depends_on', 'Splenic authority — нет своей волны.', 'related_element_kinds', '["authority"]'::jsonb, 'context_note', 'Чужие эмоции не «его правда».'),
+ jsonb_build_object('base', 'Подавляет правду, лишь бы не злить.', 'pro', 'People-pleasing.', 'warning_signals', '["усталость после встреч"]'::jsonb, 'recovery_conditions', '["дебриф", "границы"]'::jsonb),
  '[]'::jsonb, 'draft'),
 
 ('open_center', 'sacral', 'Sacral', 'ru', 'v1',
@@ -511,22 +511,22 @@ insert into public.hd_reference_interpretations (
  jsonb_build_object(
    'hd_meaning', 'Open Sacral — не Generator/MG motor; усиливает чужую Sacral энергию.',
    'mechanics', 'Projector с open Sacral — классическая связка; стратегия приглашения компенсирует отсутствие motor.',
-   'classical_keywords', '["no sustainable work energy", "amplified sacral"]',
+   'classical_keywords', '["no sustainable work energy", "amplified sacral"]'::jsonb,
    'source_logic', 'Sacral не в defined; тип Projector.',
    'pro_not_self', 'Пытаться «успевать как генератор».'
  ),
  jsonb_build_object(
-   'primary_context', '["type", "strategy"]',
-   'secondary_context', '["authority"]',
+   'primary_context', '["type", "strategy"]'::jsonb,
+   'secondary_context', '["authority"]'::jsonb,
    'depends_on', 'Тип Projector + стратегия приглашения.',
-   'related_element_kinds', '["type", "strategy"]',
+   'related_element_kinds', '["type", "strategy"]'::jsonb,
    'context_note', 'Open Sacral у проектора — норма, не дефект.'
  ),
  jsonb_build_object(
    'base', 'Доказывает ценность бесконечной работой.',
    'pro', 'Exhaustion from mimicking Generator.',
-   'warning_signals', '["хроническая усталость", "нет восстановления"]',
-   'recovery_conditions', '["снижение часов операционки", "делегирование", "приглашения"]'
+   'warning_signals', '["хроническая усталость", "нет восстановления"]'::jsonb,
+   'recovery_conditions', '["снижение часов операционки", "делегирование", "приглашения"]'::jsonb
  ),
  jsonb_build_array(
    jsonb_build_object(
@@ -584,22 +584,22 @@ insert into public.hd_reference_interpretations (
  jsonb_build_object(
    'hd_meaning', 'Curiosity channel — fixed way of conceptualizing and expressing.',
    'mechanics', 'Defined Ajna + defined Throat через 11 и 56.',
-   'classical_keywords', '["curiosity", "ideas", "stimulation", "storyteller"]',
+   'classical_keywords', '["curiosity", "ideas", "stimulation", "storyteller"]'::jsonb,
    'source_logic', 'Оба gate активны, канал соединяет Ajna и Throat.',
    'pro_not_self', 'Болтовня без смысла ради внимания.'
  ),
  jsonb_build_object(
-   'primary_context', '["defined_center", "gate"]',
-   'secondary_context', '["type", "profile"]',
+   'primary_context', '["defined_center", "gate"]'::jsonb,
+   'secondary_context', '["type", "profile"]'::jsonb,
    'depends_on', 'Defined Ajna и Throat; ворота 11 и 56.',
-   'related_element_kinds', '["defined_center", "gate", "type"]',
+   'related_element_kinds', '["defined_center", "gate", "type"]'::jsonb,
    'context_note', 'Усиливается профилем 1/3 через глубину и проверку.'
  ),
  jsonb_build_object(
    'base', 'Говорит, чтобы быть интересным, а не чтобы передать смысл.',
    'pro', 'Throat-Ajna Not-Self — пустая стимуляция.',
-   'warning_signals', '["много слов, мало результата"]',
-   'recovery_conditions', '["фокус тем", "проверка фактов"]'
+   'warning_signals', '["много слов, мало результата"]'::jsonb,
+   'recovery_conditions', '["фокус тем", "проверка фактов"]'::jsonb
  ),
  jsonb_build_array(
    jsonb_build_object(
@@ -630,22 +630,22 @@ insert into public.hd_reference_interpretations (
  jsonb_build_object(
    'hd_meaning', 'Channel of Judgment — splenic correction meets root joy of struggle to perfect.',
    'mechanics', 'Связывает defined Spleen и Root; усиливает Splenic authority в оценке «что не так».',
-   'classical_keywords', '["correction", "judgment", "vitality", "improvement"]',
+   'classical_keywords', '["correction", "judgment", "vitality", "improvement"]'::jsonb,
    'source_logic', 'Gates 18 и 58; центры Spleen и Root.',
    'pro_not_self', 'Критика ради сброса давления Root.'
  ),
  jsonb_build_object(
-   'primary_context', '["defined_center", "authority", "gate"]',
-   'secondary_context', '["type"]',
+   'primary_context', '["defined_center", "authority", "gate"]'::jsonb,
+   'secondary_context', '["type"]'::jsonb,
    'depends_on', 'Defined Spleen + Root; splenic hits по качеству.',
-   'related_element_kinds', '["defined_center", "gate", "authority"]',
+   'related_element_kinds', '["defined_center", "gate", "authority"]'::jsonb,
    'context_note', 'Читается с авторитетом Splenic — «нет» по качеству мгновенно.'
  ),
  jsonb_build_object(
    'base', 'Критикует людей вместо систем.',
    'pro', 'Bitter judgment — Not-Self 18.',
-   'warning_signals', '["команда избегает обратной связи"]',
-   'recovery_conditions', '["правила feedback", "фокус на процесс"]'
+   'warning_signals', '["команда избегает обратной связи"]'::jsonb,
+   'recovery_conditions', '["правила feedback", "фокус на процесс"]'::jsonb
  ),
  jsonb_build_array(
    jsonb_build_object(
@@ -676,22 +676,22 @@ insert into public.hd_reference_interpretations (
  jsonb_build_object(
    'hd_meaning', 'Channel of Struggle — finding purpose through fight.',
    'mechanics', 'Root pressure + Spleen intuition о ценности борьбы.',
-   'classical_keywords', '["struggle", "purpose", "fighter", "opposition"]',
+   'classical_keywords', '["struggle", "purpose", "fighter", "opposition"]'::jsonb,
    'source_logic', 'Gates 28 и 38 между Spleen и Root.',
    'pro_not_self', 'Борьба из Root pressure без splenic «стоит ли».'
  ),
  jsonb_build_object(
-   'primary_context', '["defined_center", "authority", "type"]',
-   'secondary_context', '["profile"]',
+   'primary_context', '["defined_center", "authority", "type"]'::jsonb,
+   'secondary_context', '["profile"]'::jsonb,
    'depends_on', 'Splenic authority фильтрует, какие битвы брать.',
-   'related_element_kinds', '["defined_center", "authority", "type"]',
+   'related_element_kinds', '["defined_center", "authority", "type"]'::jsonb,
    'context_note', 'С Splenic authority — брать только те битвы, где мгновенное «да».'
  ),
  jsonb_build_object(
    'base', 'Соглашается на бессмысленный конфликт из адреналина.',
    'pro', 'Struggle without purpose.',
-   'warning_signals', '["вечная война", "цинизм"]',
-   'recovery_conditions', '["ясная миссия", "право отказаться от битвы"]'
+   'warning_signals', '["вечная война", "цинизм"]'::jsonb,
+   'recovery_conditions', '["ясная миссия", "право отказаться от битвы"]'::jsonb
  ),
  jsonb_build_array(
    jsonb_build_object(

@@ -1,6 +1,8 @@
 import type { Handler } from '@netlify/functions'
 
-const SECRET_KEYS = [
+const ENV_KEYS = [
+  'VITE_SUPABASE_URL',
+  'VITE_SUPABASE_ANON_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
   'OPENAI_API_KEY',
   'HD_API_KEY',
@@ -9,7 +11,7 @@ const SECRET_KEYS = [
 
 export const handler: Handler = async () => {
   const envStatus = Object.fromEntries(
-    SECRET_KEYS.map((key) => [key, Boolean(process.env[key]?.trim())]),
+    ENV_KEYS.map((key) => [key, Boolean(process.env[key]?.trim())]),
   )
 
   return {

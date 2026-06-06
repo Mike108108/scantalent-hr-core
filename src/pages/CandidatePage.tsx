@@ -6,6 +6,7 @@ import { Input } from '../components/ui/Input'
 import { StatusBadge } from '../components/ui/StatusBadge'
 import { calculateCandidateChart } from '../lib/chartApi'
 import type { SelectedCity } from '../lib/geocoding'
+import { buildTalentMapSynthesisInput } from '../lib/buildTalentMapSynthesisInput'
 import { buildReferenceBundle } from '../lib/referenceBundleApi'
 import {
   getChartElementCounts,
@@ -441,6 +442,16 @@ export function CandidatePage() {
   const definedCentersCount = centerCounts?.defined ?? elementCounts?.defined_centers ?? 0
   const openCentersCount = centerCounts?.open ?? elementCounts?.open_centers ?? 0
 
+  const synthesisPreview =
+    chart?.id && bundleResult?.bundle && state.candidate?.id
+      ? buildTalentMapSynthesisInput({
+          candidateId: state.candidate.id,
+          chartId: chart.id,
+          bundle: bundleResult.bundle,
+          coverage: bundleResult.coverage ?? null,
+        })
+      : null
+
   return (
     <div className="stack">
       <div>
@@ -713,6 +724,113 @@ export function CandidatePage() {
                   {JSON.stringify(bundleResult.bundle, null, 2)}
                 </pre>
               </div>
+            ) : null}
+          </div>
+        </Card>
+      ) : null}
+
+      {chart ? (
+        <Card title="Debug: вход для будущей AI-карты талантов">
+          <div className="stack">
+            {!bundleResult?.bundle ? (
+              <p className="city-autocomplete__hint">
+                Сначала соберите bundle расшифровок — preview строится детерминированно из
+                source_interpretation_bundle.
+              </p>
+            ) : null}
+
+            {synthesisPreview ? (
+              <>
+                <div className="bundle-coverage">
+                  <h3 className="bundle-coverage__title">Coverage</h3>
+                  <dl className="info-list">
+                    <div className="info-list__row">
+                      <dt>matched elements</dt>
+                      <dd>
+                        {synthesisPreview.source_coverage?.matched_elements ?? '—'} /{' '}
+                        {synthesisPreview.source_coverage?.total_elements ?? '—'}
+                      </dd>
+                    </div>
+                    <div className="info-list__row">
+                      <dt>coverage %</dt>
+                      <dd>{synthesisPreview.source_coverage?.coverage_percent ?? '—'}%</dd>
+                    </div>
+                    <div className="info-list__row">
+                      <dt>слоёв</dt>
+                      <dd>{synthesisPreview.layers.length}</dd>
+                    </div>
+                  </dl>
+
+                  {synthesisPreview.warnings.length > 0 ? (
+                    <div className="bundle-missing">
+                      <h4 className="bundle-coverage__subtitle">Предупреждения</h4>
+                      <ul className="bundle-missing__list">
+                        {synthesisPreview.warnings.map((warning) => (
+                          <li key={warning} className="bundle-missing__item">
+                            {warning}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="synthesis-layer-list">
+                  <h3 className="bundle-coverage__title">Слои synthesis input</h3>
+                  <ul className="synthesis-layer-list__items">
+                    {synthesisPreview.layers.map((layer) => (
+                      <li key={layer.layer_key} className="synthesis-layer-list__item">
+                        <div className="synthesis-layer-list__header">
+                          <span className="synthesis-layer-list__key mono-text">{layer.layer_key}</span>
+                          <span className="synthesis-layer-list__title">{layer.layer_title}</span>
+                        </div>
+                        <div className="synthesis-layer-list__stats">
+                          <span>source_items: {layer.source_items.length}</span>
+                          <span>matched: {layer.source_items.filter((item) => item.matched).length}</span>
+                          <span>source_chips: {layer.source_chips.length}</span>
+                        </div>
+                        <div className="synthesis-layer-list__kinds">
+                          <span className="synthesis-layer-list__kinds-label">element_kinds:</span>{' '}
+                          <span className="mono-text">{layer.element_kinds_present.join(', ') || '—'}</span>
+                        </div>
+                        {layer.source_chips.length > 0 ? (
+                          <ul className="synthesis-chip-list">
+                            {layer.source_chips.map((chip) => (
+                              <li key={`${chip.element_kind}:${chip.element_key}`} className="synthesis-chip-list__item">
+                                <span className="mono-text">{chip.link_target}</span>
+                                <span className="synthesis-chip-list__role">{chip.role_in_layer}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                        {layer.warnings.length > 0 ? (
+                          <ul className="synthesis-layer-list__warnings">
+                            {layer.warnings.map((warning) => (
+                              <li key={warning}>{warning}</li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="debug-json-block">
+                  <div className="debug-json-block__header">
+                    <h3 className="debug-json-block__title">talent_map_synthesis_input_preview</h3>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => void handleCopy('synthesis input preview JSON', synthesisPreview)}
+                    >
+                      Скопировать synthesis input preview JSON
+                    </Button>
+                  </div>
+                  <pre className="debug-json-block__pre">
+                    {JSON.stringify(synthesisPreview, null, 2)}
+                  </pre>
+                </div>
+              </>
             ) : null}
           </div>
         </Card>

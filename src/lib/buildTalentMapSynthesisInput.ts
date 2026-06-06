@@ -21,6 +21,9 @@ import type {
 } from './types'
 
 const THROAT_CENTER_KEY = 'throat'
+const AJNA_CENTER_KEY = 'ajna'
+const COMMUNICATION_CHANNEL_KEYS = new Set(['11-56', '11_56'])
+const COMMUNICATION_GATES = new Set(['11', '56', '12', '8'])
 
 const PLANET_FILTERS = {
   communication: new Set(['mercury']),
@@ -41,12 +44,15 @@ const MAJOR_SOURCE_KINDS = new Set<ElementKind | string>([
   'activation',
 ])
 
+export type SourceItemRole = 'primary' | 'supporting' | 'context_only'
+
 export type LayerSourceItem = {
   /** Always a real chart/reference element kind — never a virtual selection kind. */
   element_kind: ElementKind
   element_key: string
   element_label: string | null
   matched: boolean
+  source_role: SourceItemRole
   /** May reference virtual selection kinds, e.g. primary:talent_hints. */
   selection_reason: string
   selected_interpretation_fields: Partial<Record<InterpretationFieldKey, unknown>>
@@ -82,8 +88,36 @@ export type TalentMapSynthesisInputPreview = {
   warnings: string[]
 }
 
+type SelectionEntry = {
+  item: ReferenceBundleItem
+  reason: string
+  role: SourceItemRole
+}
+
 type SelectionResult = {
-  items: Array<{ item: ReferenceBundleItem; reason: string }>
+  items: SelectionEntry[]
+}
+
+const ROLE_PRIORITY: Record<SourceItemRole, number> = {
+  primary: 3,
+  supporting: 2,
+  context_only: 1,
+}
+
+const ACTIVATION_PLANET_ROLES: Record<string, string> = {
+  sun: 'задаёт центральную тему',
+  earth: 'даёт опору и заземление',
+  mercury: 'определяет стиль коммуникации и передачи',
+  mars: 'показывает тему обучения, напряжения и зрелости',
+  jupiter: 'раскрывает вектор роста, правил и масштаба',
+  saturn: 'задаёт дисциплину, границы и ответственность',
+  north_node: 'указывает направление и фон развития',
+  south_node: 'указывает направление и фон развития',
+  venus: 'отражает ценности и принципы',
+  moon: 'задаёт внутренний драйв',
+  uranus: 'подчёркивает уникальность и мутацию',
+  neptune: 'добавляет скрытую и тонкую тему',
+  pluto: 'раскрывает глубину трансформации',
 }
 
 function getMetadataGates(metadata: Record<string, unknown>): string[] {
@@ -101,6 +135,10 @@ function normalizePlanet(planet: string | null | undefined): string | null {
   }
 
   return planet.trim().toLowerCase().replace(/\s+/g, '_')
+}
+
+function resolveActivationPlanet(item: ReferenceBundleItem): string | null {
+  return normalizePlanet(item.element.planet) ?? normalizePlanet(item.element.element_key.split(':')[0])
 }
 
 function activationMatchesPlanets(item: ReferenceBundleItem, planets: Set<string>): boolean {
@@ -147,6 +185,37 @@ function isThroatGateElement(item: ReferenceBundleItem): boolean {
   return item.element.element_kind === 'gate' && item.element.center === THROAT_CENTER_KEY
 }
 
+function isAjnaDefinedCenter(item: ReferenceBundleItem): boolean {
+  const element = item.element
+  return (
+    element.element_kind === 'defined_center' &&
+    (element.center === AJNA_CENTER_KEY || element.element_key === AJNA_CENTER_KEY)
+  )
+}
+
+function isCommunicationChannel(item: ReferenceBundleItem): boolean {
+  if (item.element.element_kind !== 'channel') {
+    return false
+  }
+
+  const key = item.element.element_key.trim().toLowerCase()
+  if (COMMUNICATION_CHANNEL_KEYS.has(key)) {
+    return true
+  }
+
+  const gateKeys = getMetadataGates(item.element.metadata_json)
+  return gateKeys.includes('11') && gateKeys.includes('56')
+}
+
+function isCommunicationGate(item: ReferenceBundleItem): boolean {
+  if (item.element.element_kind !== 'gate') {
+    return false
+  }
+
+  const gateKey = item.element.gate ?? item.element.element_key
+  return COMMUNICATION_GATES.has(gateKey)
+}
+
 function isThroatChannelElement(item: ReferenceBundleItem, gateCenterMap: Map<string, string>): boolean {
   if (item.element.element_kind !== 'channel') {
     return false
@@ -154,15 +223,6 @@ function isThroatChannelElement(item: ReferenceBundleItem, gateCenterMap: Map<st
 
   const gateKeys = getMetadataGates(item.element.metadata_json)
   return gateKeys.some((gateKey) => gateCenterMap.get(gateKey) === THROAT_CENTER_KEY)
-}
-
-function isThroatRelatedActivation(item: ReferenceBundleItem, gateCenterMap: Map<string, string>): boolean {
-  if (item.element.element_kind !== 'activation') {
-    return false
-  }
-
-  const gateKey = item.element.gate
-  return gateKey ? gateCenterMap.get(gateKey) === THROAT_CENTER_KEY : false
 }
 
 function hasKind(items: ReferenceBundleItem[], kind: string): ReferenceBundleItem[] {
@@ -195,6 +255,12 @@ function hasVirtualKind(
           (item.interpretation?.talent_hints.length ?? 0) > 0 ||
           (item.interpretation?.environment_hints.length ?? 0) > 0,
       )
+    case 'communication_channel':
+      return items.filter(isCommunicationChannel)
+    case 'communication_gate':
+      return items.filter(isCommunicationGate)
+    case 'ajna_center':
+      return items.filter(isAjnaDefinedCenter)
     case 'throat_center':
       return items.filter(isThroatCenterElement)
     case 'throat_gate':
@@ -226,67 +292,104 @@ function hasVirtualKind(
   }
 }
 
-function uniqueItemsByKey(
-  entries: Array<{ item: ReferenceBundleItem; reason: string }>,
-): Array<{ item: ReferenceBundleItem; reason: string }> {
-  const seen = new Set<string>()
-  const result: Array<{ item: ReferenceBundleItem; reason: string }> = []
+function itemKey(item: ReferenceBundleItem): string {
+  return `${item.element.element_kind}::${item.element.element_key}`
+}
+
+function mergeSelectionEntries(entries: SelectionEntry[]): SelectionEntry[] {
+  const byKey = new Map<string, SelectionEntry>()
 
   for (const entry of entries) {
-    const key = `${entry.item.element.element_kind}::${entry.item.element.element_key}`
-    if (seen.has(key)) {
-      continue
+    const key = itemKey(entry.item)
+    const existing = byKey.get(key)
+    if (!existing || ROLE_PRIORITY[entry.role] > ROLE_PRIORITY[existing.role]) {
+      byKey.set(key, entry)
     }
-    seen.add(key)
-    result.push(entry)
   }
 
-  return result
+  return [...byKey.values()]
+}
+
+function buildBundleItemMap(bundleItems: ReferenceBundleItem[]): Map<string, ReferenceBundleItem> {
+  const map = new Map<string, ReferenceBundleItem>()
+  for (const item of bundleItems) {
+    map.set(itemKey(item), item)
+  }
+  return map
+}
+
+function appendContextOnlyItems(
+  layer: TalentMapLayerDefinition,
+  selected: SelectionEntry[],
+  bundleItemMap: Map<string, ReferenceBundleItem>,
+): SelectionEntry[] {
+  if (layer.layer_key === 'pro_foundation') {
+    return selected
+  }
+
+  const contextEntries: SelectionEntry[] = [...selected]
+  const majorKeys = new Set(selected.map((entry) => itemKey(entry.item)))
+
+  for (const entry of selected) {
+    if (entry.role === 'context_only') {
+      continue
+    }
+
+    for (const related of entry.item.related_context_elements) {
+      if (!isElementKind(related.element_kind)) {
+        continue
+      }
+
+      const relatedKey = `${related.element_kind}::${related.element_key}`
+      if (majorKeys.has(relatedKey)) {
+        continue
+      }
+
+      const bundleItem = bundleItemMap.get(relatedKey)
+      if (!bundleItem) {
+        continue
+      }
+
+      majorKeys.add(relatedKey)
+      contextEntries.push({
+        item: bundleItem,
+        reason: `context:${related.relation}`,
+        role: 'context_only',
+      })
+    }
+  }
+
+  return mergeSelectionEntries(contextEntries)
 }
 
 function selectLayerItems(
   layer: TalentMapLayerDefinition,
   bundleItems: ReferenceBundleItem[],
   gateCenterMap: Map<string, string>,
+  bundleItemMap: Map<string, ReferenceBundleItem>,
 ): SelectionResult {
-  const selected: Array<{ item: ReferenceBundleItem; reason: string }> = []
+  const selected: SelectionEntry[] = []
 
   for (const kind of layer.primary_element_kinds) {
     for (const item of hasVirtualKind(bundleItems, kind, gateCenterMap)) {
-      selected.push({ item, reason: `primary:${kind}` })
+      selected.push({ item, reason: `primary:${kind}`, role: 'primary' })
     }
   }
 
   for (const kind of layer.supporting_element_kinds) {
     for (const item of hasVirtualKind(bundleItems, kind, gateCenterMap)) {
-      selected.push({ item, reason: `supporting:${kind}` })
+      selected.push({ item, reason: `supporting:${kind}`, role: 'supporting' })
     }
   }
 
-  let uniqueSelected = uniqueItemsByKey(selected)
+  let uniqueSelected = mergeSelectionEntries(selected)
 
   if (layer.excluded_element_kinds?.length) {
     const excluded = new Set(layer.excluded_element_kinds)
     uniqueSelected = uniqueSelected.filter((entry) => !excluded.has(entry.item.element.element_kind))
   }
 
-  if (layer.layer_key === 'communication_and_influence') {
-    uniqueSelected = uniqueSelected.filter((entry) => {
-      const { item } = entry
-      if (item.element.element_kind === 'profile') {
-        return true
-      }
-      if (activationMatchesPlanets(item, PLANET_FILTERS.communication)) {
-        return true
-      }
-      return (
-        isThroatCenterElement(item) ||
-        isThroatGateElement(item) ||
-        isThroatChannelElement(item, gateCenterMap) ||
-        isThroatRelatedActivation(item, gateCenterMap)
-      )
-    })
-  }
+  uniqueSelected = appendContextOnlyItems(layer, uniqueSelected, bundleItemMap)
 
   if (layer.layer_key === 'risks_and_distortions') {
     uniqueSelected = uniqueSelected.filter((entry) => {
@@ -325,10 +428,30 @@ function selectLayerItems(
   }
 
   if (layer.layer_key === 'pro_foundation') {
-    uniqueSelected = uniqueSelected.filter((entry) => MAJOR_SOURCE_KINDS.has(entry.item.element.element_kind))
+    uniqueSelected = uniqueSelected.filter(
+      (entry) => entry.role === 'context_only' || MAJOR_SOURCE_KINDS.has(entry.item.element.element_kind),
+    )
+  } else {
+    uniqueSelected = uniqueSelected.filter((entry) => {
+      if (entry.role !== 'context_only') {
+        return true
+      }
+      return isElementKind(entry.item.element.element_kind)
+    })
   }
 
   return { items: uniqueSelected }
+}
+
+function interpretationFieldsForRole(
+  role: SourceItemRole,
+  layer: TalentMapLayerDefinition,
+): readonly InterpretationFieldKey[] {
+  if (role === 'context_only') {
+    return ['related_context_summary']
+  }
+
+  return layer.interpretation_fields_for_ai
 }
 
 function pickInterpretationFields(
@@ -397,8 +520,21 @@ function pickInterpretationFields(
   return selected
 }
 
-function layerRoleText(layer: TalentMapLayerDefinition, selectionReason: string): string {
-  const [, kind] = selectionReason.split(':')
+function activationRoleInLayer(item: ReferenceBundleItem, layer: TalentMapLayerDefinition): string {
+  const planet = resolveActivationPlanet(item)
+  const baseRole = ACTIVATION_PLANET_ROLES[planet ?? ''] ?? 'уточняет персональную активацию темы'
+  return `${baseRole} в слое «${layer.title}»`
+}
+
+function layerRoleText(
+  layer: TalentMapLayerDefinition,
+  entry: SelectionEntry,
+): string {
+  if (entry.item.element.element_kind === 'activation') {
+    return activationRoleInLayer(entry.item, layer)
+  }
+
+  const [, kind] = entry.reason.split(':')
 
   const roleByKind: Record<string, string> = {
     type: 'задаёт базовый рабочий тип поведения',
@@ -421,6 +557,9 @@ function layerRoleText(layer: TalentMapLayerDefinition, selectionReason: string)
     throat_center: 'связан с центром коммуникации',
     throat_gate: 'связан с темой выражения через горло',
     throat_channel: 'связан с каналом коммуникации',
+    communication_channel: 'задаёт устойчивую тему коммуникации и влияния',
+    communication_gate: 'добавляет коммуникационную тему выражения',
+    ajna_center: 'даёт ментальную опору для формулировки и влияния',
     mercury_activation: 'уточняет стиль передачи и коммуникации',
     mars_activation: 'уточняет тему напряжения и обучения',
     saturn_activation: 'уточняет тему дисциплины и границ',
@@ -432,6 +571,11 @@ function layerRoleText(layer: TalentMapLayerDefinition, selectionReason: string)
     related_context_summary: 'даёт связанный контекст карты',
     coverage_summary: 'участвует в сводке покрытия источников',
     communication_hints: 'даёт коммуникационные подсказки',
+    context: 'даёт связанный контекст для интерпретации слоя',
+  }
+
+  if (entry.role === 'context_only') {
+    return roleByKind.context
   }
 
   return roleByKind[kind] ?? `участвует как источник слоя ${layer.title}`
@@ -439,8 +583,12 @@ function layerRoleText(layer: TalentMapLayerDefinition, selectionReason: string)
 
 function buildSourceChip(
   layer: TalentMapLayerDefinition,
-  entry: { item: ReferenceBundleItem; reason: string },
+  entry: SelectionEntry,
 ): SourceChip | null {
+  if (entry.role === 'context_only') {
+    return null
+  }
+
   const { element } = entry.item
   if (!isElementKind(element.element_kind)) {
     return null
@@ -452,8 +600,8 @@ function buildSourceChip(
     element_kind: element.element_kind,
     element_key: element.element_key,
     element_label: label,
-    role_in_layer: layerRoleText(layer, entry.reason),
-    reason_used: `используется как один из источников слоя ${layer.layer_key}`,
+    role_in_layer: layerRoleText(layer, entry),
+    reason_used: `используется как ${entry.role} источник слоя ${layer.layer_key}`,
     link_target: elementLinkTarget(element.element_kind, element.element_key),
   }
 }
@@ -471,9 +619,11 @@ function buildLayerPreview(
   layer: TalentMapLayerDefinition,
   bundleItems: ReferenceBundleItem[],
   gateCenterMap: Map<string, string>,
+  bundleItemMap: Map<string, ReferenceBundleItem>,
 ): LayerSynthesisPreview {
-  const selection = selectLayerItems(layer, bundleItems, gateCenterMap)
-  const matchedItems = selection.items.filter((entry) => entry.item.matched)
+  const selection = selectLayerItems(layer, bundleItems, gateCenterMap, bundleItemMap)
+  const majorItems = selection.items.filter((entry) => entry.role !== 'context_only')
+  const matchedMajorItems = majorItems.filter((entry) => entry.item.matched)
 
   const sourceItems: LayerSourceItem[] = selection.items.flatMap((entry) => {
     const kind = entry.item.element.element_kind
@@ -487,17 +637,18 @@ function buildLayerPreview(
         element_key: entry.item.element.element_key,
         element_label: entry.item.element.element_label,
         matched: entry.item.matched,
+        source_role: entry.role,
         selection_reason: entry.reason,
         selected_interpretation_fields: pickInterpretationFields(
           entry.item.interpretation,
           entry.item.related_context_elements.length,
-          layer.interpretation_fields_for_ai,
+          interpretationFieldsForRole(entry.role, layer),
         ),
       },
     ]
   })
 
-  const sourceChips = matchedItems
+  const sourceChips = matchedMajorItems
     .map((entry) => buildSourceChip(layer, entry))
     .filter((chip): chip is SourceChip => chip !== null)
   const elementKindsPresent = [
@@ -505,15 +656,17 @@ function buildLayerPreview(
   ].sort()
 
   const warnings: string[] = []
-  if (matchedItems.length < layer.min_matched_source_items) {
+  if (matchedMajorItems.length < layer.min_matched_source_items) {
     warnings.push(
-      `Слой ${layer.layer_key} получил ${matchedItems.length} matched source_items (минимум ${layer.min_matched_source_items}).`,
+      `Слой ${layer.layer_key} получил ${matchedMajorItems.length} matched primary/supporting source_items (минимум ${layer.min_matched_source_items}).`,
     )
   }
 
-  const unmatchedCount = selection.items.length - matchedItems.length
-  if (unmatchedCount > 0) {
-    warnings.push(`Слой ${layer.layer_key}: ${unmatchedCount} выбранных элементов без расшифровки.`)
+  const unmatchedMajorCount = majorItems.length - matchedMajorItems.length
+  if (unmatchedMajorCount > 0) {
+    warnings.push(
+      `Слой ${layer.layer_key}: ${unmatchedMajorCount} primary/supporting элементов без расшифровки.`,
+    )
   }
 
   return {
@@ -536,8 +689,9 @@ export function buildTalentMapSynthesisInput(params: {
   coverage?: ReferenceBundleCoverage | null
 }): TalentMapSynthesisInputPreview {
   const gateCenterMap = buildGateCenterMap(params.bundle.items)
+  const bundleItemMap = buildBundleItemMap(params.bundle.items)
   const layers = TALENT_MAP_LAYER_DEFINITIONS.map((layer) =>
-    buildLayerPreview(layer, params.bundle.items, gateCenterMap),
+    buildLayerPreview(layer, params.bundle.items, gateCenterMap, bundleItemMap),
   )
 
   const warnings = layers.flatMap((layer) => layer.warnings)

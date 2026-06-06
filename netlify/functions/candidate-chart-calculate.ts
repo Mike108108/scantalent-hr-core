@@ -140,14 +140,31 @@ export const handler: Handler = async (event) => {
     }
 
     if (existingChart && isNormalizedCentersCacheValid(existingChart.normalized_chart_data)) {
-      const { count, error: countError } = await admin
+      const { data: existingElements, error: elementsSelectError } = await admin
         .from('hr_candidate_chart_elements')
-        .select('*', { count: 'exact', head: true })
+        .select('element_kind')
         .eq('chart_id', existingChart.id)
 
-      if (countError) {
-        throw new Error(countError.message)
+      if (elementsSelectError) {
+        throw new Error(elementsSelectError.message)
       }
+
+      const elementCounts = countElementsByKind(
+        (existingElements ?? []).map((row) => ({
+          element_kind: row.element_kind,
+          element_key: '',
+          element_label: null,
+          element_value: null,
+          side: null,
+          planet: null,
+          gate: null,
+          line: null,
+          center: null,
+          channel: null,
+          source_path: null,
+          metadata_json: {},
+        })),
+      )
 
       return jsonResponse(200, {
         ok: true,
@@ -160,7 +177,8 @@ export const handler: Handler = async (event) => {
           calculated_at: existingChart.calculated_at,
           normalized_chart_data: existingChart.normalized_chart_data,
           raw_chart_data: existingChart.raw_chart_data,
-          elements_count: count ?? 0,
+          elements_count: elementCounts.total,
+          element_counts: elementCounts,
         },
       })
     }

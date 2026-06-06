@@ -6,6 +6,7 @@ import { Input } from '../components/ui/Input'
 import { StatusBadge } from '../components/ui/StatusBadge'
 import { calculateCandidateChart } from '../lib/chartApi'
 import type { SelectedCity } from '../lib/geocoding'
+import { resolveDisplayElementCounts } from '../lib/chartElementCounts'
 import { buildTalentMapSynthesisInput } from '../lib/buildTalentMapSynthesisInput'
 import { buildReferenceBundle } from '../lib/referenceBundleApi'
 import {
@@ -359,14 +360,19 @@ export function CandidatePage() {
         }
 
         setChart(nextChart)
-        setElementCounts({
-          total: result.chart.elements_count,
-          defined_centers: result.chart.element_counts?.defined_centers ?? 0,
-          open_centers: result.chart.element_counts?.open_centers ?? 0,
-          channels: result.chart.element_counts?.channels ?? 0,
-          gates: result.chart.element_counts?.gates ?? 0,
-          activations: result.chart.element_counts?.activations ?? 0,
-        })
+
+        if (result.chart.element_counts) {
+          setElementCounts({
+            total: result.chart.element_counts.total ?? result.chart.elements_count,
+            defined_centers: result.chart.element_counts.defined_centers ?? 0,
+            open_centers: result.chart.element_counts.open_centers ?? 0,
+            channels: result.chart.element_counts.channels ?? 0,
+            gates: result.chart.element_counts.gates ?? 0,
+            activations: result.chart.element_counts.activations ?? 0,
+          })
+        } else {
+          await loadChartData(state.candidate.id)
+        }
       } else {
         await loadChartData(state.candidate.id)
       }
@@ -451,6 +457,12 @@ export function CandidatePage() {
           coverage: bundleResult.coverage ?? null,
         })
       : null
+
+  const displayElementCounts = resolveDisplayElementCounts({
+    dbCounts: elementCounts,
+    chart,
+    bundleCoverage: bundleResult?.coverage ?? null,
+  })
 
   return (
     <div className="stack">
@@ -592,7 +604,7 @@ export function CandidatePage() {
                   </div>
                   <div className="info-list__row">
                     <dt>elements count</dt>
-                    <dd>{elementCounts?.total ?? 0}</dd>
+                    <dd>{displayElementCounts?.total ?? 0}</dd>
                   </div>
                   <div className="info-list__row">
                     <dt>defined centers</dt>
@@ -605,8 +617,8 @@ export function CandidatePage() {
                   <div className="info-list__row">
                     <dt>channels / gates / activations</dt>
                     <dd>
-                      {elementCounts?.channels ?? 0} / {elementCounts?.gates ?? 0} /{' '}
-                      {elementCounts?.activations ?? 0}
+                      {displayElementCounts?.channels ?? 0} / {displayElementCounts?.gates ?? 0} /{' '}
+                      {displayElementCounts?.activations ?? 0}
                     </dd>
                   </div>
                   <div className="info-list__row">
@@ -786,7 +798,18 @@ export function CandidatePage() {
                         </div>
                         <div className="synthesis-layer-list__stats">
                           <span>source_items: {layer.source_items.length}</span>
-                          <span>matched: {layer.source_items.filter((item) => item.matched).length}</span>
+                          <span>
+                            primary:{' '}
+                            {layer.source_items.filter((item) => item.source_role === 'primary').length}
+                          </span>
+                          <span>
+                            supporting:{' '}
+                            {layer.source_items.filter((item) => item.source_role === 'supporting').length}
+                          </span>
+                          <span>
+                            context:{' '}
+                            {layer.source_items.filter((item) => item.source_role === 'context_only').length}
+                          </span>
                           <span>source_chips: {layer.source_chips.length}</span>
                         </div>
                         <div className="synthesis-layer-list__kinds">

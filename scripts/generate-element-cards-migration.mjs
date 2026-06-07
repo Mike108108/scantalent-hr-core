@@ -42,14 +42,33 @@ function rowFromCard(card) {
 )`
 }
 
-const cards = [
-  JSON.parse(readFileSync(join(cardsDir, 'type_projector.v1.json'), 'utf8')),
-  JSON.parse(
-    readFileSync(join(cardsDir, 'strategy_wait_for_the_invitation.v1.json'), 'utf8'),
-  ),
-]
+const MIGRATION_TARGETS = {
+  'stage-4-e1-1': {
+    header:
+      '-- Stage 4-E1.1: Element Cards Storage — type/projector + strategy/wait_for_the_invitation',
+    jsonFiles: ['type_projector.v1.json', 'strategy_wait_for_the_invitation.v1.json'],
+    outFile: '202606070001_element_cards_storage_projector_strategy_v0_1.sql',
+  },
+  authority_splenic: {
+    header: '-- Stage 4-E1.3: Element Card Storage — authority/splenic',
+    jsonFiles: ['authority_splenic.v1.json'],
+    outFile: '202606070002_element_card_authority_splenic_v0_1.sql',
+  },
+}
 
-const sql = `-- Stage 4-E1.1: Element Cards Storage — type/projector + strategy/wait_for_the_invitation
+const targetKey = process.argv[2] ?? 'stage-4-e1-1'
+const target = MIGRATION_TARGETS[targetKey]
+if (!target) {
+  console.error(`Unknown target: ${targetKey}`)
+  console.error('Available:', Object.keys(MIGRATION_TARGETS).join(', '))
+  process.exit(1)
+}
+
+const cards = target.jsonFiles.map((file) =>
+  JSON.parse(readFileSync(join(cardsDir, file), 'utf8')),
+)
+
+const sql = `${target.header}
 -- Approved expert_draft cards from supabase/reference/element_cards/*.v1.json
 -- DB version stays v1; editorial versions live in pro_layers.card_metadata
 
@@ -82,10 +101,7 @@ on conflict (element_kind, element_key, language, version) do update set
   updated_at = timezone('utc', now());
 `
 
-const outPath = join(
-  root,
-  'supabase/migrations/202606070001_element_cards_storage_projector_strategy_v0_1.sql',
-)
+const outPath = join(root, 'supabase/migrations', target.outFile)
 writeFileSync(outPath, sql, 'utf8')
 console.log('Wrote', outPath)
 console.log('Size:', sql.length, 'bytes')

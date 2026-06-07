@@ -64,6 +64,11 @@ const MIGRATION_TARGETS = {
     jsonFiles: ['definition_split_definition.v1.json'],
     outFile: '202606070004_element_card_definition_split_definition_v0_1.sql',
   },
+  open_center_sacral: {
+    header: '-- Stage 4-E2.2: Element Card Storage — open_center/sacral',
+    jsonFiles: ['open_center_sacral.v1.json'],
+    outFile: '202606070005_element_card_open_center_sacral_v0_1.sql',
+  },
 }
 
 const targetKey = process.argv[2] ?? 'stage-4-e1-1'

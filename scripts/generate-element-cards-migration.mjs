@@ -69,6 +69,11 @@ const MIGRATION_TARGETS = {
     jsonFiles: ['open_center_sacral.v1.json'],
     outFile: '202606070005_element_card_open_center_sacral_v0_1.sql',
   },
+  defined_center_spleen: {
+    header: '-- Stage 4-E2.4: Element Card Storage — defined_center/spleen',
+    jsonFiles: ['defined_center_spleen.v1.json'],
+    outFile: '202606070006_element_card_defined_center_spleen_v0_1.sql',
+  },
 }
 
 const targetKey = process.argv[2] ?? 'stage-4-e1-1'

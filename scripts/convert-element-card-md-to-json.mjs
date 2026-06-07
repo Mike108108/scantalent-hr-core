@@ -4,6 +4,7 @@
  *
  * Supported converters: type_projector, strategy_wait_for_the_invitation.
  * authority_splenic JSON is maintained from approved source (authority_splenic.v1.json).
+ * profile_1_3 JSON is maintained from approved source (profile_1_3.v1.json).
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'

@@ -54,6 +54,11 @@ const MIGRATION_TARGETS = {
     jsonFiles: ['authority_splenic.v1.json'],
     outFile: '202606070002_element_card_authority_splenic_v0_1.sql',
   },
+  profile_1_3: {
+    header: '-- Stage 4-E1.5: Element Card Storage — profile/1/3',
+    jsonFiles: ['profile_1_3.v1.json'],
+    outFile: '202606070003_element_card_profile_1_3_v0_1.sql',
+  },
 }
 
 const targetKey = process.argv[2] ?? 'stage-4-e1-1'

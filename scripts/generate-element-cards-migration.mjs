@@ -79,6 +79,11 @@ const MIGRATION_TARGETS = {
     jsonFiles: ['defined_center_root.v1.json'],
     outFile: '202606070007_element_card_defined_center_root_v0_1.sql',
   },
+  defined_center_ajna: {
+    header: '-- Stage 4-E2.8: Element Card Storage — defined_center/ajna',
+    jsonFiles: ['defined_center_ajna.v1.json'],
+    outFile: '202606070008_element_card_defined_center_ajna_v0_1.sql',
+  },
 }
 
 const targetKey = process.argv[2] ?? 'stage-4-e1-1'

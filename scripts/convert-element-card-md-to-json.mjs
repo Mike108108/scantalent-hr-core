@@ -8,6 +8,7 @@
  * definition_split_definition JSON is maintained from approved source (definition_split_definition.v1.json).
  * open_center_sacral JSON is maintained from approved source (open_center_sacral.v1.json).
  * defined_center_spleen JSON is maintained from approved source (defined_center_spleen.v1.json).
+ * defined_center_root JSON is maintained from approved source (defined_center_root.v1.json).
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'

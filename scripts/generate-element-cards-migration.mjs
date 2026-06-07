@@ -1,0 +1,91 @@
+/**
+ * One-off: generate SQL migration from element card JSON files.
+ */
+import { readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const root = join(__dirname, '..')
+const cardsDir = join(root, 'supabase/reference/element_cards')
+
+function sqlString(value) {
+  if (value == null) return 'null'
+  return `'${String(value).replace(/'/g, "''")}'`
+}
+
+function sqlJson(value) {
+  return `'${JSON.stringify(value).replace(/'/g, "''")}'::jsonb`
+}
+
+function rowFromCard(card) {
+  return `(
+  ${sqlString(card.element_kind)},
+  ${sqlString(card.element_key)},
+  ${sqlString(card.element_label)},
+  ${sqlString(card.language)},
+  ${sqlString(card.version)},
+  ${sqlString(card.classic_markdown)},
+  ${sqlString(card.hr_translation_markdown)},
+  ${sqlString(card.pro_markdown)},
+  ${sqlJson(card.talent_hints)},
+  ${sqlJson(card.risk_hints)},
+  ${sqlJson(card.management_hints)},
+  ${sqlJson(card.environment_hints)},
+  ${sqlJson(card.limitations)},
+  ${sqlJson(card.base_layers)},
+  ${sqlJson(card.pro_layers)},
+  ${sqlJson(card.context_rules)},
+  ${sqlJson(card.not_self_layers)},
+  ${sqlJson(card.contrast_examples)},
+  ${sqlString(card.source_quality)}
+)`
+}
+
+const cards = [
+  JSON.parse(readFileSync(join(cardsDir, 'type_projector.v1.json'), 'utf8')),
+  JSON.parse(
+    readFileSync(join(cardsDir, 'strategy_wait_for_the_invitation.v1.json'), 'utf8'),
+  ),
+]
+
+const sql = `-- Stage 4-E1.1: Element Cards Storage — type/projector + strategy/wait_for_the_invitation
+-- Approved expert_draft cards from supabase/reference/element_cards/*.v1.json
+-- DB version stays v1; editorial versions live in pro_layers.card_metadata
+
+insert into public.hd_reference_interpretations (
+  element_kind, element_key, element_label, language, version,
+  classic_markdown, hr_translation_markdown, pro_markdown,
+  talent_hints, risk_hints, management_hints, environment_hints, limitations,
+  base_layers, pro_layers, context_rules, not_self_layers, contrast_examples,
+  source_quality
+) values
+
+${cards.map((c) => `-- ${c.element_kind}/${c.element_key}\n${rowFromCard(c)}`).join(',\n\n')}
+
+on conflict (element_kind, element_key, language, version) do update set
+  element_label = excluded.element_label,
+  classic_markdown = excluded.classic_markdown,
+  hr_translation_markdown = excluded.hr_translation_markdown,
+  pro_markdown = excluded.pro_markdown,
+  talent_hints = excluded.talent_hints,
+  risk_hints = excluded.risk_hints,
+  management_hints = excluded.management_hints,
+  environment_hints = excluded.environment_hints,
+  limitations = excluded.limitations,
+  base_layers = excluded.base_layers,
+  pro_layers = excluded.pro_layers,
+  context_rules = excluded.context_rules,
+  not_self_layers = excluded.not_self_layers,
+  contrast_examples = excluded.contrast_examples,
+  source_quality = excluded.source_quality,
+  updated_at = timezone('utc', now());
+`
+
+const outPath = join(
+  root,
+  'supabase/migrations/202606070001_element_cards_storage_projector_strategy_v0_1.sql',
+)
+writeFileSync(outPath, sql, 'utf8')
+console.log('Wrote', outPath)
+console.log('Size:', sql.length, 'bytes')

@@ -59,6 +59,11 @@ const MIGRATION_TARGETS = {
     jsonFiles: ['profile_1_3.v1.json'],
     outFile: '202606070003_element_card_profile_1_3_v0_1.sql',
   },
+  definition_split_definition: {
+    header: '-- Stage 4-E1.7: Element Card Storage — definition/split_definition',
+    jsonFiles: ['definition_split_definition.v1.json'],
+    outFile: '202606070004_element_card_definition_split_definition_v0_1.sql',
+  },
 }
 
 const targetKey = process.argv[2] ?? 'stage-4-e1-1'

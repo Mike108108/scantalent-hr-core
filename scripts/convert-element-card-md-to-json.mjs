@@ -1,6 +1,9 @@
 /**
  * One-off converter: approved Element Card MD → hd_reference_interpretations JSON.
  * Not part of runtime pipeline.
+ *
+ * Supported converters: type_projector, strategy_wait_for_the_invitation.
+ * authority_splenic JSON is maintained from approved source (authority_splenic.v1.json).
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -622,6 +625,7 @@ writeFileSync(
 
 console.log('Wrote type_projector.v1.json')
 console.log('Wrote strategy_wait_for_the_invitation.v1.json')
+console.log('authority_splenic: use approved supabase/reference/element_cards/authority_splenic.v1.json')
 console.log('projector hr starts:', projector.hr_translation_markdown.slice(0, 80))
 console.log('projector pro starts:', projector.pro_markdown.slice(0, 80))
 console.log('projector limitations:', projector.limitations.length)

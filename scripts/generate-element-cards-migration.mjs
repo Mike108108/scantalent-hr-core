@@ -89,6 +89,11 @@ const MIGRATION_TARGETS = {
     jsonFiles: ['defined_center_throat.v1.json'],
     outFile: '202606080001_element_card_defined_center_throat_v0_1.sql',
   },
+  open_center_g: {
+    header: '-- Stage 4-E2.12: Element Card Storage — open_center/g',
+    jsonFiles: ['open_center_g.v1.json'],
+    outFile: '202606100001_element_card_open_center_g_v0_1.sql',
+  },
 }
 
 const targetKey = process.argv[2] ?? 'stage-4-e1-1'

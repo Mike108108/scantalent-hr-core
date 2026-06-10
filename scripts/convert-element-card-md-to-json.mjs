@@ -10,6 +10,7 @@
  * defined_center_spleen JSON is maintained from approved source (defined_center_spleen.v1.json).
  * defined_center_root JSON is maintained from approved source (defined_center_root.v1.json).
  * defined_center_ajna JSON is maintained from approved source (defined_center_ajna.v1.json).
+ * open_center_g JSON is maintained from approved source (open_center_g.v1.json).
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'

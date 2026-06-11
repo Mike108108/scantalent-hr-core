@@ -12,6 +12,7 @@
  * defined_center_ajna JSON is maintained from approved source (defined_center_ajna.v1.json).
  * open_center_g JSON is maintained from approved source (open_center_g.v1.json).
  * open_center_ego JSON is maintained from approved source (open_center_ego.v1.json).
+ * open_center_head JSON is maintained from approved source (open_center_head.v1.json).
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'

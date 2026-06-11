@@ -99,6 +99,11 @@ const MIGRATION_TARGETS = {
     jsonFiles: ['open_center_ego.v1.json'],
     outFile: '202606110001_element_card_open_center_ego_v0_1.sql',
   },
+  open_center_head: {
+    header: '-- Stage 4-E2.16: Element Card Storage — open_center/head',
+    jsonFiles: ['open_center_head.v1.json'],
+    outFile: '202606110002_element_card_open_center_head_v0_1.sql',
+  },
 }
 
 const targetKey = process.argv[2] ?? 'stage-4-e1-1'

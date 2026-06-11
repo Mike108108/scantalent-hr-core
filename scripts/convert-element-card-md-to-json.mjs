@@ -18,6 +18,7 @@
  * channel_11_56 JSON is maintained from approved source (channel_11_56.v1.json).
  * channel_28_38 JSON is maintained from approved source (channel_28_38.v1.json).
  * gate_58 JSON is maintained from approved source (gate_58.v1.json).
+ * gate_18 JSON is maintained from approved source (gate_18.v1.json).
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'

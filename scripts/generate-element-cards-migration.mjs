@@ -104,6 +104,11 @@ const MIGRATION_TARGETS = {
     jsonFiles: ['open_center_head.v1.json'],
     outFile: '202606110002_element_card_open_center_head_v0_1.sql',
   },
+  open_center_solar_plexus: {
+    header: '-- Stage 4-E2.18: Element Card Storage — open_center/solar_plexus',
+    jsonFiles: ['open_center_solar_plexus.v1.json'],
+    outFile: '202606110003_element_card_open_center_solar_plexus_v0_1.sql',
+  },
 }
 
 const targetKey = process.argv[2] ?? 'stage-4-e1-1'

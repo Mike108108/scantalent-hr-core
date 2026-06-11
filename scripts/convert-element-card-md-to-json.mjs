@@ -14,6 +14,7 @@
  * open_center_ego JSON is maintained from approved source (open_center_ego.v1.json).
  * open_center_head JSON is maintained from approved source (open_center_head.v1.json).
  * open_center_solar_plexus JSON is maintained from approved source (open_center_solar_plexus.v1.json).
+ * channel_18_58 JSON is maintained from approved source (channel_18_58.v1.json).
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'

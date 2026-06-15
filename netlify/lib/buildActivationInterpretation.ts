@@ -219,19 +219,32 @@ export function composeActivationInterpretation(
   const sideLabel = buildSideLabel(components.side)
   const roleLabel = roleRef.element_label ?? `${components.side}_${components.planet}`
   const lineLabel = lineRef.element_label ?? `Линия ${components.line}`
-  const planetLabel = planetRef.element_label ?? components.planet
   const gateLabel = gateRef.element_label ?? components.gate
 
+  const lineMeaning =
+    pickLayer([lineRef], 'plain_meaning', 'base_layers') ??
+    pickLayer([lineRef], 'work_manifestation', 'base_layers') ??
+    'стиль проявления через линию.'
+
   const hrTranslationMarkdown = [
-    'Эта тема показывает, как конкретный рабочий талант играет роль в общей карте кандидата. Важны не только навык или склонность, но и позиция: центральная тема, опора, коммуникация, зона взросления или фоновый автоматический паттерн.',
-    `${roleLabel} (${sideLabel} сторона) задаёт функцию ${planetLabel.toLowerCase()} в рабочем проявлении.`,
-    `${lineLabel} добавляет способ реализации: ${pickLayer(refs, 'plain_meaning', 'base_layers') ?? pickLayer([lineRef], 'work_manifestation', 'base_layers') ?? 'стиль проявления через линию.'}`,
-    `Тема ${gateLabel} определяет содержание: ${pickLayer([gateRef], 'plain_meaning', 'base_layers') ?? 'ключевой смысл рабочей темы.'}`,
+    'Эта активация показывает, какую роль конкретная тема выполняет в карте кандидата.',
+    'Её важно читать не как отдельный ярлык, а как связку:\nтема ворот → стиль линии → функция планеты → осознанная или автоматическая сторона.',
+    `${roleLabel} (${sideLabel} сторона) задаёт функцию темы в общей карте.`,
+    `${lineLabel} уточняет стиль проявления: ${lineMeaning}`,
+    `Тема ${gateLabel} показывает содержание рабочей темы.`,
   ].join('\n\n')
 
   const proMarkdown = [
-    `Composed activation interpretation: gate/${components.gate} + line/${components.line} + planet/${components.planet} + side/${components.side} + activation_role/${components.side}_${components.planet}.`,
-    'Direct activation reference row was not found, so the interpretation was assembled from component references.',
+    'Composed activation interpretation.',
+    '',
+    'Components:',
+    `- gate/${components.gate}`,
+    `- line/${components.line}`,
+    `- planet/${components.planet}`,
+    `- side/${components.side}`,
+    `- activation_role/${components.side}_${components.planet}`,
+    '',
+    'Direct activation reference row was not found. This interpretation was assembled from component references.',
     roleRef.pro_markdown ?? '',
     planetRef.pro_markdown ?? '',
     lineRef.pro_markdown ?? '',
@@ -245,7 +258,7 @@ export function composeActivationInterpretation(
     element_key: element.element_key,
     element_label: element.element_label ?? `Activation ${element.element_key}`,
     classic_markdown: [
-      `Activation ${element.element_key}: composed from gate ${components.gate}, line ${components.line}, planet ${components.planet}, side ${components.side}.`,
+      `Activation ${element.element_key}: composed from gate/${components.gate}, line/${components.line}, planet/${components.planet}, side/${components.side}, activation_role/${components.side}_${components.planet}.`,
       roleRef.classic_markdown ?? '',
       gateRef.classic_markdown ?? '',
     ]
@@ -304,7 +317,8 @@ export function composeActivationInterpretation(
         const keywords = row.pro_layers?.classical_keywords
         return Array.isArray(keywords) ? keywords : []
       })),
-      source_logic: 'Composed from gate, line, planet, side and activation_role references.',
+      source_logic:
+        'Activation composed from gate, line, planet, side and activation_role reference rows.',
       pro_not_self: mergeStringHints([
         pickLayer([roleRef], 'pro_not_self', 'pro_layers'),
         pickLayer([planetRef], 'pro_not_self', 'pro_layers'),
@@ -317,7 +331,7 @@ export function composeActivationInterpretation(
       primary_context: ['gate', 'line', 'planet', 'side', 'activation_role'],
       secondary_context: ['type', 'strategy', 'authority', 'profile', 'channel', 'center'],
       depends_on:
-        'Final reading depends on whole chart context and should not be treated as isolated conclusion.',
+        'Итоговое чтение активации зависит от всей карты и не должно использоваться как изолированный вывод о человеке.',
       related_element_kinds: [
         'gate',
         'line',
@@ -330,7 +344,7 @@ export function composeActivationInterpretation(
         'authority',
         'profile',
       ],
-      context_note: 'This is a composed draft source layer, not a final HR conclusion.',
+      context_note: 'Это композиционный source layer для карты, а не финальное HR-заключение.',
       source_component_keys: componentKeys,
     },
     not_self_layers: {

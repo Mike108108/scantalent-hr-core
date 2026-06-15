@@ -33,6 +33,7 @@
  * gate_40 JSON is maintained from approved source (gate_40.v1.json).
  * gate_6 JSON is maintained from approved source (gate_6.v1.json).
  * gate_8 JSON is maintained from approved source (gate_8.v1.json).
+ * gate_10 JSON is maintained from approved source (gate_10.v1.json).
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'

@@ -35,6 +35,7 @@
  * gate_8 JSON is maintained from approved source (gate_8.v1.json).
  * gate_10 JSON is maintained from approved source (gate_10.v1.json).
  * gate_12 JSON is maintained from approved source (gate_12.v1.json).
+ * gate_13 JSON is maintained from approved source (gate_13.v1.json).
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -647,19 +648,92 @@ function convertStrategy() {
 const projector = convertProjector()
 const strategy = convertStrategy()
 
-writeFileSync(join(outDir, 'type_projector.v1.json'), JSON.stringify(projector, null, 2) + '\n', 'utf8')
-writeFileSync(
-  join(outDir, 'strategy_wait_for_the_invitation.v1.json'),
-  JSON.stringify(strategy, null, 2) + '\n',
-  'utf8',
-)
+const GATE_CARD_KEYS = new Set([
+  'gate_6',
+  'gate_8',
+  'gate_10',
+  'gate_12',
+  'gate_13',
+  'gate_16',
+  'gate_17',
+  'gate_18',
+  'gate_24',
+  'gate_28',
+  'gate_38',
+  'gate_40',
+  'gate_43',
+  'gate_48',
+  'gate_52',
+  'gate_54',
+  'gate_56',
+  'gate_58',
+  'gate_11',
+])
 
-console.log('Wrote type_projector.v1.json')
-console.log('Wrote strategy_wait_for_the_invitation.v1.json')
-console.log('authority_splenic: use approved supabase/reference/element_cards/authority_splenic.v1.json')
-console.log('projector hr starts:', projector.hr_translation_markdown.slice(0, 80))
-console.log('projector pro starts:', projector.pro_markdown.slice(0, 80))
-console.log('projector limitations:', projector.limitations.length)
-console.log('projector contrast:', projector.contrast_examples.length)
-console.log('strategy limitations:', strategy.limitations.length)
-console.log('strategy contrast:', strategy.contrast_examples.length)
+function validateGateCard(cardKey) {
+  const cardPath = join(outDir, `${cardKey}.v1.json`)
+  const card = JSON.parse(readFileSync(cardPath, 'utf8'))
+  const meta = card.pro_layers?.card_metadata ?? {}
+  const usedInLayers = meta.used_in_layers ?? []
+  const contrastCount = Array.isArray(card.contrast_examples) ? card.contrast_examples.length : 0
+
+  const checks = [
+    card.element_kind === 'gate',
+    card.version === 'v1',
+    card.source_quality === 'expert_draft',
+    meta.editorial_version === 'v0.1.1',
+    meta.status === 'approved_after_editorial_review',
+    Boolean(meta.ui_base_label),
+    Boolean(meta.ui_pro_label),
+    Boolean(meta.primary_layer_key),
+    meta.link_target === `element://gate/${card.element_key}`,
+    meta.source_file === `supabase/reference/element_cards/source/${cardKey}.md`,
+    contrastCount === 5,
+    usedInLayers.length > 0,
+  ]
+
+  const qa = {
+    ok: checks.every(Boolean),
+    element_kind: card.element_kind,
+    element_key: card.element_key,
+    version: card.version,
+    source_quality: card.source_quality,
+    editorial_version: meta.editorial_version,
+    status: meta.status,
+    ui_base_label: meta.ui_base_label,
+    ui_pro_label: meta.ui_pro_label,
+    primary_layer_key: meta.primary_layer_key,
+    link_target: meta.link_target,
+    contrast_examples_count: contrastCount,
+    used_in_layers: usedInLayers,
+  }
+
+  console.log(JSON.stringify(qa, null, 2))
+  if (!qa.ok) process.exit(1)
+}
+
+const cliTarget = process.argv[2]
+if (cliTarget && GATE_CARD_KEYS.has(cliTarget)) {
+  validateGateCard(cliTarget)
+} else if (cliTarget) {
+  console.error(`Unknown gate card target: ${cliTarget}`)
+  console.error('Supported gate cards:', [...GATE_CARD_KEYS].join(', '))
+  process.exit(1)
+} else {
+  writeFileSync(join(outDir, 'type_projector.v1.json'), JSON.stringify(projector, null, 2) + '\n', 'utf8')
+  writeFileSync(
+    join(outDir, 'strategy_wait_for_the_invitation.v1.json'),
+    JSON.stringify(strategy, null, 2) + '\n',
+    'utf8',
+  )
+
+  console.log('Wrote type_projector.v1.json')
+  console.log('Wrote strategy_wait_for_the_invitation.v1.json')
+  console.log('authority_splenic: use approved supabase/reference/element_cards/authority_splenic.v1.json')
+  console.log('projector hr starts:', projector.hr_translation_markdown.slice(0, 80))
+  console.log('projector pro starts:', projector.pro_markdown.slice(0, 80))
+  console.log('projector limitations:', projector.limitations.length)
+  console.log('projector contrast:', projector.contrast_examples.length)
+  console.log('strategy limitations:', strategy.limitations.length)
+  console.log('strategy contrast:', strategy.contrast_examples.length)
+}

@@ -37,6 +37,7 @@
  * gate_12 JSON is maintained from approved source (gate_12.v1.json).
  * gate_13 JSON is maintained from approved source (gate_13.v1.json).
  * gate_15 JSON is maintained from approved source (gate_15.v1.json).
+ * gate_19 JSON is maintained from approved source (gate_19.v1.json).
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -656,6 +657,7 @@ const GATE_CARD_KEYS = new Set([
   'gate_12',
   'gate_13',
   'gate_15',
+  'gate_19',
   'gate_16',
   'gate_17',
   'gate_18',

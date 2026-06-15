@@ -1,0 +1,123 @@
+-- Stage 4-E4.36: Element Card Storage — gate/12
+-- Approved expert_draft cards from supabase/reference/element_cards/*.v1.json
+-- DB version stays v1; editorial versions live in pro_layers.card_metadata
+
+insert into public.hd_reference_interpretations (
+  element_kind, element_key, element_label, language, version,
+  classic_markdown, hr_translation_markdown, pro_markdown,
+  talent_hints, risk_hints, management_hints, environment_hints, limitations,
+  base_layers, pro_layers, context_rules, not_self_layers, contrast_examples,
+  source_quality
+) values
+
+-- gate/12
+(
+  'gate',
+  '12',
+  'Gate 12',
+  'ru',
+  'v1',
+  'Gate 12 · Standstill / Caution
+Throat Center
+Harmonic Gate: 22
+Potential Channel: 12-22
+Core theme: cautious expression, mood-sensitive voice, timing of social expression
+
+Рабочий перевод ScanTalent:
+Своевременное выражение — способность выразить мысль, чувство или смысл тогда, когда момент, тон, атмосфера и внутренняя готовность совпали.
+
+Чистая формула gate/12:
+внутренний фильтр выражения → чувствительность к моменту, тону и атмосфере → пауза перед словом → точная подача мысли, когда выражение созрело
+
+`gate/12` — тема своевременного выражения в Throat Center.
+
+Gate 12 is traditionally connected with cautious expression, mood-sensitive voice and the timing of social expression. The core theme is not constant communication, but selective expression. Standalone gate/12 shows expression timing and appropriateness filter but does not automatically mean full Channel 12-22 emotional-social mechanics.',
+  '## Своевременное выражение
+
+## Короткая суть
+
+Этот элемент связан со способностью выражаться не автоматически, а в подходящий момент. Человеку важно чувствовать, когда мысль готова прозвучать, каким тоном её лучше передать и есть ли у среды готовность это услышать.
+
+## Как проявляется в работе
+
+В работе это может проявляться как аккуратность в словах, чувствительность к настрою разговора и способность не перегружать коммуникацию лишними фразами. Эта тема может быть особенно полезна там, где важны точность формулировки, тон сообщения, качество диалога и момент для высказывания.
+
+## Здоровое проявление
+
+Человек выражает мысль точно, спокойно и вовремя. Его слова могут звучать весомо, потому что они не случайны: он чувствует момент, подбирает тон и говорит тогда, когда сообщение с большей вероятностью будет услышано правильно.
+
+## Искажённое проявление
+
+Человек может слишком долго удерживать важные слова или, наоборот, выражаться из внутреннего давления. В таком состоянии фраза может прозвучать резко, закрыто, холодно или не в тот момент, хотя сама мысль могла быть ценной.
+
+## Как использовать
+
+Давать человеку возможность подготовить важную формулировку, выбрать формат выражения и не требовать мгновенной реакции в тонких коммуникационных ситуациях. Особенно хорошо этот элемент может работать в задачах, где важны смысл, тон, аккуратная подача, переговорная чувствительность, текст, публичное сообщение или обратная связь.
+
+## Что проверить в реальности
+
+Стоит смотреть, как человек выражает важные мысли в разных условиях: когда есть время на настройку, когда его торопят, когда среда напряжена, когда нужно говорить публично и когда разговор идёт один на один.
+
+## Важно
+
+Это значение отдельного элемента. Оно не доказывает, что человек всегда хороший коммуникатор, артистичный спикер, продавец или публичный лидер. Итоговое чтение зависит от всей карты, каналов, активаций, центра, линии, планеты и реального опыта человека.',
+  '## Ворота 12 · Осторожность выражения
+
+## Technical meaning
+
+`Gate 12` находится в Throat Center и связано с темой осторожности выражения: голос, слово или форма подачи раскрываются точнее, когда есть подходящий момент, внутреннее состояние и восприимчивость среды.
+
+В классической логике Human Design эта gate относится к теме выражения, настроя, социальной открытости и способности говорить тогда, когда есть внутреннее состояние и подходящий момент.
+
+## Mechanics
+
+`Gate 12` является одной стороной потенциального канала `12–22`. Гармоничная gate — `22`, связанная с эмоциональной восприимчивостью, настроем и социальной грацией. Без полного канала `12–22` gate/12 не следует читать как устойчивый эмоционально-социальный механизм. Одиночная gate даёт тему выражения и фильтра уместности, но не всю механику канала.
+
+## Role in chart
+
+В карте `gate/12` показывает, где тема выражения проходит через внутренний фильтр: готово ли слово, есть ли подходящий момент, насколько тон совпадает с состоянием и средой. В зависимости от планеты, линии и стороны Personality / Design эта тема может быть более осознанной, автоматической, коммуникативной, ценностной, развивающей или фоновой.
+
+## Contextual reading
+
+`gate/12` нужно читать через Throat Center defined/open status, harmonic gate/22, potential channel/12-22, full channel presence or absence, планету, линию, сторону Personality / Design, activation role, тип, стратегию, авторитет, профиль, whole chart context и реальные рабочие факты.
+
+## Корректное проявление
+
+Корректное проявление — это выражение, которое возникает в согласии с механикой карты, состоянием человека и реальным моментом. Слово не выталкивается давлением, а появляется тогда, когда есть внутренняя готовность и подходящий контекст.
+
+## Not-Self проявление
+
+Not-Self проявление может выглядеть как давление говорить без внутренней готовности, зависимость от реакции среды, попытка произвести впечатление тоном или закрывание выражения из-за неподходящей атмосферы. В таком состоянии человек может либо замолчать там, где важно выразиться, либо сказать не тем тоном и не в тот момент.
+
+## Interpretation limits
+
+`gate/12` не является самостоятельным доказательством харизмы, публичности, творческой профессии, эмоциональной нестабильности, закрытости, таланта продаж или сильной коммуникационной роли. Для таких выводов нужны контекст карты, реальные навыки, опыт и подтверждение другими элементами.',
+  '["чувствует подходящий момент для высказывания", "умеет бережно обращаться с тоном коммуникации", "может усиливать качество важных формулировок", "видит, когда сообщение лучше подготовить, а не произносить сразу", "может быть точным в обратной связи, если есть подходящий контекст", "способен выражать смысл без лишнего давления", "может улучшать тексты, презентации, переговорные формулировки и публичные сообщения"]'::jsonb,
+  '["может удерживать важные слова слишком долго", "может выражаться резко, если чувствует давление говорить сразу", "может закрывать голос в неподходящей атмосфере", "может зависеть от настроя среды при важных высказываниях", "может терять точность выражения в шумной, грубой или торопящей коммуникации", "может восприниматься как холодный или закрытый, если его пауза неправильно понята"]'::jsonb,
+  '["давать время на подготовку важных формулировок", "не требовать мгновенного ответа в тонких коммуникационных ситуациях", "создавать спокойный контекст для обратной связи и важных обсуждений", "поручать задачи, где важны точность слова, тон и момент коммуникации", "согласовывать формат выражения: устно, письменно, один на один или публично", "обращать внимание на качество среды перед важными разговорами"]'::jsonb,
+  '["уважительная коммуникационная культура", "среда, где ценят точность формулировок", "возможность подготовить важное сообщение", "пространство для паузы перед ответом", "разговоры без грубого давления и перебивания", "команды, где тон общения влияет на качество результата"]'::jsonb,
+  '["Не использовать gate/12 как доказательство сильной коммуникационной роли.", "Не делать вывод о профессии, публичности, продажах, сцене или творчестве только по этому элементу.", "Не трактовать gate/12 как эмоциональную нестабильность.", "Не трактовать gate/12 как социальную закрытость или интровертность.", "Не приписывать gate/12 полную механику channel/12-22 без harmonic gate/22 и полного канала.", "Не использовать gate/12 для hire/no-hire решений.", "Не использовать gate/12 для role-fit, vacancy-fit, fit_score или процентов соответствия.", "Проверять проявление через реальные рабочие факты: речь, тексты, обратную связь, переговоры, публичные ситуации и реакцию на давление."]'::jsonb,
+  '{"title": "Своевременное выражение", "base_label": "Своевременное выражение", "plain_meaning": "Этот элемент связан со способностью выражаться не автоматически, а в подходящий момент. Человеку важно чувствовать, когда мысль готова прозвучать, каким тоном её лучше передать и есть ли у среды готовность это услышать.", "work_manifestation": "аккуратность в словах, чувствительность к настрою разговора и способность не перегружать коммуникацию лишними фразами; полезен там, где важны точность формулировки, тон сообщения, качество диалога и момент для высказывания", "healthy_expression": "Человек выражает мысль точно, спокойно и вовремя. Его слова могут звучать весомо, потому что они не случайны: он чувствует момент, подбирает тон и говорит тогда, когда сообщение с большей вероятностью будет услышано правильно.", "distorted_expression": "Человек может слишком долго удерживать важные слова или, наоборот, выражаться из внутреннего давления. В таком состоянии фраза может прозвучать резко, закрыто, холодно или не в тот момент, хотя сама мысль могла быть ценной.", "strengths": "чувствует подходящий момент для высказывания; бережно обращается с тоном коммуникации; усиливает качество важных формулировок; видит, когда сообщение лучше подготовить; точен в обратной связи при подходящем контексте; выражает смысл без лишнего давления", "risks": "удерживание важных слов слишком долго; резкость под давлением говорить сразу; закрывание голоса в неподходящей атмосфере; зависимость от настроя среды; потеря точности в шумной или торопящей коммуникации; восприятие как холодного или закрытого из-за паузы", "when_it_works_best": "Давать человеку возможность подготовить важную формулировку, выбрать формат выражения и не требовать мгновенной реакции в тонких коммуникационных ситуациях. Особенно хорошо работает в задачах, где важны смысл, тон, аккуратная подача, переговорная чувствительность, текст, публичное сообщение или обратная связь.", "when_talent_is_not_revealed": "удерживание важных слов слишком долго;\nрезкость под давлением говорить сразу;\nзакрывание голоса в неподходящей атмосфере;\nзависимость от настроя среды;\nпотеря точности в шумной или торопящей коммуникации;\nвосприятие как холодного или закрытого из-за паузы", "development_hints": ["тренировать различение паузы и избегания", "учиться выбирать формат выражения под задачу", "развивать навык короткой и точной формулировки", "замечать, какая среда помогает говорить ясно", "учиться выражать важное без накопления внутреннего давления"], "communication_hints": ["лучше раскрывается через своевременные формулировки", "может быть сильнее в подготовленной речи, тексте или точечной обратной связи", "тон сообщения может быть не менее важен, чем содержание", "важные слова лучше звучат при внутренней готовности", "коммуникация выигрывает от паузы, настройки и точного момента"], "reality_check": "как человек выражает важные мысли, когда есть время на настройку;\nкак выражается под давлением и в напряжённой среде;\nкак говорит публично и один на один;\nсохраняет ли точность тона в разных условиях;\nготовит ли важные формулировки заранее", "important_note": "Это значение отдельного элемента. Оно не доказывает, что человек всегда хороший коммуникатор, артистичный спикер, продавец или публичный лидер. Итоговое чтение зависит от всей карты, каналов, активаций, центра, линии, планеты и реального опыта человека."}'::jsonb,
+  '{"hd_meaning": "`Gate 12` находится в Throat Center и связано с темой осторожности выражения: голос, слово или форма подачи раскрываются точнее, когда есть подходящий момент, внутреннее состояние и восприимчивость среды. В ScanTalent это переводится как тема своевременного выражения: избирательность момента, тона и готовности среды к сообщению.", "mechanics": "Throat Center даёт теме `gate/12` форму выражения через голос, слово или подачу. Harmonic gate — Gate 22, связанная с эмоциональной восприимчивостью, настроем и социальной грацией; potential channel — channel/12-22. Одиночная Gate 12 даёт тему выражения и фильтра уместности; полный Channel 12-22 соединяет выражение с эмоциональной атмосферой и социальной открытостью в более устойчивую механику эмоционально-социальной выразительности.", "classical_keywords": ["Gate 12", "Standstill", "Caution", "Throat Center", "Harmonic Gate 22", "Channel 12-22", "Cautious expression", "Mood-sensitive voice", "Timing of social expression", "Selective expression"], "source_logic": "gate/12 describes a single gate in Throat Center with theme of timely expression, moment sensitivity and tone appropriateness. It gives expression filter and timing theme but does not by itself provide full Channel 12-22 mechanics, communication talent proof, artistry, public speaking ability, mood instability or social closedness.", "pro_not_self": "Not-Self expression may appear when the person tries to force expression without correct timing, speak from pressure, seek validation through tone, or suppress the voice because the social or emotional field does not feel right.", "role_in_chart": "В карте `gate/12` показывает, где тема выражения проходит через внутренний фильтр: готово ли слово, есть ли подходящий момент, насколько тон совпадает с состоянием и средой. Через планету, линию, сторону и activation role уточняется, какую функцию эта тема выполняет: центральную, коммуникативную, ценностную, развивающую или фоновую.", "contextual_reading": "Throat Center defined/open status;\nharmonic_gate/22;\nchannel/12-22;\nplanet;\nline;\nside;\nactivation_role;\ntype;\nstrategy;\nauthority;\nprofile;\nwhole_chart;\nreal_work_facts;\ncommunication_and_influence layer", "correct_expression": "выражение возникает в согласии с механикой карты и реальным моментом; слово появляется при внутренней готовности; точная подача мысли в подходящий момент; чувствительность к тону и атмосфере; пауза перед словом, когда это нужно", "not_self_expression": "давление говорить без внутренней готовности; зависимость от реакции среды; попытка произвести впечатление тоном; закрывание выражения из-за неподходящей атмосферы; замолчание там, где важно выразиться; резкость или неверный тон под давлением", "interpretation_limitations": "нельзя читать gate/12 как доказательство сильной коммуникационной роли, артистичности, публичности или продаж;\nнельзя трактовать как эмоциональную нестабильность или социальную закрытость;\nнельзя переносить весь смысл channel/12-22 на одиночную gate/12;\nнельзя делать вывод о найме или профессии только по gate/12;\nнельзя использовать для fit_score, role-fit или hire/no-hire decisions;\nнельзя читать изолированно без Throat, planet, line, side, channel, type, strategy, authority и контекста", "card_metadata": {"editorial_version": "v0.1.1", "status": "approved_after_editorial_review", "ui_base_label": "Своевременное выражение", "ui_pro_label": "Ворота 12 · Осторожность выражения", "primary_layer_key": "communication_and_influence", "link_target": "element://gate/12", "used_in_layers": ["communication_and_influence", "work_style", "main_talents", "risks_and_distortions", "management_and_environment", "development_potential", "pro_foundation"], "source_file": "supabase/reference/element_cards/source/gate_12.md", "methodology_note": "contrast_pairs из MD маппятся в contrast_examples. AI Digest не создаётся как отдельное top-level runtime-поле."}, "ai_source_rules": {"allowed_uses": ["использовать как источник для слоя communication_and_influence", "использовать как supporting source для work_style, если важна пауза перед выражением", "использовать как source для risks_and_distortions, если есть тема давления говорить сразу", "использовать как source для management_and_environment, если среда влияет на качество коммуникации", "использовать как source chip в Pro-основании карты"], "forbidden_uses": ["не делать standalone вывод, что человек хороший коммуникатор", "не делать standalone вывод, что человек артистичный или творческий", "не делать standalone вывод, что человек эмоционально нестабилен", "не делать standalone вывод, что человек закрытый", "не делать вывод о продажах, публичности или сцене без других источников", "не заменять gate/12 полным channel/12-22", "не использовать для fit_score, role-fit, vacancy-fit или hire/no-hire"], "preferred_layers": ["communication_and_influence", "work_style", "risks_and_distortions", "management_and_environment", "development_potential", "pro_foundation"], "source_priority": "supporting", "priority_note": "Gate/12 usually supports conclusions about timing of expression, tone sensitivity, communication quality under pressure and readiness to speak. It may become primary in a layer only when Gate 12 is strongly activated, repeated, connected to Channel 12-22, or central through planet/activation role in communication context.", "can_be_primary_when": ["full channel/12-22 is present", "gate/12 is activated by a central planet or important activation role in communication", "the layer specifically analyses expression timing, tone, feedback or communication quality", "several other elements repeat the same theme of timely expression, tone sensitivity or expression readiness"], "ai_must_check": ["is channel/12-22 defined?", "which planet activates gate/12?", "which line is involved?", "is activation personality or design?", "what is the communication context?", "are there other throat/communication sources?", "does the work role require expression, writing, feedback or public communication?"]}, "source_chip": {"base_label": "Своевременное выражение", "pro_label": "Ворота 12 · Осторожность выражения", "short_role": "Добавляет тему момента, тона и внутренней готовности к выражению.", "role_in_this_layer": "В коммуникационных выводах помогает объяснить, почему человеку важно не только содержание сообщения, но и момент, атмосфера и способ выражения.", "link_target": "element://gate/12"}}'::jsonb,
+  '{"primary_context": ["throat_center_context", "harmonic_gate/22", "potential_channel/12-22", "full_channel_presence_or_absence", "planet", "line", "side", "activation_role"], "secondary_context": ["type", "strategy", "authority", "profile", "defined_or_open_throat_context", "communication_role", "team_environment", "decision_context"], "depends_on": "Gate 12 must be interpreted through the whole chart context. Its meaning changes depending on whether Channel 12-22 is defined, which planet and line activate the gate, whether the expression is conscious or automatic, and whether the work context actually requires communication, voice, writing or social expression.", "related_element_kinds": ["defined_center", "open_center", "channel", "gate", "planet", "line", "side", "activation_role", "type", "strategy", "authority", "profile"], "context_note": "Read gate/12 as a theme of timely expression, not as a standalone proof of communication talent, mood instability, artistry, social openness or role suitability."}'::jsonb,
+  '{"base": "Искажённое проявление может выглядеть как закрывание важного выражения, резкость под давлением или зависимость качества речи от неподходящей атмосферы.", "pro": "Not-Self expression may appear when the person tries to force expression without correct timing, speak from pressure, seek validation through tone, or suppress the voice because the social or emotional field does not feel right.", "warning_signals": ["человек говорит резко после долгого сдерживания", "важные мысли не выражаются вовремя", "качество речи резко падает под давлением", "появляется зависимость от реакции среды", "тон сообщения мешает смыслу быть услышанным", "человек избегает выражения там, где его голос важен"], "recovery_conditions": ["дать паузу перед важным ответом", "выбрать подходящий формат выражения", "создать спокойный и уважительный контекст", "разделить подготовку смысла и момент озвучивания", "проверить, есть ли реальная готовность говорить сейчас", "поддержать точность тона, а не скорость реакции"]}'::jsonb,
+  '[{"contrast_context": "gate/12 как одиночная gate без полного channel/12-22", "how_it_would_read": "Тема своевременного выражения присутствует, но не доказывает устойчивую эмоционально-социальную выразительность.", "why_current_context_is_different": "Без harmonic gate/22 и полного канала нельзя приписывать человеку полную механику 12-22."}, {"contrast_context": "gate/12 в полном channel/12-22", "how_it_would_read": "Тема выражения становится устойчивее и сильнее связана с эмоциональной атмосферой, социальной открытостью и настроем.", "why_current_context_is_different": "Полный канал создаёт механику, которую одиночная gate не даёт сама по себе."}, {"contrast_context": "gate/12 в коммуникативной роли или Mercury activation", "how_it_would_read": "Тема может ярче проявляться в речи, текстах, объяснениях, переговорах или публичных формулировках.", "why_current_context_is_different": "Планета и роль активации показывают, насколько тема выражения становится центральной для коммуникации."}, {"contrast_context": "gate/12 в напряжённой среде с требованием быстрых ответов", "how_it_would_read": "Человек может терять точность, замыкаться или говорить не тем тоном из-за давления момента.", "why_current_context_is_different": "Элемент лучше раскрывается, когда у выражения есть пауза, настройка и уважительный контекст."}, {"contrast_context": "gate/12 в задачах с тонкой обратной связью", "how_it_would_read": "Может проявиться как способность подобрать точную формулировку и не разрушить контакт лишней резкостью.", "why_current_context_is_different": "В таком HR-контексте важна не публичность, а качество момента, тона и подачи смысла."}]'::jsonb,
+  'expert_draft'
+)
+on conflict (element_kind, element_key, language, version) do update set
+  element_label = excluded.element_label,
+  classic_markdown = excluded.classic_markdown,
+  hr_translation_markdown = excluded.hr_translation_markdown,
+  pro_markdown = excluded.pro_markdown,
+  talent_hints = excluded.talent_hints,
+  risk_hints = excluded.risk_hints,
+  management_hints = excluded.management_hints,
+  environment_hints = excluded.environment_hints,
+  limitations = excluded.limitations,
+  base_layers = excluded.base_layers,
+  pro_layers = excluded.pro_layers,
+  context_rules = excluded.context_rules,
+  not_self_layers = excluded.not_self_layers,
+  contrast_examples = excluded.contrast_examples,
+  source_quality = excluded.source_quality,
+  updated_at = timezone('utc', now());

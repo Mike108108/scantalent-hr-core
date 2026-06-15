@@ -219,6 +219,11 @@ const MIGRATION_TARGETS = {
     jsonFiles: ['gate_13.v1.json'],
     outFile: '202606150008_element_card_gate_13_v0_1.sql',
   },
+  gate_15: {
+    header: '-- Stage 4-E4.40: Element Card Storage — gate/15',
+    jsonFiles: ['gate_15.v1.json'],
+    outFile: '202606150009_element_card_gate_15_v0_1.sql',
+  },
 }
 
 const targetKey = process.argv[2] ?? 'stage-4-e1-1'

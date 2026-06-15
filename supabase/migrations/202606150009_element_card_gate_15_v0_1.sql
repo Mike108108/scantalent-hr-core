@@ -1,0 +1,127 @@
+-- Stage 4-E4.40: Element Card Storage — gate/15
+-- Approved expert_draft cards from supabase/reference/element_cards/*.v1.json
+-- DB version stays v1; editorial versions live in pro_layers.card_metadata
+
+insert into public.hd_reference_interpretations (
+  element_kind, element_key, element_label, language, version,
+  classic_markdown, hr_translation_markdown, pro_markdown,
+  talent_hints, risk_hints, management_hints, environment_hints, limitations,
+  base_layers, pro_layers, context_rules, not_self_layers, contrast_examples,
+  source_quality
+) values
+
+-- gate/15
+(
+  'gate',
+  '15',
+  'Gate 15',
+  'ru',
+  'v1',
+  'Gate 15 · Extremes / Modesty / Love of Humanity
+G / Identity Center
+Harmonic Gate: 5
+Potential Channel: 5-15
+Core theme: wide rhythm range, extremes, modesty, love of humanity, collective rhythm
+
+Рабочий перевод ScanTalent:
+Широкий диапазон ритмов — способность принимать разные темпы, стили и формы человеческого проявления, не подгоняя всё живое под один стандарт.
+
+Чистая формула gate/15:
+широкий диапазон ритмов + принятие человеческой неодинаковости
+
+`gate/15` — тема широкого диапазона ритмов в G / Identity Center, Collective / Understanding circuit.
+
+Gate 15 is classically associated with Extremes, Modesty and Love of Humanity in the G Center. Its harmonic gate is Gate 5 in Sacral Center, forming Channel 5-15 when both gates are defined. Gate 5 carries fixed rhythm, repeatability and natural cycle. Gate 15 carries wide rhythm range, amplitude and acceptance of human variability. Standalone gate/15 shows wide rhythm range theme but does not automatically mean stable rhythm, fixed flow or full Channel 5-15 mechanics.',
+  '## Широкий диапазон ритмов
+
+## Короткая суть
+
+Эта тема связана со способностью воспринимать разные темпы работы, разные стили людей и неодинаковую динамику процессов.
+
+В работе она может помогать там, где нельзя всех подогнать под один ритм: люди включаются по-разному, задачи идут волнами, а результат требует не жёсткой унификации, а живой настройки.
+
+## Как проявляется в работе
+
+Эта тема может проявляться как способность чувствовать, что не все задачи требуют одного темпа; выдерживать разную скорость людей и процессов; не ломать реальную командную динамику ради формального порядка; видеть ценность в разных стилях работы; помогать среде оставаться гибкой, но не распадаться.
+
+## Здоровое проявление
+
+Здоровое проявление — это гибкий живой порядок. Эта тема не требует, чтобы все работали одинаково, но и не превращает свободу в хаос. Она может помогать видеть, где нужен быстрый темп, где нужно замедление, где важна пауза, а где — включение в общий поток.
+
+## Искажённое проявление
+
+Искажённое проявление — это непредсказуемость ритма. Широкий диапазон может превращаться в скачки темпа, сопротивление правилам, трудность с устойчивой доступностью или оправдание хаоса словами о свободном ритме.
+
+## Как использовать
+
+Лучше всего эта тема раскрывается в среде с гибкостью в способе работы, уважением к разным темпам, понятным результатом, ясными сроками и минимальными правилами доступности. Оптимальная формула: гибкость в ритме + ясность результата + минимальные договорённости.
+
+## Что проверить в реальности
+
+Важно проверить: умеет ли человек сохранять результат при гибком ритме; не превращается ли свобода в хаос; может ли договариваться о сроках и доступности; как реагирует на жёсткий график; как работает в командах с разным темпом.
+
+## Важное ограничение
+
+Это значение отдельного элемента, а не финальный вывод о человеке. Итоговое проявление зависит от всей карты, устойчивых связок, роли элемента в карте, рабочего контекста и реального поведения.',
+  '## Ворота 15 · Крайности
+
+## Technical meaning
+
+`Gate 15` находится в G / Identity Center и классически связана с темой Extremes, Modesty и Love of Humanity. В прикладном HR-чтении её важно не сводить к эмоциональной любви к людям — речь о способности воспринимать широкий диапазон человеческих проявлений, ритмов и темпов.
+
+`Modesty` здесь лучше понимать не как застенчивость, а как способность не навязывать один правильный ритм всему живому процессу. В контурной логике Gate 15 относится к Collective / Understanding circuit.
+
+## Mechanics
+
+Gate 15 образует потенциальный канал с Gate 5 в Sacral Center: Channel 5-15 · Rhythm / Flow.
+
+- Gate 5 несёт тему фиксированного ритма, повторяемости и естественного цикла.
+- Gate 15 несёт широкий диапазон ритмов, амплитуду и способность принимать неодинаковость.
+- Полный Channel 5-15 делает тему ритма устойчивее и телеснее.
+
+Одиночную gate/15 нельзя читать как полный канал 5-15 или как стабильный режим.
+
+## Role in chart
+
+Gate 15 показывает тему: как человек относится к разным ритмам, темпам и формам живого процесса. Она может быть важна в слоях рабочего стиля, среды и управления, рисков, развития и коммуникации.
+
+## Корректное проявление
+
+Корректное проявление — способность не ломать реальный рабочий ритм ради искусственного стандарта: принятие разных темпов людей; понимание, что эффективность не всегда выглядит одинаково; выдерживание неоднородной командной динамики; гибкое отношение к процессам; человечность в организации работы.
+
+## Not-Self проявление
+
+Not-Self проявление может выглядеть как крайности без опоры: резкие скачки темпа; отсутствие устойчивого рабочего ритма; сопротивление любым правилам; путаница между свободой и хаосом; оправдание несобранности естественным ритмом; раздражение при жёстком единообразии.
+
+## Interpretation limits
+
+Gate 15 не доказывает, что человек хаотичный, нестабильный, любит всех людей, социальный, гуманист, гибкий в любых задачах, умеет держать режим, живёт в потоке, подходит для HR или хорошо работает в свободном графике.',
+  '["замечает, что разные люди работают в разных ритмах", "может поддерживать гибкую рабочую динамику", "не требует искусственного единообразия там, где процесс живой", "может быть полезен в неоднородных командах", "видит ценность разных стилей включения", "помогает смягчать чрезмерно жёсткие рабочие рамки", "может удерживать человечность в процессах", "чувствует, что эффективность не всегда выглядит одинаково"]'::jsonb,
+  '["скачки темпа без объяснения команде", "сопротивление любым правилам и расписанию", "путаница между гибкостью и хаосом", "трудность с устойчивой доступностью", "оправдание несобранности словами о свободном ритме", "раздражение при жёстком единообразии", "потеря меры между личным ритмом и общей ответственностью", "неустойчивый рабочий темп в среде без минимальных договорённостей"]'::jsonb,
+  '["давать гибкость в способе работы, но фиксировать результат", "согласовывать сроки, ответственность и правила доступности", "не требовать одинакового темпа там, где задачи реально разные", "не путать гибкий ритм с отсутствием контроля", "обсуждать минимальный рабочий ритм заранее", "оставлять пространство для естественной амплитуды, если это не ломает процесс", "проверять результат по фактам, а не по внешней одинаковости графика", "не использовать чрезмерно жёсткую стандартизацию без причины"]'::jsonb,
+  '["среда с уважением к разным рабочим темпам", "гибкие процессы с понятными критериями результата", "команда, где разные стили работы не считаются проблемой сами по себе", "минимальные договорённости вместо тотального контроля", "пространство для естественных циклов ускорения и замедления", "руководство, которое отличает живой ритм от хаоса", "рабочая культура, где можно обсуждать темп и доступность", "процессы, где важен результат, а не полное внешнее единообразие"]'::jsonb,
+  '["Do not use Gate 15 as a final HR conclusion without whole chart context.", "Do not interpret Gate 15 as stable rhythm unless Gate 5 / Channel 5-15 context supports it.", "Do not label the person chaotic, unstable or extreme based only on Gate 15.", "Do not translate Love of Humanity as emotional love for all people.", "Do not infer sociality, extroversion, empathy, people-orientation or HR talent from Gate 15 alone.", "Do not use Gate 15 for role-fit, vacancy-fit, fit_score or hire/no-hire decisions.", "Check center context, circuit context, harmonic gate, full channel presence, activation, line, planet, side, type, strategy, authority and real work behavior."]'::jsonb,
+  '{"title": "Широкий диапазон ритмов", "base_label": "Широкий диапазон ритмов", "plain_meaning": "Эта тема связана со способностью воспринимать разные темпы работы, разные стили людей и неодинаковую динамику процессов.", "work_manifestation": "чувствует, что не все задачи требуют одного темпа; выдерживает разную скорость людей и процессов; не ломает реальную командную динамику ради формального порядка; видит ценность в разных стилях работы; помогает среде оставаться гибкой, но не распадаться", "healthy_expression": "Гибкий живой порядок: разные ритмы могут сосуществовать, если результат и ответственность понятны. Человек видит, где нужен быстрый темп, где замедление, где пауза, а где включение в общий поток.", "distorted_expression": "Непредсказуемость ритма: скачки темпа, сопротивление правилам, трудность с устойчивой доступностью или оправдание хаоса словами о свободном ритме.", "strengths": "не уравнивает всех под один стандарт; полезен там, где разные люди, этапы, уровни энергии и способы включения; смягчает чрезмерную жёсткость; поддерживает гибкую рабочую динамику", "risks": "скачки темпа без объяснения; сопротивление правилам; путаница между гибкостью и хаосом; трудность с устойчивой доступностью; оправдание несобранности; раздражение при жёстком единообразии; потеря меры между личным ритмом и общей ответственностью", "when_it_works_best": "В среде с гибкостью в способе работы, уважением к разным темпам, понятным результатом, ясными сроками и минимальными правилами доступности. Формула: гибкость в ритме + ясность результата + минимальные договорённости.", "when_talent_is_not_revealed": "скачки темпа без объяснения;\nсопротивление правилам;\nпутаница между гибкостью и хаосом;\nтрудность с устойчивой доступностью;\nоправдание несобранности;\nраздражение при жёстком единообразии;\nпотеря меры между личным ритмом и общей ответственностью", "development_hints": ["учиться отделять гибкость от несобранности", "создавать личные минимальные правила ритма", "договариваться о сроках и доступности заранее", "объяснять команде свой рабочий темп без оправданий", "развивать способность завершать задачи даже при переменной амплитуде", "наблюдать, где свобода помогает результату, а где разрушает процесс", "учиться уважать чужой ритм без потери собственных границ"], "communication_hints": ["объяснять, какой ритм работы сейчас реалистичен", "не обещать одинаковую доступность, если ритм будет волнообразным", "заранее проговаривать периоды ускорения и замедления", "помогать команде не путать разный темп с отсутствием вовлечённости", "переводить разговор о свободе в конкретные договорённости", "обсуждать не только график, но и результат, ответственность и формат связи"], "reality_check": "умеет ли человек сохранять результат при гибком ритме;\nне превращается ли свобода в хаос;\nможет ли договариваться о сроках и доступности;\nкак реагирует на жёсткий график;\nкак работает в командах с разным темпом;\nпомогает ли гибкость процессу или сбивает других", "important_note": "Это значение отдельного элемента, а не финальный вывод о человеке. Итоговое проявление зависит от всей карты, устойчивых связок, роли элемента в карте, рабочего контекста и реального поведения."}'::jsonb,
+  '{"hd_meaning": "Gate 15 находится в G / Identity Center и классически связана с темой Extremes, Modesty и Love of Humanity. В ScanTalent это переводится как тема широкого диапазона ритмов: способность принимать разные темпы, стили и формы человеческого проявления без навязывания одного стандарта.", "mechanics": "G / Identity Center, Collective / Understanding circuit. Harmonic gate — Gate 5 в Sacral Center; potential channel — 5-15. Gate 5 несёт фиксированный ритм и естественный цикл. Gate 15 несёт широкий диапазон ритмов и амплитуду. Полный Channel 5-15 делает тему ритма устойчивее и телеснее. Одиночная Gate 15 показывает тему диапазона, но не гарантирует стабильный поток.", "classical_keywords": ["Gate 15", "Extremes", "Modesty", "Love of Humanity", "G Center", "Identity Center", "Harmonic Gate 5", "Channel 5-15", "Rhythm", "Flow", "Collective Understanding circuit", "Wide rhythm range"], "source_logic": "gate/15 describes a single gate in G Center with theme of wide rhythm range and acceptance of human variability. It gives rhythm range theme but does not by itself provide full Channel 5-15 mechanics, stable rhythm, chaos diagnosis, sociality, empathy, people-orientation or hire/no-hire signals.", "pro_not_self": "Not-Self expression may appear when the wide rhythm range theme is distorted through pressure, conditioning, unsuitable environment, or compensating excessive standardization with extremes. The person may show unpredictable tempo, resistance to structure, or confuse freedom with chaos.", "role_in_chart": "В карте Gate 15 показывает, как человек относится к разным ритмам, темпам и формам живого процесса. Через планету, линию, сторону и activation role уточняется, какую функцию эта тема выполняет: в рабочем стиле, среде, рисках, развитии или коммуникации.", "contextual_reading": "G Center defined/open status;\ndefined_or_open_g_context;\ncollective_understanding_circuit_context;\nharmonic_gate/5;\nchannel/5-15;\nfull_channel_presence_or_absence;\nplanet;\nline;\nside;\nactivation_role;\ntype;\nstrategy;\nauthority;\nprofile;\nwhole_chart;\nreal_work_facts;\nwork_style layer", "correct_expression": "не ломает реальный рабочий ритм ради искусственного стандарта; принимает разные темпы людей; выдерживает неоднородную командную динамику; гибкое отношение к процессам; человечность в организации работы; уважение к различным стилям включения", "not_self_expression": "резкие скачки темпа; отсутствие устойчивого рабочего ритма; сопротивление любым правилам; путаница между свободой и хаосом; оправдание несобранности естественным ритмом; раздражение при жёстком единообразии; потеря меры между гибкостью и обязательствами", "interpretation_limitations": "нельзя читать gate/15 как доказательство хаоса, нестабильности, любви ко всем людям, социальности или гибкости;\nнельзя переносить весь смысл channel/5-15 на одиночную gate/15;\nнельзя делать вывод о найме или профессии только по gate/15;\nнельзя использовать для fit_score, role-fit или hire/no-hire decisions;\nнельзя читать изолированно без G Center, Gate 5, channel, planet, line, side, type, strategy, authority и контекста", "card_metadata": {"editorial_version": "v0.1.1", "status": "approved_after_editorial_review", "ui_base_label": "Широкий диапазон ритмов", "ui_pro_label": "Ворота 15 · Крайности", "primary_layer_key": "work_style", "link_target": "element://gate/15", "used_in_layers": ["work_style", "management_and_environment", "risks_and_distortions", "development_potential", "communication_and_influence", "pro_foundation"], "source_file": "supabase/reference/element_cards/source/gate_15.md", "methodology_note": "contrast_pairs из MD маппятся в contrast_examples. AI Digest не создаётся как отдельное top-level runtime-поле."}, "ai_source_rules": {"allowed_uses": ["Use Gate 15 as a source for wide rhythm range and human variability.", "Use Gate 15 in work_style when discussing flexible rhythm and different tempos.", "Use Gate 15 in management_and_environment when discussing flexible structures with clear agreements.", "Use Gate 15 in risks_and_distortions when discussing irregularity, resistance to rigidity or lack of minimum rhythm agreements.", "Use Gate 15 in development_potential when discussing the development of healthy rhythm boundaries.", "Use Gate 15 as supporting context in communication_and_influence when team rhythm and expectations must be clarified."], "forbidden_uses": ["Do not say the candidate is chaotic because of Gate 15.", "Do not say the candidate loves all people because of Gate 15.", "Do not say the candidate is naturally social, empathic or humanitarian because of Gate 15 alone.", "Do not say the candidate has stable rhythm unless Channel 5-15 or other context supports it.", "Do not treat Gate 15 as generic flexibility or adaptability skill.", "Do not make role-fit, fit_score, vacancy-fit or hiring recommendations from Gate 15."], "preferred_layers": ["work_style", "management_and_environment", "risks_and_distortions", "development_potential", "communication_and_influence", "pro_foundation"], "source_priority": "supporting", "priority_note": "Gate/15 usually supports conclusions about work rhythm, flexible tempo, human variability and resistance to rigid standardization. It may become primary in a layer only when Gate 15 is strongly activated, repeated, connected to Channel 5-15, or central through planet/activation role in work style or team rhythm context.", "can_be_primary_when": ["full channel/5-15 is present", "gate/15 is activated by a central planet or important activation role in work style or team rhythm", "the layer specifically analyses flexible rhythm, different tempos or human variability", "several other elements repeat the same theme of rhythm range, flexibility or resistance to uniformity"], "ai_must_check": ["Is Gate 5 present?", "Is Channel 5-15 defined?", "Is G Center defined or open?", "Which activation carries Gate 15?", "Which line, planet and side are involved?", "How does this interact with type, strategy and authority?", "Does the work role require strict rhythm or flexible rhythm?", "Are there real work facts showing healthy flexibility or distorted inconsistency?"]}, "source_chip": {"base_label": "Широкий диапазон ритмов", "pro_label": "Ворота 15 · Крайности", "short_role": "Добавляет тему широкого диапазона ритмов: разные темпы, разные стили включения и способность не подгонять всех под один стандарт.", "role_in_this_layer": "В слое рабочего стиля помогает объяснить, почему человеку может быть важна гибкость ритма при ясном результате и минимальных договорённостях.", "link_target": "element://gate/15"}}'::jsonb,
+  '{"primary_context": ["g_center_context", "defined_or_open_g_context", "collective_understanding_circuit_context", "harmonic_gate/5", "potential_channel/5-15", "full_channel_presence_or_absence", "activation_context"], "secondary_context": ["type", "strategy", "authority", "profile", "line_context", "planet_context", "side_context", "work_environment", "team_rhythm", "role_expectations"], "depends_on": "Gate 15 must be read through the whole chart context, especially whether Gate 5 is present and whether Channel 5-15 is defined. It should not be interpreted as stable rhythm, chaos, sociality or universal love in isolation.", "related_element_kinds": ["gate", "channel", "center", "activation", "type", "strategy", "authority", "profile"], "context_note": "Gate 15 shows the theme of wide rhythm range and human variability. Its final HR expression depends on center context, circuit context, harmonic gate, full channel presence, activations, line, planet, side, type, strategy, authority and real work behavior."}'::jsonb,
+  '{"base": "Искажённое проявление этой темы — когда широкий диапазон ритмов превращается в непредсказуемость, сопротивление любой структуре или трудность держать договорённости.", "pro": "Not-Self проявление может возникать, когда тема Gate 15 проживается через давление, обусловленность, отсутствие корректного входа в задачи, неподходящую среду или попытку компенсировать чрезмерную стандартизацию резкими крайностями.", "warning_signals": ["человек резко меняет темп без предупреждения", "команда не понимает, когда на него можно рассчитывать", "любая структура воспринимается как давление", "гибкость используется как оправдание незавершённости", "человек раздражается, если от него требуют одинаковой доступности", "ритм работы зависит только от состояния, без договорённости с командой", "свобода начинает вредить срокам и общему процессу"], "recovery_conditions": ["понятные минимальные договорённости", "гибкость в способе выполнения", "ясный результат и критерии завершения", "согласованные сроки", "уважение к естественной амплитуде", "отсутствие лишнего микроконтроля", "регулярная проверка фактического результата", "умение проговаривать свой темп заранее"]}'::jsonb,
+  '[{"contrast_context": "Gate 15 active without full Channel 5-15", "how_it_would_read": "Shows a theme of wide rhythm range, tolerance for different tempos and sensitivity to rigid standardization.", "why_current_context_is_different": "Without Gate 5 and full Channel 5-15, it should not be read as stable rhythm, fixed flow or consistent cycle."}, {"contrast_context": "Gate 15 with harmonic Gate 5 and full Channel 5-15", "how_it_would_read": "The rhythm theme becomes more stable and embodied. The person may carry a stronger natural rhythm and influence the rhythm of the environment.", "why_current_context_is_different": "The full channel is stronger than a single gate and should be prioritized when present."}, {"contrast_context": "Flexible environment with clear outcomes", "how_it_would_read": "Gate 15 can show healthy flexibility, respect for different tempos and ability to work with living process.", "why_current_context_is_different": "In a rigid environment that demands identical rhythm from everyone, the same theme can distort into resistance, frustration or irregularity."}, {"contrast_context": "Healthy wide rhythm range versus unstructured inconsistency", "how_it_would_read": "Healthy expression allows different tempos while keeping responsibility, results and communication clear.", "why_current_context_is_different": "Distorted expression loses minimum agreements and may look like unpredictability or avoidance of structure."}, {"contrast_context": "Classic Love of Humanity theme versus generic people-orientation", "how_it_would_read": "Gate 15 can reflect acceptance of human variety, different rhythms and different forms of being.", "why_current_context_is_different": "This should not be read as emotional warmth, extroversion, empathy, HR talent or love for all people without support from other chart elements and real behavior."}]'::jsonb,
+  'expert_draft'
+)
+on conflict (element_kind, element_key, language, version) do update set
+  element_label = excluded.element_label,
+  classic_markdown = excluded.classic_markdown,
+  hr_translation_markdown = excluded.hr_translation_markdown,
+  pro_markdown = excluded.pro_markdown,
+  talent_hints = excluded.talent_hints,
+  risk_hints = excluded.risk_hints,
+  management_hints = excluded.management_hints,
+  environment_hints = excluded.environment_hints,
+  limitations = excluded.limitations,
+  base_layers = excluded.base_layers,
+  pro_layers = excluded.pro_layers,
+  context_rules = excluded.context_rules,
+  not_self_layers = excluded.not_self_layers,
+  contrast_examples = excluded.contrast_examples,
+  source_quality = excluded.source_quality,
+  updated_at = timezone('utc', now());

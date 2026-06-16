@@ -29,7 +29,7 @@ pro_layers:
     editorial_version: v0.1.1
     status: approved_after_editorial_review
     ui_base_label: Осознанный внутренний драйв
-    ui_pro_label: Позиция активации · Moon · Personality
+    ui_pro_label: Позиция активации · Луна Личности
     source_file: supabase/reference/element_cards/source/activation_role_personality_moon.md
 
 primary_layer_key: pro_foundation
@@ -132,7 +132,7 @@ source_quality = expert_draft применяется после storage integrat
 
 # 3. User-facing Pro
 
-# Позиция активации · Moon · Personality
+# Позиция активации · Луна Личности
 
 ## Технический смысл
 
@@ -471,7 +471,7 @@ ai_source_rules:
 source_chip:
   base_label: Осознанный внутренний драйв
 
-  pro_label: Позиция активации · Moon · Personality
+  pro_label: Позиция активации · Луна Личности
 
   short_role: >
     Показывает, через какую тему человек может осознанно ощущать внутренний драйв и движение.
@@ -494,7 +494,7 @@ ai_digest:
   element_key: personality_moon
 
   base_label: Осознанный внутренний драйв
-  pro_label: Позиция активации · Moon · Personality
+  pro_label: Позиция активации · Луна Личности
 
   layer_relevance: >
     Особенно релевантно для work_style, main_talents, development_potential,

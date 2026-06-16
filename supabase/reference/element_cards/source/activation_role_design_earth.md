@@ -56,7 +56,7 @@ pro_layers:
     editorial_version: v0.1.1
     status: approved_after_editorial_review
     ui_base_label: Автоматическая опора
-    ui_pro_label: Позиция активации · Earth · Design
+    ui_pro_label: Позиция активации · Земля Дизайна
     source_file: supabase/reference/element_cards/source/activation_role_design_earth.md
 
 primary_layer_key: pro_foundation
@@ -157,7 +157,7 @@ source_quality = expert_draft применяется после storage integrat
 
 # 3. User-facing Pro
 
-# Позиция активации · Earth · Design
+# Позиция активации · Земля Дизайна
 
 ## Технический смысл
 
@@ -507,7 +507,7 @@ ai_source_rules:
 source_chip:
   base_label: Автоматическая опора
 
-  pro_label: Позиция активации · Earth · Design
+  pro_label: Позиция активации · Земля Дизайна
 
   short_role: >
     Показывает, через какую тему человек может автоматически стабилизироваться в поведении и рабочем ритме.
@@ -531,7 +531,7 @@ ai_digest:
   element_key: design_earth
 
   base_label: Автоматическая опора
-  pro_label: Позиция активации · Earth · Design
+  pro_label: Позиция активации · Земля Дизайна
 
   layer_relevance: >
     Особенно релевантно для work_style, decision_and_stability, management_and_environment,

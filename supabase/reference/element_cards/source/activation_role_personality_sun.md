@@ -58,7 +58,7 @@ pro_layers:
     editorial_version: v0.1.1
     status: approved_after_editorial_review
     ui_base_label: Осознанное ядро проявления
-    ui_pro_label: Позиция активации · Sun · Personality
+    ui_pro_label: Позиция активации · Солнце Личности
     source_file: supabase/reference/element_cards/source/activation_role_personality_sun.md
 
 primary_layer_key: pro_foundation
@@ -160,7 +160,7 @@ editorial_version хранится в pro_layers.card_metadata.editorial_version
 
 # 3. User-facing Pro
 
-# Позиция активации · Sun · Personality
+# Позиция активации · Солнце Личности
 
 ## Технический смысл
 
@@ -499,7 +499,7 @@ ai_source_rules:
 source_chip:
   base_label: Осознанное ядро проявления
 
-  pro_label: Позиция активации · Sun · Personality
+  pro_label: Позиция активации · Солнце Личности
 
   short_role: >
     Показывает, какая тема может быть осознанным центром вклада и самопрезентации.
@@ -523,7 +523,7 @@ ai_digest:
   element_key: personality_sun
 
   base_label: Осознанное ядро проявления
-  pro_label: Позиция активации · Sun · Personality
+  pro_label: Позиция активации · Солнце Личности
 
   layer_relevance: >
     Особенно релевантно для main_talents, work_style, development_potential,

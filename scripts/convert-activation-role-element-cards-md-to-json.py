@@ -86,27 +86,59 @@ def unwrap_yaml_root(yaml_text: str, root_key: str) -> str:
 
 def parse_folded_scalar(yaml_text: str, key: str, stop_keys=None) -> str:
     stop_keys = stop_keys or []
-    pattern = rf"^\s*{key}:\s*>\s*\n"
-    m = re.search(pattern, yaml_text, re.MULTILINE)
+    m = re.search(rf"^(\s*){key}:\s*>\s*$", yaml_text, re.MULTILINE)
     if m:
+        key_indent = len(m.group(1))
         rest = yaml_text[m.end():]
         lines = []
         for line in rest.split("\n"):
             if not line.strip():
                 continue
-            if re.match(r"^\s{0,2}\w[\w_]*:\s*", line):
+            stripped = line.lstrip()
+            indent = len(line) - len(stripped)
+            if indent <= key_indent and re.match(r"\w[\w_]*:\s", stripped):
+                break
+            if indent <= key_indent + 2 and stripped.startswith("- "):
                 break
             for stop_key in stop_keys:
-                if re.match(rf"^\s*{stop_key}:\s*", line):
+                if re.match(rf"^{stop_key}:\s", stripped):
                     return " ".join(lines).strip()
-            if line.startswith(" ") or line.startswith("\t"):
-                lines.append(line.strip())
+            if indent > key_indent:
+                lines.append(stripped)
             else:
                 break
         return " ".join(lines).strip()
     kv = re.search(rf"^\s*{key}:\s*(.+)$", yaml_text, re.MULTILINE)
     value = kv.group(1).strip() if kv else ""
     return "" if value == ">" else value
+
+
+def parse_context_rules(content: str) -> dict:
+    yaml_text = unwrap_yaml_root(yaml_block_text(content, "# 5. Context rules"), "context_rules")
+    if not yaml_text:
+        return {}
+    data = parse_simple_yaml(yaml_text)
+    data["depends_on"] = parse_folded_scalar(
+        yaml_text, "depends_on", ["related_element_kinds", "context_note"]
+    )
+    data["context_note"] = parse_folded_scalar(yaml_text, "context_note")
+    return data
+
+
+def parse_not_self_layers(content: str) -> dict:
+    yaml_text = unwrap_yaml_root(
+        yaml_block_text(content, "# 6. Not-Self / distortion"), "not_self_layers"
+    )
+    if not yaml_text:
+        return {}
+    data = parse_simple_yaml(yaml_text)
+    data["base"] = parse_folded_scalar(
+        yaml_text, "base", ["pro", "warning_signals", "recovery_conditions"]
+    )
+    data["pro"] = parse_folded_scalar(
+        yaml_text, "pro", ["warning_signals", "recovery_conditions"]
+    )
+    return data
 
 
 def parse_contrast_examples(content: str) -> list:
@@ -294,11 +326,11 @@ def convert_card(card_key: str) -> dict:
     element_key = metadata_yaml.get("element_key", card_key.replace("activation_role_", ""))
     element_label = metadata_yaml.get("element_label", "")
     ui_base_label = card_meta.get("ui_base_label", element_label)
-    ui_pro_label = RU_PRO_LABELS.get(element_key, card_meta.get("ui_pro_label", ""))
+    ui_pro_label = card_meta.get("ui_pro_label") or RU_PRO_LABELS.get(element_key, "")
 
     hints_yaml = extract_yaml_block(content, "# 4. Hints")
-    context_rules = merge_multiline_yaml(content, "# 5. Context rules", "context_rules")
-    not_self_layers = merge_multiline_yaml(content, "# 6. Not-Self / distortion", "not_self_layers")
+    context_rules = parse_context_rules(content)
+    not_self_layers = parse_not_self_layers(content)
     limitations_yaml = extract_yaml_block(content, "# 7. Limitations")
     ai_source_rules = merge_multiline_yaml(content, "# 8. AI-source rules", "ai_source_rules")
     source_chip = merge_multiline_yaml(content, "# 9. Source chip", "source_chip")

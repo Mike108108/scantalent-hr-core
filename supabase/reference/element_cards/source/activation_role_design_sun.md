@@ -58,7 +58,7 @@ pro_layers:
     editorial_version: v0.1.1
     status: approved_after_editorial_review
     ui_base_label: Автоматическое ядро поведения
-    ui_pro_label: Позиция активации · Sun · Design
+    ui_pro_label: Позиция активации · Солнце Дизайна
     source_file: supabase/reference/element_cards/source/activation_role_design_sun.md
 
 primary_layer_key: pro_foundation
@@ -161,7 +161,7 @@ editorial_version хранится в pro_layers.card_metadata.editorial_version
 
 # 3. User-facing Pro
 
-# Позиция активации · Sun · Design
+# Позиция активации · Солнце Дизайна
 
 ## Технический смысл
 
@@ -507,7 +507,7 @@ ai_source_rules:
 source_chip:
   base_label: Автоматическое ядро поведения
 
-  pro_label: Позиция активации · Sun · Design
+  pro_label: Позиция активации · Солнце Дизайна
 
   short_role: >
     Показывает, какая тема может автоматически проявляться как центральный поведенческий паттерн.
@@ -531,7 +531,7 @@ ai_digest:
   element_key: design_sun
 
   base_label: Автоматическое ядро поведения
-  pro_label: Позиция активации · Sun · Design
+  pro_label: Позиция активации · Солнце Дизайна
 
   layer_relevance: >
     Особенно релевантно для main_talents, work_style, development_potential,

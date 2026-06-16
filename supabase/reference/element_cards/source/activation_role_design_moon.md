@@ -29,7 +29,7 @@ pro_layers:
     editorial_version: v0.1.1
     status: approved_after_editorial_review
     ui_base_label: Автоматический импульс движения
-    ui_pro_label: Позиция активации · Moon · Design
+    ui_pro_label: Позиция активации · Луна Дизайна
     source_file: supabase/reference/element_cards/source/activation_role_design_moon.md
 
 primary_layer_key: pro_foundation
@@ -132,7 +132,7 @@ source_quality = expert_draft применяется после storage integrat
 
 # 3. User-facing Pro
 
-# Позиция активации · Moon · Design
+# Позиция активации · Луна Дизайна
 
 ## Технический смысл
 
@@ -479,7 +479,7 @@ ai_source_rules:
 source_chip:
   base_label: Автоматический импульс движения
 
-  pro_label: Позиция активации · Moon · Design
+  pro_label: Позиция активации · Луна Дизайна
 
   short_role: >
     Показывает, через какую тему человек может автоматически включаться, двигаться и возвращаться к действию.
@@ -502,7 +502,7 @@ ai_digest:
   element_key: design_moon
 
   base_label: Автоматический импульс движения
-  pro_label: Позиция активации · Moon · Design
+  pro_label: Позиция активации · Луна Дизайна
 
   layer_relevance: >
     Особенно релевантно для work_style, main_talents, development_potential,

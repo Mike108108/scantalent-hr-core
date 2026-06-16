@@ -246,6 +246,19 @@ const MIGRATION_TARGETS = {
     ],
     outFile: '202606160001_element_cards_lines_1_6_v0_1.sql',
   },
+  activation_roles_sun_earth_moon: {
+    header:
+      '-- Stage 4-E6.2-C1: Element Card Storage — activation_role Sun / Earth / Moon (Batch 1)',
+    jsonFiles: [
+      'activation_role_personality_sun.v1.json',
+      'activation_role_design_sun.v1.json',
+      'activation_role_personality_earth.v1.json',
+      'activation_role_design_earth.v1.json',
+      'activation_role_personality_moon.v1.json',
+      'activation_role_design_moon.v1.json',
+    ],
+    outFile: '202606160002_element_cards_activation_roles_sun_earth_moon_v0_1.sql',
+  },
 }
 
 const targetKey = process.argv[2] ?? 'stage-4-e1-1'

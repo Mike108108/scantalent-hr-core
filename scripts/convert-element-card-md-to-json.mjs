@@ -40,6 +40,7 @@
  * gate_19 JSON is maintained from approved source (gate_19.v1.json).
  * gate_39 JSON is maintained from approved source (gate_39.v1.json).
  * line_1 … line_6 JSON: use scripts/convert-line-element-cards-md-to-json.py
+ * activation_role Sun/Earth/Moon batch 1 JSON: use scripts/convert-activation-role-element-cards-md-to-json.py
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'

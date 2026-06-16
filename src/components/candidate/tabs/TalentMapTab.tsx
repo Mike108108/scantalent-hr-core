@@ -91,7 +91,6 @@ export function TalentMapTab() {
                 </dl>
                 <div className="form-actions">
                   <Button
-                    type="button"
                     variant="secondary"
                     to={`/app/candidate/foundations?section=${section.key}`}
                   >

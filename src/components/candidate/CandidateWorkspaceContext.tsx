@@ -343,9 +343,9 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
   const canCalculateChart =
     state.status === 'ready' &&
     Boolean(state.candidate?.id) &&
-    values.name.trim() &&
-    values.birth_date &&
-    values.birth_time &&
+    Boolean(values.name.trim()) &&
+    Boolean(values.birth_date) &&
+    Boolean(values.birth_time) &&
     cityReady &&
     chartUiStatus !== 'calculating'
 

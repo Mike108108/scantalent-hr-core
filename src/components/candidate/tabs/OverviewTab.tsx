@@ -1,9 +1,10 @@
-import { CityAutocomplete } from '../candidate/CityAutocomplete'
-import { useCandidateWorkspace } from '../candidate/CandidateWorkspaceContext'
-import { Button } from '../ui/Button'
-import { Card } from '../ui/Card'
-import { Input } from '../ui/Input'
-import { StatusBadge } from '../ui/StatusBadge'
+import type { ChangeEvent, FormEvent } from 'react'
+import { CityAutocomplete } from '../CityAutocomplete'
+import { useCandidateWorkspace } from '../CandidateWorkspaceContext'
+import { Button } from '../../ui/Button'
+import { Card } from '../../ui/Card'
+import { Input } from '../../ui/Input'
+import { StatusBadge } from '../../ui/StatusBadge'
 
 export function OverviewTab() {
   const {
@@ -53,12 +54,12 @@ export function OverviewTab() {
   return (
     <div className="stack workspace-sections">
       <Card title={isEditing ? 'Данные кандидата' : 'Новый кандидат'}>
-        <form className="stack" onSubmit={(event) => void handleSubmit(event)}>
+        <form className="stack" onSubmit={(event: FormEvent<HTMLFormElement>) => void handleSubmit(event)}>
           <Input
             label="Имя кандидата"
             name="name"
             value={values.name}
-            onChange={(event) => updateField('name', event.target.value)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => updateField('name', event.target.value)}
             required
             disabled={saving}
           />
@@ -67,7 +68,7 @@ export function OverviewTab() {
             name="birth_date"
             type="date"
             value={values.birth_date}
-            onChange={(event) => updateField('birth_date', event.target.value)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => updateField('birth_date', event.target.value)}
             required
             disabled={saving}
           />
@@ -76,7 +77,7 @@ export function OverviewTab() {
             name="birth_time"
             type="time"
             value={values.birth_time}
-            onChange={(event) => updateField('birth_time', event.target.value)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => updateField('birth_time', event.target.value)}
             required
             disabled={saving}
           />
@@ -84,7 +85,7 @@ export function OverviewTab() {
             label="Город рождения"
             value={values.birth_place}
             selectedCity={selectedCity}
-            onValueChange={(value) => updateField('birth_place', value)}
+            onValueChange={(value: string) => updateField('birth_place', value)}
             onCitySelect={handleCitySelect}
             onCityClear={handleCityClear}
             disabled={saving}

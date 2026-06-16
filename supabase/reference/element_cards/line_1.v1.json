@@ -1,0 +1,207 @@
+{
+  "element_kind": "line",
+  "element_key": "1",
+  "element_label": "Линия 1",
+  "language": "ru",
+  "version": "v1",
+  "source_quality": "expert_draft",
+  "classic_markdown": "Line 1 · Опора на основу\n\ninvestigator, foundation, security, research, basis\n\nLine 1 adds foundation, investigation, security and depth of preparation to the theme.\n\nWhen a gate or activation is in the 1st line, the theme tends to seek a basis before stable expression. It becomes clearer and more reliable when the person understands the underlying structure.",
+  "hr_translation_markdown": "## Название\n\nОпора на основу\n\n## Короткая суть\n\nЭта линия показывает стиль, в котором рабочая тема раскрывается через понимание основы, исследование и чувство опоры.\n\n## Как проявляется в работе\n\nЧеловек лучше действует, когда понимает, на чём всё держится: правила, причины, структуру задачи, исходные данные и реальные основания решения.\n\n## Здоровое проявление\n\nЧеловек создаёт устойчивую базу: разбирается в сути, задаёт точные вопросы, проверяет фундамент и помогает не строить работу на догадках.\n\n## Искажённое проявление\n\nМожет застревать в подготовке, сомневаться без достаточного основания, искать полную гарантию перед действием или перегружать себя сбором информации.\n\n## Как использовать\n\nДавать время на изучение контекста, объяснять задачу не только через “что сделать”, но и через “почему это важно” и “на чём держится решение”.\n\n## Что проверить в реальности\n\nПомогает ли человеку предварительное понимание основы работать точнее — или он уходит в избыточную подготовку и откладывает действие.\n\n## Важно\n\nЛиния 1 не означает, что человек всегда аналитик или теоретик. Она показывает, что конкретная тема проявляется через потребность в основе и понимании фундамента.",
+  "pro_markdown": "## Линия 1 · Фундамент\n\n## Technical meaning\n\nLine 1 adds foundation, investigation, security and depth of preparation to the theme.\n\n## Mechanics\n\nWhen a gate or activation is in the 1st line, the theme tends to seek a basis before stable expression. It becomes clearer and more reliable when the person understands the underlying structure.\n\n## Role in chart\n\nLine 1 modifies a gate or activation by making the theme more foundation-oriented: the person may need to understand why, how and on what basis the theme should be used.\n\n## Contextual reading\n\nLine 1 should be read through the gate, planet, side, activation_position, profile, type, authority and whole chart context.\n\n## Correct expression\n\nThe theme expresses through research, preparation, understanding and building a stable base for action.\n\n## Not-Self expression\n\nThe theme may distort into insecurity, over-preparation, fear of acting without enough information or dependence on external guarantees.\n\n## Interpretation limits\n\nDo not conclude that the person is slow, uncertain or overly theoretical. Line 1 shows the style of manifestation of a specific theme, not the whole personality.",
+  "talent_hints": [
+    "создаёт основу",
+    "разбирается в причинах",
+    "задаёт фундаментальные вопросы",
+    "укрепляет решение через понимание"
+  ],
+  "risk_hints": [
+    "избыточная подготовка",
+    "застревание в исследовании",
+    "поиск полной гарантии",
+    "сомнение без практической проверки"
+  ],
+  "management_hints": [
+    "дать контекст и причины задачи",
+    "показать исходные данные",
+    "обозначить критерий достаточной подготовки",
+    "не давить на мгновенное действие без понимания основы"
+  ],
+  "environment_hints": [
+    "понятные правила",
+    "доступ к информации",
+    "уважение к подготовке",
+    "пространство для вопросов"
+  ],
+  "limitations": [
+    "Не делать вывод, что человек медлительный, неуверенный или излишне теоретический.",
+    "Line 1 показывает стиль проявления конкретной темы, а не всю личность.",
+    "Не использовать line/1 как финальный вывод о человеке.",
+    "Не использовать для fit_score, match_score или решения о найме.",
+    "Не читать линию отдельно от gate, activation_position, profile и whole chart context."
+  ],
+  "base_layers": {
+    "title": "Опора на основу",
+    "base_label": "Опора на основу",
+    "plain_meaning": "Эта линия показывает стиль, в котором рабочая тема раскрывается через понимание основы, исследование и чувство опоры.",
+    "work_manifestation": "Человек лучше действует, когда понимает, на чём всё держится: правила, причины, структуру задачи, исходные данные и реальные основания решения.",
+    "healthy_expression": "Человек создаёт устойчивую базу: разбирается в сути, задаёт точные вопросы, проверяет фундамент и помогает не строить работу на догадках.",
+    "distorted_expression": "Может застревать в подготовке, сомневаться без достаточного основания, искать полную гарантию перед действием или перегружать себя сбором информации.",
+    "strengths": "создаёт основу; разбирается в причинах; задаёт фундаментальные вопросы; укрепляет решение через понимание",
+    "risks": "избыточная подготовка; застревание в исследовании; поиск полной гарантии; сомнение без практической проверки",
+    "when_it_works_best": "Давать время на изучение контекста, объяснять задачу не только через “что сделать”, но и через “почему это важно” и “на чём держится решение”.",
+    "when_talent_is_not_revealed": "Может застревать в подготовке, сомневаться без достаточного основания, искать полную гарантию перед действием или перегружать себя сбором информации.",
+    "development_hints": [
+      "дать контекст и причины задачи",
+      "показать исходные данные",
+      "обозначить критерий достаточной подготовки",
+      "не давить на мгновенное действие без понимания основы"
+    ],
+    "communication_hints": [
+      "дать контекст и причины задачи",
+      "показать исходные данные",
+      "обозначить критерий достаточной подготовки",
+      "не давить на мгновенное действие без понимания основы"
+    ],
+    "reality_check": "Помогает ли человеку предварительное понимание основы работать точнее — или он уходит в избыточную подготовку и откладывает действие.",
+    "important_note": "Линия 1 не означает, что человек всегда аналитик или теоретик. Она показывает, что конкретная тема проявляется через потребность в основе и понимании фундамента."
+  },
+  "pro_layers": {
+    "hd_meaning": "Line 1 adds foundation, investigation, security and depth of preparation to the theme.",
+    "mechanics": "When a gate or activation is in the 1st line, the theme tends to seek a basis before stable expression. It becomes clearer and more reliable when the person understands the underlying structure.",
+    "classical_keywords": [
+      "investigator",
+      "foundation",
+      "security",
+      "research",
+      "basis"
+    ],
+    "source_logic": "line/1 describes the universal style of manifestation for a gate or activation theme. Final reading depends on gate, planet, side, activation_position, profile, type, authority and whole chart context.",
+    "role_in_chart": "Line 1 modifies a gate or activation by making the theme more foundation-oriented: the person may need to understand why, how and on what basis the theme should be used.",
+    "contextual_reading": "Line 1 should be read through the gate, planet, side, activation_position, profile, type, authority and whole chart context.",
+    "correct_expression": "The theme expresses through research, preparation, understanding and building a stable base for action.",
+    "not_self_expression": "The theme may distort into insecurity, over-preparation, fear of acting without enough information or dependence on external guarantees.",
+    "pro_not_self": "Not-Self проявление Line 1 связано с попыткой получить абсолютную безопасность через информацию, вместо корректного применения темы в контексте карты.",
+    "interpretation_limitations": "Do not conclude that the person is slow, uncertain or overly theoretical. Line 1 shows the style of manifestation of a specific theme, not the whole personality.",
+    "card_metadata": {
+      "editorial_version": "v0.1.1",
+      "status": "approved_after_editorial_review",
+      "ui_base_label": "Опора на основу",
+      "ui_pro_label": "Линия 1 · Фундамент",
+      "primary_layer_key": "pro_foundation",
+      "link_target": "element://line/1",
+      "source_file": "supabase/reference/element_cards/source/line_1.md",
+      "used_in_layers": [
+        "work_style",
+        "decision_and_stability",
+        "development_potential",
+        "pro_foundation"
+      ],
+      "methodology_note": "Universal line card: describes style of manifestation, not a final person label. Read through gate, activation_position and whole chart context."
+    },
+    "ai_source_rules": {
+      "allowed_uses": [
+        "использовать как supporting source для pro_foundation",
+        "использовать для уточнения стиля проявления темы в gate или activation",
+        "использовать в слоях, указанных в used_in_layers",
+        "использовать для контекстного чтения activation composition"
+      ],
+      "forbidden_uses": [
+        "не использовать как финальный вывод о человеке",
+        "не использовать для fit_score или match_score",
+        "не использовать для hire/no-hire decisions",
+        "не подменять line-card profile-card или activation_position",
+        "не читать line отдельно от gate и activation context"
+      ],
+      "preferred_layers": [
+        "work_style",
+        "decision_and_stability",
+        "development_potential",
+        "pro_foundation"
+      ],
+      "source_priority": "supporting",
+      "ai_must_check": [
+        "gate",
+        "activation",
+        "activation_position",
+        "planet",
+        "side",
+        "profile",
+        "type",
+        "authority"
+      ]
+    },
+    "source_chip": {
+      "base_label": "Опора на основу",
+      "pro_label": "Линия 1 · Фундамент",
+      "short_role": "Показывает, что тема проявляется через исследование и создание базы.",
+      "role_in_this_layer": "Уточняет, что тема требует понимания основы перед устойчивым применением.",
+      "link_target": "element://line/1"
+    }
+  },
+  "context_rules": {
+    "primary_context": [
+      "gate",
+      "activation",
+      "profile"
+    ],
+    "secondary_context": [
+      "planet",
+      "side",
+      "activation_position",
+      "type",
+      "authority"
+    ],
+    "depends_on": "Итоговое чтение зависит от темы ворот, позиции активации, профиля и общего контекста карты.",
+    "related_element_kinds": [
+      "gate",
+      "activation",
+      "profile",
+      "planet",
+      "side",
+      "activation_position"
+    ],
+    "context_note": "Линия 1 показывает стиль проявления темы через основу, исследование и подготовку. Не использовать как самостоятельный вывод о человеке."
+  },
+  "not_self_layers": {
+    "base": "Тема может искажаться через избыточную подготовку, сомнения и поиск полной гарантии.",
+    "pro": "Not-Self проявление Line 1 связано с попыткой получить абсолютную безопасность через информацию, вместо корректного применения темы в контексте карты.",
+    "warning_signals": [
+      "человек долго готовится, но не переходит к действию",
+      "требует полной ясности там, где нужен рабочий минимум",
+      "использует недостаток информации как повод отложить решение"
+    ],
+    "recovery_conditions": [
+      "понятный контекст задачи",
+      "доступ к ключевой информации",
+      "критерий достаточной подготовки",
+      "поддержка перехода от исследования к действию"
+    ]
+  },
+  "contrast_examples": [
+    {
+      "contrast_context": "Line 1 в gate, связанной с аналитикой",
+      "how_it_would_read": "Может усиливать способность глубоко разбираться в причинах и строить надёжную основу решения.",
+      "why_current_context_is_different": "Если та же линия стоит в теме коммуникации, акцент будет не на анализе как профессии, а на подготовленности высказывания."
+    },
+    {
+      "contrast_context": "Line 1 как часть profile/1/3",
+      "how_it_would_read": "Фундаментальная подготовка соединяется с практическими пробами и ошибками.",
+      "why_current_context_is_different": "Отдельная line/1 не равна всему профилю 1/3; профиль добавляет динамику второй линии."
+    },
+    {
+      "contrast_context": "Line 1 в центральной activation_position",
+      "how_it_would_read": "Тема может быть важной опорой личности или автоматической механики.",
+      "why_current_context_is_different": "В периферийной позиции line/1 может быть только уточняющим стилем, а не главным паттерном карты."
+    },
+    {
+      "contrast_context": "Line 1 в полном канале",
+      "how_it_would_read": "Фундаментальность может проявляться устойчивее, потому что тема поддержана всей механикой канала.",
+      "why_current_context_is_different": "В hanging gate проявление может быть более ситуативным и зависеть от контекста."
+    },
+    {
+      "contrast_context": "Line 1 в здоровом и искажённом проявлении",
+      "how_it_would_read": "В здоровом проявлении даёт надёжную базу; в искажённом — застревание в подготовке.",
+      "why_current_context_is_different": "Качество проявления зависит от условий, роли, нагрузки и общей механики человека."
+    }
+  ]
+}

@@ -1,0 +1,207 @@
+{
+  "element_kind": "line",
+  "element_key": "3",
+  "element_label": "Линия 3",
+  "language": "ru",
+  "version": "v1",
+  "source_quality": "expert_draft",
+  "classic_markdown": "Line 3 · Опыт через пробы\n\nmartyr, trial and error, experiment, adaptation, mutation through experience\n\nLine 3 adds experiment, trial and error, adaptation and learning through lived experience to the theme.\n\nWhen a gate or activation is in the 3rd line, the theme is tested through practice. Friction, mistakes and correction become part of the learning mechanism.",
+  "hr_translation_markdown": "## Название\n\nОпыт через пробы\n\n## Короткая суть\n\nЭта линия показывает стиль, в котором рабочая тема раскрывается через практику, пробы, ошибки, проверку реальностью и постепенную доработку.\n\n## Как проявляется в работе\n\nЧеловек лучше понимает тему не в теории, а через опыт: попробовать, столкнуться с ограничением, исправить, улучшить и найти рабочий вариант.\n\n## Здоровое проявление\n\nЧеловек быстро учится на практике, не боится тестировать, видит, что реально работает, и превращает ошибки в улучшения.\n\n## Искажённое проявление\n\nМожет хаотично пробовать, повторять одни и те же ошибки, торопиться без выводов или воспринимать опыт как личную неудачу.\n\n## Как использовать\n\nДавать задачи, где допустимы тесты, итерации и практическая проверка. Важно отделять ошибку процесса от оценки личности.\n\n## Что проверить в реальности\n\nУмеет ли человек делать выводы из опыта и превращать пробы в рабочие улучшения, а не просто много экспериментировать.\n\n## Важно\n\nЛиния 3 не означает ненадёжность. Она показывает, что конкретная тема раскрывается через практическое столкновение с реальностью. Ошибка здесь не провал, а способ проверки реальности.",
+  "pro_markdown": "## Линия 3 · Эксперимент\n\n## Technical meaning\n\nLine 3 adds experiment, trial and error, adaptation and learning through lived experience to the theme.\n\n## Mechanics\n\nWhen a gate or activation is in the 3rd line, the theme is tested through practice. Friction, mistakes and correction become part of the learning mechanism.\n\n## Role in chart\n\nLine 3 modifies a theme by making it experiential and iterative. The theme may become more reliable after testing, not before.\n\n## Contextual reading\n\nLine 3 should be read through gate, planet, side, activation_position, profile, authority, work role and whole chart context.\n\n## Correct expression\n\nThe theme expresses through testing, practical conclusions, iteration and the ability to find what works after direct experience.\n\n## Not-Self expression\n\nThe theme may distort into chaotic experimentation, self-blame, fear of repeated mistakes or endless testing without integration.\n\n## Interpretation limits\n\nDo not conclude that the person is unstable, careless or problematic. Line 3 describes the learning style of a theme through practical reality.",
+  "talent_hints": [
+    "быстро учится на практике",
+    "тестирует решения",
+    "видит, что работает в реальности",
+    "улучшает через итерации"
+  ],
+  "risk_hints": [
+    "хаотичные пробы",
+    "повторение ошибок без выводов",
+    "самообвинение после неудач",
+    "поспешные действия без интеграции опыта"
+  ],
+  "management_hints": [
+    "разрешать тестовые циклы",
+    "фиксировать выводы после проб",
+    "не наказывать за честную ошибку",
+    "помогать переводить опыт в систему"
+  ],
+  "environment_hints": [
+    "культура итераций",
+    "право на тест",
+    "обратная связь без стыда",
+    "задачи с практической проверкой"
+  ],
+  "limitations": [
+    "Не делать вывод, что человек нестабильный, безответственный или проблемный.",
+    "Line 3 описывает стиль обучения темы через практическую реальность.",
+    "Не использовать line/3 как финальный вывод о человеке.",
+    "Не использовать для fit_score, match_score или решения о найме.",
+    "Не читать линию отдельно от gate, activation_position, profile и whole chart context."
+  ],
+  "base_layers": {
+    "title": "Опыт через пробы",
+    "base_label": "Опыт через пробы",
+    "plain_meaning": "Эта линия показывает стиль, в котором рабочая тема раскрывается через практику, пробы, ошибки, проверку реальностью и постепенную доработку.",
+    "work_manifestation": "Человек лучше понимает тему не в теории, а через опыт: попробовать, столкнуться с ограничением, исправить, улучшить и найти рабочий вариант.",
+    "healthy_expression": "Человек быстро учится на практике, не боится тестировать, видит, что реально работает, и превращает ошибки в улучшения.",
+    "distorted_expression": "Может хаотично пробовать, повторять одни и те же ошибки, торопиться без выводов или воспринимать опыт как личную неудачу.",
+    "strengths": "быстро учится на практике; тестирует решения; видит, что работает в реальности; улучшает через итерации",
+    "risks": "хаотичные пробы; повторение ошибок без выводов; самообвинение после неудач; поспешные действия без интеграции опыта",
+    "when_it_works_best": "Давать задачи, где допустимы тесты, итерации и практическая проверка. Важно отделять ошибку процесса от оценки личности.",
+    "when_talent_is_not_revealed": "Может хаотично пробовать, повторять одни и те же ошибки, торопиться без выводов или воспринимать опыт как личную неудачу.",
+    "development_hints": [
+      "разрешать тестовые циклы",
+      "фиксировать выводы после проб",
+      "не наказывать за честную ошибку",
+      "помогать переводить опыт в систему"
+    ],
+    "communication_hints": [
+      "разрешать тестовые циклы",
+      "фиксировать выводы после проб",
+      "не наказывать за честную ошибку",
+      "помогать переводить опыт в систему"
+    ],
+    "reality_check": "Умеет ли человек делать выводы из опыта и превращать пробы в рабочие улучшения, а не просто много экспериментировать.",
+    "important_note": "Линия 3 не означает ненадёжность. Она показывает, что конкретная тема раскрывается через практическое столкновение с реальностью. Ошибка здесь не провал, а способ проверки реальности."
+  },
+  "pro_layers": {
+    "hd_meaning": "Line 3 adds experiment, trial and error, adaptation and learning through lived experience to the theme.",
+    "mechanics": "When a gate or activation is in the 3rd line, the theme is tested through practice. Friction, mistakes and correction become part of the learning mechanism.",
+    "classical_keywords": [
+      "martyr",
+      "trial and error",
+      "experiment",
+      "adaptation",
+      "mutation through experience"
+    ],
+    "source_logic": "line/3 describes the universal style of manifestation for a gate or activation theme. Final reading depends on gate, planet, side, activation_position, profile, type, authority and whole chart context.",
+    "role_in_chart": "Line 3 modifies a theme by making it experiential and iterative. The theme may become more reliable after testing, not before.",
+    "contextual_reading": "Line 3 should be read through gate, planet, side, activation_position, profile, authority, work role and whole chart context.",
+    "correct_expression": "The theme expresses through testing, practical conclusions, iteration and the ability to find what works after direct experience.",
+    "not_self_expression": "The theme may distort into chaotic experimentation, self-blame, fear of repeated mistakes or endless testing without integration.",
+    "pro_not_self": "Not-Self проявление Line 3 связано с потерей корректного отношения к trial and error: ошибка становится самооценкой вместо материала для опыта.",
+    "interpretation_limitations": "Do not conclude that the person is unstable, careless or problematic. Line 3 describes the learning style of a theme through practical reality.",
+    "card_metadata": {
+      "editorial_version": "v0.1.1",
+      "status": "approved_after_editorial_review",
+      "ui_base_label": "Опыт через пробы",
+      "ui_pro_label": "Линия 3 · Эксперимент",
+      "primary_layer_key": "pro_foundation",
+      "link_target": "element://line/3",
+      "source_file": "supabase/reference/element_cards/source/line_3.md",
+      "used_in_layers": [
+        "work_style",
+        "risks_and_distortions",
+        "development_potential",
+        "pro_foundation"
+      ],
+      "methodology_note": "Universal line card: describes style of manifestation, not a final person label. Read through gate, activation_position and whole chart context."
+    },
+    "ai_source_rules": {
+      "allowed_uses": [
+        "использовать как supporting source для pro_foundation",
+        "использовать для уточнения стиля проявления темы в gate или activation",
+        "использовать в слоях, указанных в used_in_layers",
+        "использовать для контекстного чтения activation composition"
+      ],
+      "forbidden_uses": [
+        "не использовать как финальный вывод о человеке",
+        "не использовать для fit_score или match_score",
+        "не использовать для hire/no-hire decisions",
+        "не подменять line-card profile-card или activation_position",
+        "не читать line отдельно от gate и activation context"
+      ],
+      "preferred_layers": [
+        "work_style",
+        "risks_and_distortions",
+        "development_potential",
+        "pro_foundation"
+      ],
+      "source_priority": "supporting",
+      "ai_must_check": [
+        "gate",
+        "activation",
+        "activation_position",
+        "planet",
+        "side",
+        "profile",
+        "type",
+        "authority"
+      ]
+    },
+    "source_chip": {
+      "base_label": "Опыт через пробы",
+      "pro_label": "Линия 3 · Эксперимент",
+      "short_role": "Показывает, что тема раскрывается через практику, ошибки и доработку.",
+      "role_in_this_layer": "Уточняет, где тема требует тестирования, итераций и практического опыта.",
+      "link_target": "element://line/3"
+    }
+  },
+  "context_rules": {
+    "primary_context": [
+      "gate",
+      "activation",
+      "profile"
+    ],
+    "secondary_context": [
+      "planet",
+      "side",
+      "activation_position",
+      "authority",
+      "work_role"
+    ],
+    "depends_on": "Итоговое чтение зависит от темы ворот, позиции активации, профиля, авторитета и рабочей роли.",
+    "related_element_kinds": [
+      "gate",
+      "activation",
+      "profile",
+      "planet",
+      "side",
+      "activation_position"
+    ],
+    "context_note": "Линия 3 показывает стиль проявления темы через опыт, ошибки и итерации. Не использовать как вывод о ненадёжности человека."
+  },
+  "not_self_layers": {
+    "base": "Тема может искажаться через хаотичные пробы, повторение ошибок без выводов или болезненное отношение к неудачам.",
+    "pro": "Not-Self проявление Line 3 связано с потерей корректного отношения к trial and error: ошибка становится самооценкой вместо материала для опыта.",
+    "warning_signals": [
+      "человек повторяет одни и те же ошибки без интеграции",
+      "торопится тестировать без фиксации выводов",
+      "воспринимает рабочую ошибку как личный провал"
+    ],
+    "recovery_conditions": [
+      "культура итераций",
+      "разбор опыта без стыда",
+      "короткие циклы проверки",
+      "перевод ошибки в вывод и улучшение"
+    ]
+  },
+  "contrast_examples": [
+    {
+      "contrast_context": "Line 3 в gate, связанной с улучшением",
+      "how_it_would_read": "Может давать способность дорабатывать через практические тесты.",
+      "why_current_context_is_different": "Если gate связана с коммуникацией, line/3 будет проявляться как обучение говорить точнее через опыт общения."
+    },
+    {
+      "contrast_context": "Line 3 в profile/1/3",
+      "how_it_would_read": "Исследование основы соединяется с практической проверкой.",
+      "why_current_context_is_different": "Отдельная line/3 не содержит всей потребности line/1 в фундаменте."
+    },
+    {
+      "contrast_context": "Line 3 в полном канале",
+      "how_it_would_read": "Опыт через пробы может стать устойчивым рабочим способом.",
+      "why_current_context_is_different": "В hanging gate проявление может быть менее стабильным и сильнее зависеть от среды."
+    },
+    {
+      "contrast_context": "Line 3 в центральной activation_position",
+      "how_it_would_read": "Практическое тестирование может быть важной частью рабочей формулы.",
+      "why_current_context_is_different": "В supporting-позиции line/3 только уточняет стиль отдельной темы."
+    },
+    {
+      "contrast_context": "Line 3 здорово / искажённо",
+      "how_it_would_read": "В здоровом проявлении даёт обучение через опыт; в искажённом — хаос и самообвинение.",
+      "why_current_context_is_different": "Ключевое различие — делает ли человек выводы из опыта."
+    }
+  ]
+}

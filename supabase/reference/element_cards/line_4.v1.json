@@ -1,0 +1,207 @@
+{
+  "element_kind": "line",
+  "element_key": "4",
+  "element_label": "Линия 4",
+  "language": "ru",
+  "version": "v1",
+  "source_quality": "expert_draft",
+  "classic_markdown": "Line 4 · Влияние через доверие\n\nopportunist, network, trust, friendship, influence through connection\n\nLine 4 adds network, trust, close-circle influence and relational transmission to the theme.\n\nWhen a gate or activation is in the 4th line, the theme is more easily transmitted through connection, familiarity, reputation and people who are already open to receiving it.",
+  "hr_translation_markdown": "## Название\n\nВлияние через доверие\n\n## Короткая суть\n\nЭта линия показывает стиль, в котором рабочая тема проявляется через доверие, связи, близкий круг, репутацию и человеческий контакт.\n\n## Как проявляется в работе\n\nЧеловек сильнее влияет там, где есть отношения, понятный круг взаимодействия и доверие к его словам, роли или опыту.\n\n## Здоровое проявление\n\nЧеловек передаёт тему через контакт, объединяет людей, укрепляет доверие и влияет не давлением, а устойчивой связью.\n\n## Искажённое проявление\n\nМожет зависеть от реакции своего круга, бояться потерять контакт, избегать новых людей или слишком держаться за привычные связи.\n\n## Как использовать\n\nСтроить взаимодействие через доверие, понятные договорённости, устойчивые контакты и уважение к роли человека в группе.\n\n## Что проверить в реальности\n\nГде человек раскрывается сильнее: в холодной среде без контакта или там, где есть доверие, знакомый круг и репутационная опора.\n\n## Важно\n\nЛиния 4 не означает, что человек обязательно экстраверт. Здесь важно не количество контактов, а качество доверия.",
+  "pro_markdown": "## Линия 4 · Связи\n\n## Technical meaning\n\nLine 4 adds network, trust, close-circle influence and relational transmission to the theme.\n\n## Mechanics\n\nWhen a gate or activation is in the 4th line, the theme is more easily transmitted through connection, familiarity, reputation and people who are already open to receiving it.\n\n## Role in chart\n\nLine 4 modifies a theme by making it socially transmissive: the theme tends to spread through trust, contact and relationship fields.\n\n## Contextual reading\n\nLine 4 should be read through gate, planet, side, activation_position, profile, communication context, team environment and whole chart context.\n\n## Correct expression\n\nThe theme expresses through trust, support, exchange, stable connections and influence within a relational field.\n\n## Not-Self expression\n\nThe theme may distort into dependence on acceptance, fear of losing connection, pressure on the close circle or avoidance of new relational contexts.\n\n## Interpretation limits\n\nDo not conclude that the person is simply sociable, extraverted or dependent on people. Line 4 describes the relational style of manifestation of a specific theme.",
+  "talent_hints": [
+    "влияние через доверие",
+    "укрепление связей",
+    "передача темы через контакт",
+    "репутационная опора"
+  ],
+  "risk_hints": [
+    "зависимость от своего круга",
+    "страх потерять контакт",
+    "закрытость к новым людям",
+    "давление на близкие связи"
+  ],
+  "management_hints": [
+    "строить доверие",
+    "не ломать резко рабочий круг",
+    "использовать силу репутации",
+    "давать роль в коммуникации с людьми"
+  ],
+  "environment_hints": [
+    "доверительная команда",
+    "устойчивые контакты",
+    "понятные договорённости",
+    "среда без резких социальных разрывов"
+  ],
+  "limitations": [
+    "Не делать вывод, что человек просто общительный, экстравертный или зависимый от людей.",
+    "Line 4 описывает relational style проявления конкретной темы.",
+    "Не использовать line/4 как финальный вывод о человеке.",
+    "Не использовать для fit_score, match_score или решения о найме.",
+    "Не читать линию отдельно от gate, activation_position, profile и whole chart context."
+  ],
+  "base_layers": {
+    "title": "Влияние через доверие",
+    "base_label": "Влияние через доверие",
+    "plain_meaning": "Эта линия показывает стиль, в котором рабочая тема проявляется через доверие, связи, близкий круг, репутацию и человеческий контакт.",
+    "work_manifestation": "Человек сильнее влияет там, где есть отношения, понятный круг взаимодействия и доверие к его словам, роли или опыту.",
+    "healthy_expression": "Человек передаёт тему через контакт, объединяет людей, укрепляет доверие и влияет не давлением, а устойчивой связью.",
+    "distorted_expression": "Может зависеть от реакции своего круга, бояться потерять контакт, избегать новых людей или слишком держаться за привычные связи.",
+    "strengths": "влияние через доверие; укрепление связей; передача темы через контакт; репутационная опора",
+    "risks": "зависимость от своего круга; страх потерять контакт; закрытость к новым людям; давление на близкие связи",
+    "when_it_works_best": "Строить взаимодействие через доверие, понятные договорённости, устойчивые контакты и уважение к роли человека в группе.",
+    "when_talent_is_not_revealed": "Может зависеть от реакции своего круга, бояться потерять контакт, избегать новых людей или слишком держаться за привычные связи.",
+    "development_hints": [
+      "строить доверие",
+      "не ломать резко рабочий круг",
+      "использовать силу репутации",
+      "давать роль в коммуникации с людьми"
+    ],
+    "communication_hints": [
+      "строить доверие",
+      "не ломать резко рабочий круг",
+      "использовать силу репутации",
+      "давать роль в коммуникации с людьми"
+    ],
+    "reality_check": "Где человек раскрывается сильнее: в холодной среде без контакта или там, где есть доверие, знакомый круг и репутационная опора.",
+    "important_note": "Линия 4 не означает, что человек обязательно экстраверт. Здесь важно не количество контактов, а качество доверия."
+  },
+  "pro_layers": {
+    "hd_meaning": "Line 4 adds network, trust, close-circle influence and relational transmission to the theme.",
+    "mechanics": "When a gate or activation is in the 4th line, the theme is more easily transmitted through connection, familiarity, reputation and people who are already open to receiving it.",
+    "classical_keywords": [
+      "opportunist",
+      "network",
+      "trust",
+      "friendship",
+      "influence through connection"
+    ],
+    "source_logic": "line/4 describes the universal style of manifestation for a gate or activation theme. Final reading depends on gate, planet, side, activation_position, profile, type, authority and whole chart context.",
+    "role_in_chart": "Line 4 modifies a theme by making it socially transmissive: the theme tends to spread through trust, contact and relationship fields.",
+    "contextual_reading": "Line 4 should be read through gate, planet, side, activation_position, profile, communication context, team environment and whole chart context.",
+    "correct_expression": "The theme expresses through trust, support, exchange, stable connections and influence within a relational field.",
+    "not_self_expression": "The theme may distort into dependence on acceptance, fear of losing connection, pressure on the close circle or avoidance of new relational contexts.",
+    "pro_not_self": "Not-Self проявление Line 4 связано с неустойчивым отношением к сети: человек может держаться за привычный круг или пытаться влиять без настоящего доверия.",
+    "interpretation_limitations": "Do not conclude that the person is simply sociable, extraverted or dependent on people. Line 4 describes the relational style of manifestation of a specific theme.",
+    "card_metadata": {
+      "editorial_version": "v0.1.1",
+      "status": "approved_after_editorial_review",
+      "ui_base_label": "Влияние через доверие",
+      "ui_pro_label": "Линия 4 · Связи",
+      "primary_layer_key": "pro_foundation",
+      "link_target": "element://line/4",
+      "source_file": "supabase/reference/element_cards/source/line_4.md",
+      "used_in_layers": [
+        "communication_and_influence",
+        "management_and_environment",
+        "work_style",
+        "pro_foundation"
+      ],
+      "methodology_note": "Universal line card: describes style of manifestation, not a final person label. Read through gate, activation_position and whole chart context."
+    },
+    "ai_source_rules": {
+      "allowed_uses": [
+        "использовать как supporting source для pro_foundation",
+        "использовать для уточнения стиля проявления темы в gate или activation",
+        "использовать в слоях, указанных в used_in_layers",
+        "использовать для контекстного чтения activation composition"
+      ],
+      "forbidden_uses": [
+        "не использовать как финальный вывод о человеке",
+        "не использовать для fit_score или match_score",
+        "не использовать для hire/no-hire decisions",
+        "не подменять line-card profile-card или activation_position",
+        "не читать line отдельно от gate и activation context"
+      ],
+      "preferred_layers": [
+        "communication_and_influence",
+        "management_and_environment",
+        "work_style",
+        "pro_foundation"
+      ],
+      "source_priority": "supporting",
+      "ai_must_check": [
+        "gate",
+        "activation",
+        "activation_position",
+        "planet",
+        "side",
+        "profile",
+        "type",
+        "authority"
+      ]
+    },
+    "source_chip": {
+      "base_label": "Влияние через доверие",
+      "pro_label": "Линия 4 · Связи",
+      "short_role": "Показывает, что тема проявляется через доверие, контакты и устойчивые связи.",
+      "role_in_this_layer": "Уточняет, где тема лучше передаётся через отношения, репутацию и доверительный контакт.",
+      "link_target": "element://line/4"
+    }
+  },
+  "context_rules": {
+    "primary_context": [
+      "gate",
+      "activation",
+      "profile"
+    ],
+    "secondary_context": [
+      "planet",
+      "side",
+      "activation_position",
+      "communication_context",
+      "team_environment"
+    ],
+    "depends_on": "Итоговое чтение зависит от темы ворот, позиции активации, профиля, коммуникационного контекста и среды.",
+    "related_element_kinds": [
+      "gate",
+      "activation",
+      "profile",
+      "planet",
+      "side",
+      "activation_position"
+    ],
+    "context_note": "Линия 4 показывает стиль проявления темы через доверие и связи. Не читать как экстраверсию или обязательную социальность."
+  },
+  "not_self_layers": {
+    "base": "Тема может искажаться через зависимость от реакции своего круга, страх потерять контакт или давление на близкие связи.",
+    "pro": "Not-Self проявление Line 4 связано с неустойчивым отношением к сети: человек может держаться за привычный круг или пытаться влиять без настоящего доверия.",
+    "warning_signals": [
+      "человек боится потерять контакт",
+      "держится только за привычный круг",
+      "пытается влиять там, где доверие не сформировано"
+    ],
+    "recovery_conditions": [
+      "устойчивые договорённости",
+      "доверительная коммуникация",
+      "постепенное расширение круга",
+      "ясная роль в группе"
+    ]
+  },
+  "contrast_examples": [
+    {
+      "contrast_context": "Line 4 в коммуникационной теме",
+      "how_it_would_read": "Может усиливать передачу идей через доверие и знакомый круг.",
+      "why_current_context_is_different": "Если тема не коммуникационная, line/4 всё равно указывает на relational style, но не делает человека коммуникатором по умолчанию."
+    },
+    {
+      "contrast_context": "Line 4 в profile/4/6",
+      "how_it_would_read": "Связи соединяются со зрелой перспективой.",
+      "why_current_context_is_different": "Отдельная line/4 не содержит всей динамики line/6."
+    },
+    {
+      "contrast_context": "Line 4 в холодной среде",
+      "how_it_would_read": "Тема может проявляться слабее, если нет доверия и понятных контактов.",
+      "why_current_context_is_different": "В доверительной среде та же тема может стать сильным каналом влияния."
+    },
+    {
+      "contrast_context": "Line 4 в центральной activation_position",
+      "how_it_would_read": "Доверие и связи могут стать важной частью рабочей формулы.",
+      "why_current_context_is_different": "В supporting-позиции line/4 только уточняет способ проявления отдельной темы."
+    },
+    {
+      "contrast_context": "Line 4 здорово / искажённо",
+      "how_it_would_read": "В здоровом проявлении даёт влияние через доверие; в искажённом — зависимость от круга.",
+      "why_current_context_is_different": "Качество проявления зависит от зрелости контакта и среды."
+    }
+  ]
+}

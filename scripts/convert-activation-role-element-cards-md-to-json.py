@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-off: activation_role Element Card MD → activation_role_*.v1.json (Stage 4-E6.2-C1/C2/C3)."""
+"""One-off: activation_role Element Card MD → activation_role_*.v1.json (Stage 4-E6.2-C1/C2/C3/C4)."""
 import json
 import re
 from pathlib import Path
@@ -35,6 +35,17 @@ BATCH_3_CARDS = [
     "activation_role_design_jupiter",
 ]
 
+BATCH_4_CARDS = [
+    "activation_role_personality_saturn",
+    "activation_role_design_saturn",
+    "activation_role_personality_uranus",
+    "activation_role_design_uranus",
+    "activation_role_personality_neptune",
+    "activation_role_design_neptune",
+    "activation_role_personality_pluto",
+    "activation_role_design_pluto",
+]
+
 RU_PRO_LABELS = {
     "personality_sun": "Позиция активации · Солнце Личности",
     "design_sun": "Позиция активации · Солнце Дизайна",
@@ -54,6 +65,14 @@ RU_PRO_LABELS = {
     "design_mars": "Позиция активации · Марс Дизайна",
     "personality_jupiter": "Позиция активации · Юпитер Личности",
     "design_jupiter": "Позиция активации · Юпитер Дизайна",
+    "personality_saturn": "Позиция активации · Сатурн Личности",
+    "design_saturn": "Позиция активации · Сатурн Дизайна",
+    "personality_uranus": "Позиция активации · Уран Личности",
+    "design_uranus": "Позиция активации · Уран Дизайна",
+    "personality_neptune": "Позиция активации · Нептун Личности",
+    "design_neptune": "Позиция активации · Нептун Дизайна",
+    "personality_pluto": "Позиция активации · Плутон Личности",
+    "design_pluto": "Позиция активации · Плутон Дизайна",
 }
 
 CLASSIC_SUMMARIES = {
@@ -110,6 +129,30 @@ CLASSIC_SUMMARIES = {
     ),
     "design_jupiter": (
         "Design Jupiter activation position — automatic scale and rules in activation composition."
+    ),
+    "personality_saturn": (
+        "Conscious Saturn activation position — conscious responsibility and boundaries in activation composition."
+    ),
+    "design_saturn": (
+        "Design Saturn activation position — automatic boundaries and consequences in activation composition."
+    ),
+    "personality_uranus": (
+        "Conscious Uranus activation position — conscious uniqueness in activation composition."
+    ),
+    "design_uranus": (
+        "Design Uranus activation position — automatic unusualness in activation composition."
+    ),
+    "personality_neptune": (
+        "Conscious Neptune activation position — conscious subtle theme in activation composition."
+    ),
+    "design_neptune": (
+        "Design Neptune activation position — hidden background layer in activation composition."
+    ),
+    "personality_pluto": (
+        "Conscious Pluto activation position — conscious depth of change in activation composition."
+    ),
+    "design_pluto": (
+        "Design Pluto activation position — automatic depth of change in activation composition."
     ),
 }
 
@@ -584,8 +627,10 @@ def convert_card(card_key: str) -> dict:
 if __name__ == "__main__":
     import sys
 
-    batch = sys.argv[1] if len(sys.argv) > 1 else "batch3"
-    if batch == "batch3":
+    batch = sys.argv[1] if len(sys.argv) > 1 else "batch4"
+    if batch == "batch4":
+        cards = BATCH_4_CARDS
+    elif batch == "batch3":
         cards = BATCH_3_CARDS
     elif batch == "batch2":
         cards = BATCH_2_CARDS

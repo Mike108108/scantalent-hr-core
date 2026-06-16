@@ -259,6 +259,19 @@ const MIGRATION_TARGETS = {
     ],
     outFile: '202606160002_element_cards_activation_roles_sun_earth_moon_v0_1.sql',
   },
+  activation_roles_nodes_mercury: {
+    header:
+      '-- Stage 4-E6.2-C2: Element Card Storage — activation_role Nodes / Mercury (Batch 2)',
+    jsonFiles: [
+      'activation_role_personality_north_node.v1.json',
+      'activation_role_design_north_node.v1.json',
+      'activation_role_personality_south_node.v1.json',
+      'activation_role_design_south_node.v1.json',
+      'activation_role_personality_mercury.v1.json',
+      'activation_role_design_mercury.v1.json',
+    ],
+    outFile: '202606160003_element_cards_activation_roles_nodes_mercury_v0_1.sql',
+  },
 }
 
 const targetKey = process.argv[2] ?? 'stage-4-e1-1'

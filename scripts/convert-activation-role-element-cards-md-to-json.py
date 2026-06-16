@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-off: activation_role Element Card MD → activation_role_*.v1.json (Stage 4-E6.2-C1)."""
+"""One-off: activation_role Element Card MD → activation_role_*.v1.json (Stage 4-E6.2-C1/C2)."""
 import json
 import re
 from pathlib import Path
@@ -17,6 +17,15 @@ BATCH_1_CARDS = [
     "activation_role_design_moon",
 ]
 
+BATCH_2_CARDS = [
+    "activation_role_personality_north_node",
+    "activation_role_design_north_node",
+    "activation_role_personality_south_node",
+    "activation_role_design_south_node",
+    "activation_role_personality_mercury",
+    "activation_role_design_mercury",
+]
+
 RU_PRO_LABELS = {
     "personality_sun": "Позиция активации · Солнце Личности",
     "design_sun": "Позиция активации · Солнце Дизайна",
@@ -24,6 +33,12 @@ RU_PRO_LABELS = {
     "design_earth": "Позиция активации · Земля Дизайна",
     "personality_moon": "Позиция активации · Луна Личности",
     "design_moon": "Позиция активации · Луна Дизайна",
+    "personality_north_node": "Позиция активации · Северный узел Личности",
+    "design_north_node": "Позиция активации · Северный узел Дизайна",
+    "personality_south_node": "Позиция активации · Южный узел Личности",
+    "design_south_node": "Позиция активации · Южный узел Дизайна",
+    "personality_mercury": "Позиция активации · Меркурий Личности",
+    "design_mercury": "Позиция активации · Меркурий Дизайна",
 }
 
 CLASSIC_SUMMARIES = {
@@ -45,7 +60,44 @@ CLASSIC_SUMMARIES = {
     "design_moon": (
         "Design Moon activation position — automatic movement impulse and behavioral drive in activation composition."
     ),
+    "personality_north_node": (
+        "Conscious North Node activation position — conscious growth direction in activation composition."
+    ),
+    "design_north_node": (
+        "Design North Node activation position — automatic development vector in activation composition."
+    ),
+    "personality_south_node": (
+        "Conscious South Node activation position — conscious familiar experience in activation composition."
+    ),
+    "design_south_node": (
+        "Design South Node activation position — automatic familiar background in activation composition."
+    ),
+    "personality_mercury": (
+        "Conscious Mercury activation position — conscious way of speaking in activation composition."
+    ),
+    "design_mercury": (
+        "Design Mercury activation position — automatic way of expressing in activation composition."
+    ),
 }
+
+
+def normalize_heading(heading: str) -> str:
+    return heading.lstrip("#").strip()
+
+
+def find_section_marker(content: str, heading: str) -> str:
+    bare = normalize_heading(heading)
+    for marker in (f"## {bare}", f"### {bare}", f"# {bare}"):
+        if marker in content:
+            return marker
+    return f"## {bare}"
+
+
+def yaml_section_marker(content: str, section_num: int, name: str) -> str:
+    for marker in (f"# {section_num}. {name}", f"## {section_num}. {name}"):
+        if marker in content:
+            return marker
+    return f"# {section_num}. {name}"
 
 
 def unquote(value: str) -> str:
@@ -56,11 +108,12 @@ def unquote(value: str) -> str:
 
 
 def section_prose(content: str, heading: str) -> str:
-    start = content.find(heading)
+    marker = find_section_marker(content, heading)
+    start = content.find(marker)
     if start == -1:
         return ""
-    rest = content[start + len(heading):].lstrip("\n")
-    m = re.search(r"\n## |\n---\n|\n# \d+\.", rest)
+    rest = content[start + len(marker):].lstrip("\n")
+    m = re.search(r"\n(?:##|###) |\n---\n|\n# \d+\.", rest)
     slice_ = rest[: m.start()] if m else rest
     return slice_.strip()
 
@@ -114,7 +167,9 @@ def parse_folded_scalar(yaml_text: str, key: str, stop_keys=None) -> str:
 
 
 def parse_context_rules(content: str) -> dict:
-    yaml_text = unwrap_yaml_root(yaml_block_text(content, "# 5. Context rules"), "context_rules")
+    yaml_text = unwrap_yaml_root(
+        yaml_block_text(content, yaml_section_marker(content, 5, "Context rules")), "context_rules"
+    )
     if not yaml_text:
         return {}
     data = parse_simple_yaml(yaml_text)
@@ -127,7 +182,8 @@ def parse_context_rules(content: str) -> dict:
 
 def parse_not_self_layers(content: str) -> dict:
     yaml_text = unwrap_yaml_root(
-        yaml_block_text(content, "# 6. Not-Self / distortion"), "not_self_layers"
+        yaml_block_text(content, yaml_section_marker(content, 6, "Not-Self / distortion")),
+        "not_self_layers",
     )
     if not yaml_text:
         return {}
@@ -142,7 +198,7 @@ def parse_not_self_layers(content: str) -> dict:
 
 
 def parse_contrast_examples(content: str) -> list:
-    yaml_text = yaml_block_text(content, "# 11. Contrast examples")
+    yaml_text = yaml_block_text(content, yaml_section_marker(content, 11, "Contrast examples"))
     if not yaml_text:
         return []
     items = []
@@ -320,21 +376,27 @@ def card_metadata_from_yaml(metadata_yaml: dict) -> dict:
 def convert_card(card_key: str) -> dict:
     content = (SOURCE_DIR / f"{card_key}.md").read_text(encoding="utf-8")
 
-    metadata_yaml = extract_yaml_block(content, "# 1. Metadata")
+    metadata_yaml = extract_yaml_block(content, yaml_section_marker(content, 1, "Metadata"))
     card_meta = card_metadata_from_yaml(metadata_yaml)
 
     element_key = metadata_yaml.get("element_key", card_key.replace("activation_role_", ""))
     element_label = metadata_yaml.get("element_label", "")
     ui_base_label = card_meta.get("ui_base_label", element_label)
-    ui_pro_label = card_meta.get("ui_pro_label") or RU_PRO_LABELS.get(element_key, "")
+    ui_pro_label = RU_PRO_LABELS.get(element_key) or card_meta.get("ui_pro_label", "")
 
-    hints_yaml = extract_yaml_block(content, "# 4. Hints")
+    hints_yaml = extract_yaml_block(content, yaml_section_marker(content, 4, "Hints"))
     context_rules = parse_context_rules(content)
     not_self_layers = parse_not_self_layers(content)
-    limitations_yaml = extract_yaml_block(content, "# 7. Limitations")
-    ai_source_rules = merge_multiline_yaml(content, "# 8. AI-source rules", "ai_source_rules")
-    source_chip = merge_multiline_yaml(content, "# 9. Source chip", "source_chip")
-    ai_digest = merge_multiline_yaml(content, "# 10. AI Digest", "ai_digest")
+    limitations_yaml = extract_yaml_block(content, yaml_section_marker(content, 7, "Limitations"))
+    ai_source_rules = merge_multiline_yaml(
+        content, yaml_section_marker(content, 8, "AI-source rules"), "ai_source_rules"
+    )
+    source_chip = merge_multiline_yaml(
+        content, yaml_section_marker(content, 9, "Source chip"), "source_chip"
+    )
+    ai_digest = merge_multiline_yaml(
+        content, yaml_section_marker(content, 10, "AI Digest"), "ai_digest"
+    )
     contrast_examples = parse_contrast_examples(content)
 
     talent_hints = hints_yaml.get("talent_hints", [])
@@ -454,13 +516,13 @@ def convert_card(card_key: str) -> dict:
                 "base_label": source_chip.get("base_label", ui_base_label),
                 "pro_label": ui_pro_label,
                 "short_role": parse_folded_scalar(
-                    yaml_block_text(content, "# 9. Source chip"),
+                    yaml_block_text(content, yaml_section_marker(content, 9, "Source chip")),
                     "short_role",
                     ["role_in_this_layer"],
                 )
                 or source_chip.get("short_role", ""),
                 "role_in_this_layer": parse_folded_scalar(
-                    yaml_block_text(content, "# 9. Source chip"),
+                    yaml_block_text(content, yaml_section_marker(content, 9, "Source chip")),
                     "role_in_this_layer",
                     ["link_target"],
                 )
@@ -487,7 +549,11 @@ def convert_card(card_key: str) -> dict:
 
 
 if __name__ == "__main__":
-    for card_key in BATCH_1_CARDS:
+    import sys
+
+    batch = sys.argv[1] if len(sys.argv) > 1 else "batch2"
+    cards = BATCH_2_CARDS if batch == "batch2" else BATCH_1_CARDS
+    for card_key in cards:
         card = convert_card(card_key)
         out_path = OUT_DIR / f"{card_key}.v1.json"
         out_path.write_text(json.dumps(card, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

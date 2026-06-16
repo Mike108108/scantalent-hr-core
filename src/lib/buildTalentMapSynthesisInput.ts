@@ -504,7 +504,11 @@ function pickInterpretationFields(
         selected.composition_meta = {
           composition_mode: interpretation.pro_layers.composition_mode ?? null,
           composition_components: interpretation.pro_layers.composition_components ?? null,
-          source_component_keys: interpretation.pro_layers.source_component_keys ?? null,
+          source_component_keys:
+            interpretation.pro_layers.source_component_keys ??
+            interpretation.context_rules.source_component_keys ??
+            interpretation.pro_layers.composition_components ??
+            null,
         }
         break
       case 'related_context_summary':

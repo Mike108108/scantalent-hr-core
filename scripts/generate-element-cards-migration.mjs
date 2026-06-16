@@ -272,6 +272,19 @@ const MIGRATION_TARGETS = {
     ],
     outFile: '202606160003_element_cards_activation_roles_nodes_mercury_v0_1.sql',
   },
+  activation_roles_venus_mars_jupiter: {
+    header:
+      '-- Stage 4-E6.2-C3: Element Card Storage — activation_role Venus / Mars / Jupiter (Batch 3)',
+    jsonFiles: [
+      'activation_role_personality_venus.v1.json',
+      'activation_role_design_venus.v1.json',
+      'activation_role_personality_mars.v1.json',
+      'activation_role_design_mars.v1.json',
+      'activation_role_personality_jupiter.v1.json',
+      'activation_role_design_jupiter.v1.json',
+    ],
+    outFile: '202606160004_element_cards_activation_roles_venus_mars_jupiter_v0_1.sql',
+  },
 }
 
 const targetKey = process.argv[2] ?? 'stage-4-e1-1'

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-off: activation_role Element Card MD → activation_role_*.v1.json (Stage 4-E6.2-C1/C2)."""
+"""One-off: activation_role Element Card MD → activation_role_*.v1.json (Stage 4-E6.2-C1/C2/C3)."""
 import json
 import re
 from pathlib import Path
@@ -26,6 +26,15 @@ BATCH_2_CARDS = [
     "activation_role_design_mercury",
 ]
 
+BATCH_3_CARDS = [
+    "activation_role_personality_venus",
+    "activation_role_design_venus",
+    "activation_role_personality_mars",
+    "activation_role_design_mars",
+    "activation_role_personality_jupiter",
+    "activation_role_design_jupiter",
+]
+
 RU_PRO_LABELS = {
     "personality_sun": "Позиция активации · Солнце Личности",
     "design_sun": "Позиция активации · Солнце Дизайна",
@@ -39,6 +48,12 @@ RU_PRO_LABELS = {
     "design_south_node": "Позиция активации · Южный узел Дизайна",
     "personality_mercury": "Позиция активации · Меркурий Личности",
     "design_mercury": "Позиция активации · Меркурий Дизайна",
+    "personality_venus": "Позиция активации · Венера Личности",
+    "design_venus": "Позиция активации · Венера Дизайна",
+    "personality_mars": "Позиция активации · Марс Личности",
+    "design_mars": "Позиция активации · Марс Дизайна",
+    "personality_jupiter": "Позиция активации · Юпитер Личности",
+    "design_jupiter": "Позиция активации · Юпитер Дизайна",
 }
 
 CLASSIC_SUMMARIES = {
@@ -77,6 +92,24 @@ CLASSIC_SUMMARIES = {
     ),
     "design_mercury": (
         "Design Mercury activation position — automatic way of expressing in activation composition."
+    ),
+    "personality_venus": (
+        "Conscious Venus activation position — conscious values and standards in activation composition."
+    ),
+    "design_venus": (
+        "Design Venus activation position — values in behavior in activation composition."
+    ),
+    "personality_mars": (
+        "Conscious Mars activation position — conscious maturation zone in activation composition."
+    ),
+    "design_mars": (
+        "Design Mars activation position — automatic training zone in activation composition."
+    ),
+    "personality_jupiter": (
+        "Conscious Jupiter activation position — conscious rules of growth in activation composition."
+    ),
+    "design_jupiter": (
+        "Design Jupiter activation position — automatic scale and rules in activation composition."
     ),
 }
 
@@ -551,8 +584,13 @@ def convert_card(card_key: str) -> dict:
 if __name__ == "__main__":
     import sys
 
-    batch = sys.argv[1] if len(sys.argv) > 1 else "batch2"
-    cards = BATCH_2_CARDS if batch == "batch2" else BATCH_1_CARDS
+    batch = sys.argv[1] if len(sys.argv) > 1 else "batch3"
+    if batch == "batch3":
+        cards = BATCH_3_CARDS
+    elif batch == "batch2":
+        cards = BATCH_2_CARDS
+    else:
+        cards = BATCH_1_CARDS
     for card_key in cards:
         card = convert_card(card_key)
         out_path = OUT_DIR / f"{card_key}.v1.json"

@@ -285,6 +285,22 @@ const MIGRATION_TARGETS = {
     ],
     outFile: '202606160004_element_cards_activation_roles_venus_mars_jupiter_v0_1.sql',
   },
+  activation_roles_saturn_uranus_neptune_pluto: {
+    header:
+      '-- Stage 4-E6.2-C4: Element Card Storage — activation_role Saturn / Uranus / Neptune / Pluto (Batch 4)',
+    jsonFiles: [
+      'activation_role_personality_saturn.v1.json',
+      'activation_role_design_saturn.v1.json',
+      'activation_role_personality_uranus.v1.json',
+      'activation_role_design_uranus.v1.json',
+      'activation_role_personality_neptune.v1.json',
+      'activation_role_design_neptune.v1.json',
+      'activation_role_personality_pluto.v1.json',
+      'activation_role_design_pluto.v1.json',
+    ],
+    outFile:
+      '202606160005_element_cards_activation_roles_saturn_uranus_neptune_pluto_v0_1.sql',
+  },
 }
 
 const targetKey = process.argv[2] ?? 'stage-4-e1-1'

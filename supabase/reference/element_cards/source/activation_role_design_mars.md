@@ -27,7 +27,7 @@ pro_layers:
     editorial_version: v0.1.1
     status: approved_after_editorial_review
     ui_base_label: Автоматическая зона тренировки
-    ui_pro_label: Позиция активации · Mars · Design
+    ui_pro_label: Позиция активации · Марс Дизайна
     source_file: supabase/reference/element_cards/source/activation_role_design_mars.md
 
 primary_layer_key: pro_foundation
@@ -475,7 +475,7 @@ ai_source_rules:
 source_chip:
   base_label: Автоматическая зона тренировки
 
-  pro_label: Позиция активации · Mars · Design
+  pro_label: Позиция активации · Марс Дизайна
 
   short_role: >
     Показывает, через какую тему человек может автоматически проходить тренировку, реакцию и созревание через опыт.
@@ -498,7 +498,7 @@ ai_digest:
   element_key: design_mars
 
   base_label: Автоматическая зона тренировки
-  pro_label: Позиция активации · Mars · Design
+  pro_label: Позиция активации · Марс Дизайна
 
   layer_relevance: >
     Особенно релевантно для development_potential, risks_and_distortions,

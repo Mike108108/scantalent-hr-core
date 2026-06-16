@@ -29,7 +29,7 @@ pro_layers:
     editorial_version: v0.1.1
     status: approved_after_editorial_review
     ui_base_label: Автоматический масштаб и правила
-    ui_pro_label: Позиция активации · Jupiter · Design
+    ui_pro_label: Позиция активации · Юпитер Дизайна
     source_file: supabase/reference/element_cards/source/activation_role_design_jupiter.md
 
 primary_layer_key: pro_foundation
@@ -479,7 +479,7 @@ ai_source_rules:
 source_chip:
   base_label: Автоматический масштаб и правила
 
-  pro_label: Позиция активации · Jupiter · Design
+  pro_label: Позиция активации · Юпитер Дизайна
 
   short_role: >
     Показывает, через какую тему у человека может автоматически проявляться масштаб, правила роста и расширение ответственности.
@@ -502,7 +502,7 @@ ai_digest:
   element_key: design_jupiter
 
   base_label: Автоматический масштаб и правила
-  pro_label: Позиция активации · Jupiter · Design
+  pro_label: Позиция активации · Юпитер Дизайна
 
   layer_relevance: >
     Особенно релевантно для development_potential, management_and_environment,

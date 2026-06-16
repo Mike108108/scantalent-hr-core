@@ -29,7 +29,7 @@ pro_layers:
     editorial_version: v0.1.1
     status: approved_after_editorial_review
     ui_base_label: Ценности в поведении
-    ui_pro_label: Позиция активации · Venus · Design
+    ui_pro_label: Позиция активации · Венера Дизайна
     source_file: supabase/reference/element_cards/source/activation_role_design_venus.md
 
 primary_layer_key: pro_foundation
@@ -488,7 +488,7 @@ ai_source_rules:
 source_chip:
   base_label: Ценности в поведении
 
-  pro_label: Позиция активации · Venus · Design
+  pro_label: Позиция активации · Венера Дизайна
 
   short_role: >
     Показывает, через какую тему ценности могут автоматически проявляться в поведении, реакциях и границах.
@@ -511,7 +511,7 @@ ai_digest:
   element_key: design_venus
 
   base_label: Ценности в поведении
-  pro_label: Позиция активации · Venus · Design
+  pro_label: Позиция активации · Венера Дизайна
 
   layer_relevance: >
     Особенно релевантно для management_and_environment, work_style,

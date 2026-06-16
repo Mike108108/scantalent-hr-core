@@ -29,7 +29,7 @@ pro_layers:
     editorial_version: v0.1.1
     status: approved_after_editorial_review
     ui_base_label: Осознанные правила роста
-    ui_pro_label: Позиция активации · Jupiter · Personality
+    ui_pro_label: Позиция активации · Юпитер Личности
     source_file: supabase/reference/element_cards/source/activation_role_personality_jupiter.md
 
 primary_layer_key: pro_foundation
@@ -476,7 +476,7 @@ ai_source_rules:
 source_chip:
   base_label: Осознанные правила роста
 
-  pro_label: Позиция активации · Jupiter · Personality
+  pro_label: Позиция активации · Юпитер Личности
 
   short_role: >
     Показывает, через какую тему человек может осознанно формулировать правила роста, расширения и масштаба.
@@ -499,7 +499,7 @@ ai_digest:
   element_key: personality_jupiter
 
   base_label: Осознанные правила роста
-  pro_label: Позиция активации · Jupiter · Personality
+  pro_label: Позиция активации · Юпитер Личности
 
   layer_relevance: >
     Особенно релевантно для development_potential, management_and_environment,

@@ -27,7 +27,7 @@ pro_layers:
     editorial_version: v0.1.1
     status: approved_after_editorial_review
     ui_base_label: Осознанная зона взросления
-    ui_pro_label: Позиция активации · Mars · Personality
+    ui_pro_label: Позиция активации · Марс Личности
     source_file: supabase/reference/element_cards/source/activation_role_personality_mars.md
 
 primary_layer_key: pro_foundation
@@ -469,7 +469,7 @@ ai_source_rules:
 source_chip:
   base_label: Осознанная зона взросления
 
-  pro_label: Позиция активации · Mars · Personality
+  pro_label: Позиция активации · Марс Личности
 
   short_role: >
     Показывает, через какую тему человек может осознанно проходить тренировку, взросление и созревание.
@@ -492,7 +492,7 @@ ai_digest:
   element_key: personality_mars
 
   base_label: Осознанная зона взросления
-  pro_label: Позиция активации · Mars · Personality
+  pro_label: Позиция активации · Марс Личности
 
   layer_relevance: >
     Особенно релевантно для development_potential, risks_and_distortions,

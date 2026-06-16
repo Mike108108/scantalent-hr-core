@@ -29,7 +29,7 @@ pro_layers:
     editorial_version: v0.1.1
     status: approved_after_editorial_review
     ui_base_label: Осознанные ценности
-    ui_pro_label: Позиция активации · Venus · Personality
+    ui_pro_label: Позиция активации · Венера Личности
     source_file: supabase/reference/element_cards/source/activation_role_personality_venus.md
 
 primary_layer_key: pro_foundation
@@ -472,7 +472,7 @@ ai_source_rules:
 source_chip:
   base_label: Осознанные ценности
 
-  pro_label: Позиция активации · Venus · Personality
+  pro_label: Позиция активации · Венера Личности
 
   short_role: >
     Показывает, через какую тему человек может осознанно формулировать ценности, принципы и внутренние стандарты.
@@ -495,7 +495,7 @@ ai_digest:
   element_key: personality_venus
 
   base_label: Осознанные ценности
-  pro_label: Позиция активации · Venus · Personality
+  pro_label: Позиция активации · Венера Личности
 
   layer_relevance: >
     Особенно релевантно для management_and_environment, work_style,

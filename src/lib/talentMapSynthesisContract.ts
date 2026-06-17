@@ -1,25 +1,25 @@
 import { type ElementKind } from './elementKnowledgeBaseContract'
+import {
+  TALENT_MAP_SECTION_KEYS,
+  type TalentMapSectionKey,
+} from './talentMapSections'
 
 /**
- * HR Talent Map layer synthesis contract v0.1.
- * Layers synthesize combinations of elements — they do not store canonical element meanings.
+ * HR Talent Map section synthesis contract v0.1.
+ * Sections synthesize combinations of elements — they do not store canonical element meanings.
  */
 
-export const TALENT_MAP_LAYER_KEYS = [
-  'work_style',
-  'main_talents',
-  'decision_and_stability',
-  'communication_and_influence',
-  'risks_and_distortions',
-  'management_and_environment',
-  'development_potential',
-  'pro_foundation',
-] as const
+export { TALENT_MAP_SECTION_KEYS }
+export type { TalentMapSectionKey }
 
-export type TalentMapLayerKey = (typeof TALENT_MAP_LAYER_KEYS)[number]
+/** @deprecated Use TALENT_MAP_SECTION_KEYS */
+export const TALENT_MAP_LAYER_KEYS = TALENT_MAP_SECTION_KEYS
+
+/** @deprecated Use TalentMapSectionKey */
+export type TalentMapLayerKey = TalentMapSectionKey
 
 /**
- * Virtual selection kinds — used only in layer mapping, selection_reason and
+ * Virtual selection kinds — used only in section mapping, selection_reason and
  * interpretation_fields_for_ai. Must never appear as element_kind in source_items or source_chips.
  */
 export const VIRTUAL_SELECTION_KINDS = [
@@ -42,7 +42,15 @@ export const VIRTUAL_SELECTION_KINDS = [
   'saturn_activation',
   'moon_activation',
   'jupiter_activation',
+  'north_node_activation',
+  'south_node_activation',
+  'pluto_activation',
   'nodes_activation',
+  'personality_sun',
+  'design_sun',
+  'personality_earth',
+  'design_earth',
+  'recovery_conditions',
   'source_quality',
   'composition_mode',
   'related_context_summary',
@@ -65,8 +73,9 @@ export type InterpretationFieldKey =
   | 'source_quality'
   | 'related_context_summary'
   | 'composition_meta'
+  | 'recovery_conditions'
 
-/** Short layer link to Element Library — no full interpretation payload. */
+/** Short section link to Element Library — no full interpretation payload. */
 export type SourceChip = {
   element_kind: ElementKind
   element_key: string
@@ -90,15 +99,16 @@ export const SOURCE_CHIP_RULES: SourceChipRules = {
   link_target_format: 'element://{element_kind}/{element_key}',
 }
 
-export type TalentMapLayerDefinition = {
-  layer_key: TalentMapLayerKey
+export type TalentMapSectionSynthesisDefinition = {
+  section_key: TalentMapSectionKey
   title: string
   short_description: string
-  layer_goal: string
+  section_goal: string
   base_output_rules: string[]
   pro_output_rules: string[]
   primary_element_kinds: readonly (ElementKind | string)[]
   supporting_element_kinds: readonly (ElementKind | string)[]
+  context_element_kinds?: readonly (ElementKind | string)[]
   excluded_element_kinds?: readonly (ElementKind | string)[]
   interpretation_fields_for_ai: readonly InterpretationFieldKey[]
   omitted_interpretation_fields: readonly InterpretationFieldKey[]
@@ -108,7 +118,11 @@ export type TalentMapLayerDefinition = {
   allowed_pro_terms: readonly string[]
   source_chip_rules: SourceChipRules
   min_matched_source_items: number
+  section_guardrails?: readonly string[]
 }
+
+/** @deprecated Use TalentMapSectionSynthesisDefinition */
+export type TalentMapLayerDefinition = TalentMapSectionSynthesisDefinition
 
 export const GLOBAL_FORBIDDEN_FIELDS = [
   'fit_score',
@@ -136,7 +150,7 @@ export const GLOBAL_FORBIDDEN_PHRASES = [
   'идеально подходит на роль',
 ] as const
 
-/** Base-mode output only — does not restrict Pro-mode layer synthesis output. */
+/** Base-mode output only — does not restrict Pro-mode section synthesis output. */
 export const BASE_FORBIDDEN_TERMS = [
   'Human Design',
   'бодиграф',
@@ -213,27 +227,43 @@ const sharedBaseOutputRules = [
 ] as const
 
 const sharedProOutputRules = [
-  'Глубокое техническое Human Design-основание по сочетанию элементов слоя.',
-  'Полные Pro-описания элементов остаются в Element Library; в слое — только synthesis.',
+  'Глубокое техническое Human Design-основание по сочетанию элементов раздела.',
+  'Полные Pro-описания элементов остаются в Element Library; в разделе — только synthesis.',
   'Source chips обязательны для каждого ключевого элемента-основания.',
 ] as const
 
-export const TALENT_MAP_LAYER_DEFINITIONS: TalentMapLayerDefinition[] = [
+const RISKS_SECTION_GUARDRAILS = [
+  'Не превращать риски в диагнозы или hiring-вердикты.',
+  'Описывать условия перегрузки и искажения, а не «проблемность» человека.',
+] as const
+
+export const TALENT_MAP_SECTION_DEFINITIONS: TalentMapSectionSynthesisDefinition[] = [
   {
-    layer_key: 'work_style',
-    title: 'Рабочий стиль',
-    short_description: 'Как человек входит в работу, действует и удерживает рабочий ритм.',
-    layer_goal: 'Синтезировать прикладной рабочий стиль из глобальных механик, центров, каналов и релевантных активаций.',
+    section_key: 'work_mode_and_entry',
+    title: 'Рабочий формат и вход в задачи',
+    short_description: 'Как человек естественно включается в работу и какой формат задач ему подходит.',
+    section_goal:
+      'Синтезировать рабочий формат и способ входа в задачи из type, strategy, profile, definition, authority, центров, каналов и ключевых Sun/Earth активаций.',
     base_output_rules: [...sharedBaseOutputRules],
     pro_output_rules: [...sharedProOutputRules],
-    primary_element_kinds: ['type', 'strategy', 'profile', 'definition'],
-    supporting_element_kinds: ['authority', 'defined_center', 'open_center', 'channel', 'activation'],
+    primary_element_kinds: ['type', 'strategy', 'profile', 'definition', 'authority'],
+    supporting_element_kinds: [
+      'open_center',
+      'defined_center',
+      'channel',
+      'personality_sun',
+      'design_sun',
+      'personality_earth',
+      'design_earth',
+    ],
+    context_element_kinds: ['limitations', 'related_context_summary', 'management_hints', 'environment_hints'],
     interpretation_fields_for_ai: [
       'base_layers',
       'management_hints',
       'environment_hints',
       'context_rules',
       'related_context_summary',
+      'limitations',
     ],
     omitted_interpretation_fields: ['pro_layers', 'contrast_examples', 'not_self_layers'],
     forbidden_base_terms: BASE_FORBIDDEN_TERMS,
@@ -242,88 +272,33 @@ export const TALENT_MAP_LAYER_DEFINITIONS: TalentMapLayerDefinition[] = [
     min_matched_source_items: 3,
   },
   {
-    layer_key: 'main_talents',
-    title: 'Сильные стороны / таланты',
-    short_description: 'Устойчивые сильные стороны и таланты, видимые в рабочем контексте.',
-    layer_goal: 'Выделить главные таланты из каналов, центров, ворот и активаций с опорой на talent_hints.',
+    section_key: 'decision_style',
+    title: 'Принятие решений',
+    short_description: 'Как лучше принимать рабочие решения и где усиливается давление.',
+    section_goal:
+      'Синтезировать стиль решений из authority, strategy, центров, profile, definition и релевантных Moon/Mars/Saturn активаций.',
     base_output_rules: [...sharedBaseOutputRules],
     pro_output_rules: [...sharedProOutputRules],
-    primary_element_kinds: ['channel', 'defined_center', 'gate'],
-    supporting_element_kinds: ['activation', 'talent_hints'],
-    interpretation_fields_for_ai: ['base_layers', 'talent_hints', 'context_rules', 'related_context_summary'],
-    omitted_interpretation_fields: ['pro_layers', 'not_self_layers', 'contrast_examples'],
-    forbidden_base_terms: BASE_FORBIDDEN_TERMS,
-    allowed_pro_terms: PRO_ALLOWED_HD_TERMS,
-    source_chip_rules: SOURCE_CHIP_RULES,
-    min_matched_source_items: 2,
-  },
-  {
-    layer_key: 'decision_and_stability',
-    title: 'Принятие решений и рабочая устойчивость',
-    short_description: 'Как человек принимает решения и сохраняет устойчивость под нагрузкой.',
-    layer_goal: 'Синтезировать стиль решений и устойчивость из authority, strategy, центров и risk/not-self сигналов.',
-    base_output_rules: [...sharedBaseOutputRules],
-    pro_output_rules: [...sharedProOutputRules],
-    primary_element_kinds: ['authority', 'strategy'],
-    supporting_element_kinds: ['defined_center', 'open_center', 'activation', 'risk_hints', 'not_self_layers'],
-    interpretation_fields_for_ai: [
-      'base_layers',
-      'risk_hints',
-      'not_self_layers',
-      'limitations',
-      'context_rules',
-      'related_context_summary',
-    ],
-    omitted_interpretation_fields: ['pro_layers', 'talent_hints', 'contrast_examples'],
-    forbidden_base_terms: BASE_FORBIDDEN_TERMS,
-    allowed_pro_terms: PRO_ALLOWED_HD_TERMS,
-    source_chip_rules: SOURCE_CHIP_RULES,
-    min_matched_source_items: 2,
-  },
-  {
-    layer_key: 'communication_and_influence',
-    title: 'Коммуникация и влияние',
-    short_description: 'Как человек доносит мысли, влияет и взаимодействует в команде.',
-    layer_goal: 'Собрать коммуникационный профиль из throat-связанных элементов, Mercury-активаций и profile.',
-    base_output_rules: [...sharedBaseOutputRules],
-    pro_output_rules: [...sharedProOutputRules],
-    primary_element_kinds: ['profile', 'communication_channel'],
+    primary_element_kinds: ['authority', 'strategy', 'defined_center', 'open_center'],
     supporting_element_kinds: [
-      'communication_gate',
-      'ajna_center',
-      'throat_center',
-      'mercury_activation',
-    ],
-    interpretation_fields_for_ai: [
-      'base_layers',
-      'talent_hints',
-      'environment_hints',
-      'context_rules',
-      'related_context_summary',
-    ],
-    omitted_interpretation_fields: ['pro_layers', 'contrast_examples', 'not_self_layers'],
-    forbidden_base_terms: BASE_FORBIDDEN_TERMS,
-    allowed_pro_terms: PRO_ALLOWED_HD_TERMS,
-    source_chip_rules: SOURCE_CHIP_RULES,
-    min_matched_source_items: 2,
-  },
-  {
-    layer_key: 'risks_and_distortions',
-    title: 'Риски и условия искажения',
-    short_description: 'Где талант искажается и при каких условиях растут рабочие риски.',
-    layer_goal: 'Выявить риски из open centers, not-self, limitations и релевантных Mars/Saturn/Moon активаций.',
-    base_output_rules: [...sharedBaseOutputRules],
-    pro_output_rules: [...sharedProOutputRules],
-    primary_element_kinds: ['open_center', 'not_self_layers', 'risk_hints', 'limitations'],
-    supporting_element_kinds: ['mars_activation', 'saturn_activation', 'moon_activation', 'contrast_examples'],
-    interpretation_fields_for_ai: [
+      'profile',
+      'definition',
+      'moon_activation',
+      'mars_activation',
+      'saturn_activation',
       'risk_hints',
       'not_self_layers',
       'limitations',
-      'contrast_examples',
+    ],
+    context_element_kinds: ['related_context_summary', 'contrast_examples'],
+    interpretation_fields_for_ai: [
       'base_layers',
+      'risk_hints',
+      'not_self_layers',
+      'limitations',
       'context_rules',
       'related_context_summary',
+      'contrast_examples',
     ],
     omitted_interpretation_fields: ['pro_layers', 'talent_hints'],
     forbidden_base_terms: BASE_FORBIDDEN_TERMS,
@@ -332,26 +307,48 @@ export const TALENT_MAP_LAYER_DEFINITIONS: TalentMapLayerDefinition[] = [
     min_matched_source_items: 2,
   },
   {
-    layer_key: 'management_and_environment',
-    title: 'Управление и среда',
-    short_description: 'Как управлять человеком и какая среда раскрывает продуктивность.',
-    layer_goal: 'Синтезировать management/environment рекомендации из strategy, authority, profile, hints и центров.',
+    section_key: 'main_talents',
+    title: 'Главные таланты',
+    short_description: 'Устойчивые сильные стороны и таланты, видимые в рабочем контексте.',
+    section_goal:
+      'Выделить главные таланты из каналов, центров, Sun/Earth активаций и gates с talent_hints. Канал имеет приоритет над standalone gate.',
     base_output_rules: [...sharedBaseOutputRules],
     pro_output_rules: [...sharedProOutputRules],
-    primary_element_kinds: ['strategy', 'authority', 'profile'],
-    supporting_element_kinds: [
-      'management_hints',
-      'environment_hints',
-      'defined_center',
-      'open_center',
+    primary_element_kinds: [
       'channel',
+      'defined_center',
+      'personality_sun',
+      'design_sun',
+      'personality_earth',
+      'design_earth',
     ],
+    supporting_element_kinds: ['gate', 'talent_hints', 'activation'],
+    context_element_kinds: ['related_context_summary', 'limitations'],
+    interpretation_fields_for_ai: ['base_layers', 'talent_hints', 'context_rules', 'related_context_summary', 'limitations'],
+    omitted_interpretation_fields: ['pro_layers', 'not_self_layers', 'contrast_examples'],
+    forbidden_base_terms: BASE_FORBIDDEN_TERMS,
+    allowed_pro_terms: PRO_ALLOWED_HD_TERMS,
+    source_chip_rules: SOURCE_CHIP_RULES,
+    min_matched_source_items: 2,
+  },
+  {
+    section_key: 'work_environment',
+    title: 'Рабочая среда',
+    short_description: 'В каких условиях человек раскрывается лучше всего.',
+    section_goal:
+      'Синтезировать рабочую среду из open/defined centers, definition, strategy, authority и hints — без выдуманных environment/motivation/variables элементов.',
+    base_output_rules: [...sharedBaseOutputRules],
+    pro_output_rules: [...sharedProOutputRules],
+    primary_element_kinds: ['open_center', 'defined_center', 'definition', 'strategy', 'authority'],
+    supporting_element_kinds: ['environment_hints', 'management_hints', 'risk_hints', 'channel'],
+    context_element_kinds: ['limitations', 'related_context_summary'],
     interpretation_fields_for_ai: [
-      'management_hints',
       'environment_hints',
+      'management_hints',
       'base_layers',
       'context_rules',
       'related_context_summary',
+      'limitations',
     ],
     omitted_interpretation_fields: ['pro_layers', 'contrast_examples'],
     forbidden_base_terms: BASE_FORBIDDEN_TERMS,
@@ -360,81 +357,151 @@ export const TALENT_MAP_LAYER_DEFINITIONS: TalentMapLayerDefinition[] = [
     min_matched_source_items: 2,
   },
   {
-    layer_key: 'development_potential',
-    title: 'Потенциал развития',
-    short_description: 'Куда расти и что развивать для раскрытия таланта.',
-    layer_goal: 'Определить вектор развития из channels, gates, Jupiter/Saturn/Nodes активаций, talent_hints и limitations.',
+    section_key: 'communication',
+    title: 'Коммуникация',
+    short_description: 'Как обсуждать задачи, обратную связь и ожидания.',
+    section_goal:
+      'Собрать коммуникационный профиль из throat/ajna центров, communication channel, Mercury activation и profile.',
     base_output_rules: [...sharedBaseOutputRules],
     pro_output_rules: [...sharedProOutputRules],
-    primary_element_kinds: ['channel', 'gate'],
+    primary_element_kinds: ['throat_center', 'ajna_center', 'communication_channel', 'mercury_activation', 'profile'],
     supporting_element_kinds: [
-      'jupiter_activation',
-      'saturn_activation',
-      'nodes_activation',
+      'communication_gate',
       'talent_hints',
-      'limitations',
+      'management_hints',
+      'environment_hints',
     ],
+    context_element_kinds: ['related_context_summary', 'limitations'],
     interpretation_fields_for_ai: [
-      'talent_hints',
-      'limitations',
       'base_layers',
+      'talent_hints',
+      'environment_hints',
+      'management_hints',
       'context_rules',
       'related_context_summary',
+      'limitations',
     ],
-    omitted_interpretation_fields: ['pro_layers', 'not_self_layers', 'contrast_examples'],
+    omitted_interpretation_fields: ['pro_layers', 'contrast_examples', 'not_self_layers'],
     forbidden_base_terms: BASE_FORBIDDEN_TERMS,
     allowed_pro_terms: PRO_ALLOWED_HD_TERMS,
     source_chip_rules: SOURCE_CHIP_RULES,
     min_matched_source_items: 2,
   },
   {
-    layer_key: 'pro_foundation',
-    title: 'Pro-основание / источники карты',
-    short_description: 'Техническое основание карты и сводка источников для Pro-режима.',
-    layer_goal: 'Дать полную карту источников: major groups, source_quality, composition_mode, coverage и context.',
-    base_output_rules: [
-      'Не использовать в Base-режиме; слой предназначен для Pro foundation.',
-      'Показать структуру источников без hiring-выводов.',
-    ],
-    pro_output_rules: [
-      'Полное техническое основание по всем major source groups.',
-      'Включать source_quality, composition_mode и coverage summary.',
-      'Не дублировать Element Library целиком — ссылаться через source chips.',
-    ],
-    primary_element_kinds: [
-      'type',
-      'strategy',
-      'authority',
-      'profile',
-      'definition',
-      'defined_center',
-      'open_center',
+    section_key: 'risks',
+    title: 'Риски и чувствительные зоны',
+    short_description: 'Где возможны перегрузка, искажения и уязвимости.',
+    section_goal:
+      'Выявить риски из open centers, risk_hints, not_self, limitations и релевантных Mars/Saturn/Moon активаций.',
+    base_output_rules: [...sharedBaseOutputRules],
+    pro_output_rules: [...sharedProOutputRules],
+    primary_element_kinds: ['open_center', 'risk_hints', 'not_self_layers', 'limitations'],
+    supporting_element_kinds: [
+      'mars_activation',
+      'saturn_activation',
+      'moon_activation',
       'channel',
-      'gate',
-      'activation',
+      'contrast_examples',
     ],
-    supporting_element_kinds: ['source_quality', 'composition_mode', 'related_context_summary', 'coverage_summary'],
-    excluded_element_kinds: ['planet', 'line', 'side', 'activation_role'],
+    context_element_kinds: ['related_context_summary', 'management_hints', 'recovery_conditions'],
     interpretation_fields_for_ai: [
+      'risk_hints',
+      'not_self_layers',
+      'limitations',
+      'contrast_examples',
       'base_layers',
-      'pro_layers',
       'context_rules',
-      'source_quality',
-      'composition_meta',
       'related_context_summary',
+      'recovery_conditions',
     ],
-    omitted_interpretation_fields: [],
-    forbidden_base_terms: [],
+    omitted_interpretation_fields: ['pro_layers', 'talent_hints'],
+    forbidden_base_terms: BASE_FORBIDDEN_TERMS,
     allowed_pro_terms: PRO_ALLOWED_HD_TERMS,
     source_chip_rules: SOURCE_CHIP_RULES,
-    min_matched_source_items: 5,
+    min_matched_source_items: 2,
+    section_guardrails: RISKS_SECTION_GUARDRAILS,
+  },
+  {
+    section_key: 'management',
+    title: 'Управление кандидатом',
+    short_description: 'Как ставить задачи и поддерживать сильные стороны.',
+    section_goal:
+      'Синтезировать управленческие рекомендации из strategy, authority, profile, management_hints и центров.',
+    base_output_rules: [...sharedBaseOutputRules],
+    pro_output_rules: [...sharedProOutputRules],
+    primary_element_kinds: ['strategy', 'authority', 'profile', 'management_hints', 'open_center'],
+    supporting_element_kinds: ['defined_center', 'channel', 'environment_hints', 'risk_hints'],
+    context_element_kinds: ['related_context_summary', 'limitations'],
+    interpretation_fields_for_ai: [
+      'management_hints',
+      'environment_hints',
+      'base_layers',
+      'context_rules',
+      'related_context_summary',
+      'limitations',
+    ],
+    omitted_interpretation_fields: ['pro_layers', 'contrast_examples'],
+    forbidden_base_terms: BASE_FORBIDDEN_TERMS,
+    allowed_pro_terms: PRO_ALLOWED_HD_TERMS,
+    source_chip_rules: SOURCE_CHIP_RULES,
+    min_matched_source_items: 2,
+  },
+  {
+    section_key: 'development_potential',
+    title: 'Потенциал развития',
+    short_description: 'Куда человек может расти через опыт и практику.',
+    section_goal:
+      'Определить вектор развития из Jupiter/Saturn/Nodes/Pluto активаций, channels, gates с talent_hints и Sun-Earth оси.',
+    base_output_rules: [...sharedBaseOutputRules],
+    pro_output_rules: [...sharedProOutputRules],
+    primary_element_kinds: [
+      'jupiter_activation',
+      'saturn_activation',
+      'north_node_activation',
+      'south_node_activation',
+      'pluto_activation',
+      'channel',
+    ],
+    supporting_element_kinds: [
+      'gate',
+      'talent_hints',
+      'limitations',
+      'personality_sun',
+      'design_sun',
+      'personality_earth',
+      'design_earth',
+    ],
+    context_element_kinds: ['related_context_summary', 'contrast_examples'],
+    interpretation_fields_for_ai: [
+      'talent_hints',
+      'limitations',
+      'base_layers',
+      'context_rules',
+      'related_context_summary',
+      'contrast_examples',
+    ],
+    omitted_interpretation_fields: ['pro_layers', 'not_self_layers'],
+    forbidden_base_terms: BASE_FORBIDDEN_TERMS,
+    allowed_pro_terms: PRO_ALLOWED_HD_TERMS,
+    source_chip_rules: SOURCE_CHIP_RULES,
+    min_matched_source_items: 2,
   },
 ]
 
-export function getTalentMapLayerDefinition(layerKey: TalentMapLayerKey): TalentMapLayerDefinition {
-  const definition = TALENT_MAP_LAYER_DEFINITIONS.find((layer) => layer.layer_key === layerKey)
+/** @deprecated Use TALENT_MAP_SECTION_DEFINITIONS */
+export const TALENT_MAP_LAYER_DEFINITIONS = TALENT_MAP_SECTION_DEFINITIONS
+
+export function getTalentMapSectionDefinition(
+  sectionKey: TalentMapSectionKey,
+): TalentMapSectionSynthesisDefinition {
+  const definition = TALENT_MAP_SECTION_DEFINITIONS.find((section) => section.section_key === sectionKey)
   if (!definition) {
-    throw new Error(`Unknown talent map layer: ${layerKey}`)
+    throw new Error(`Unknown talent map section: ${sectionKey}`)
   }
   return definition
+}
+
+/** @deprecated Use getTalentMapSectionDefinition */
+export function getTalentMapLayerDefinition(sectionKey: TalentMapSectionKey): TalentMapSectionSynthesisDefinition {
+  return getTalentMapSectionDefinition(sectionKey)
 }

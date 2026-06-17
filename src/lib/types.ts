@@ -49,15 +49,7 @@ export type ChartElementCounts = {
 
 export type TalentMapStatus = 'draft' | 'processing' | 'ready' | 'error'
 
-export type LayerKey =
-  | 'work_mode_and_entry'
-  | 'decision_style'
-  | 'main_talents'
-  | 'work_environment'
-  | 'communication'
-  | 'risks'
-  | 'management'
-  | 'development_potential'
+export type { LayerKey, TalentMapSectionKey } from './talentMapSectionTypes'
 
 export type ReferenceInterpretationLayers = {
   plain_meaning?: string

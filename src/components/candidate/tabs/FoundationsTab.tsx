@@ -488,7 +488,7 @@ export function FoundationsTab() {
             </div>
           </Card>
         )
-      )}
+      })}
 
       {synthesisPreview && !sectionFilter ? (
         <Card title="Подготовленные источники по разделам карты талантов">

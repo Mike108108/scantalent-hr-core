@@ -2,6 +2,10 @@ import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ELEMENT_KINDS, ELEMENT_UI_GROUPS } from '../../../lib/elementKnowledgeBaseContract'
 import { MVP_TALENT_MAP_SECTIONS } from '../../../lib/talentMapSections'
+import type {
+  SectionInputAuditIssue,
+  SectionInputAuditSeverity,
+} from '../../../lib/talentMapSectionInputAudit'
 import { useCandidateWorkspace } from '../CandidateWorkspaceContext'
 import { Button } from '../../ui/Button'
 import { Card } from '../../ui/Card'
@@ -10,12 +14,55 @@ import { StatusBadge } from '../../ui/StatusBadge'
 type ViewMode = 'all' | 'problems'
 type ContentMode = 'base' | 'pro'
 
+const AUDIT_SEVERITY_ORDER: Exclude<SectionInputAuditSeverity, 'ok'>[] = [
+  'error',
+  'warning',
+  'info',
+]
+
+const AUDIT_SEVERITY_LABELS: Record<Exclude<SectionInputAuditSeverity, 'ok'>, string> = {
+  error: 'Ошибки',
+  warning: 'Предупреждения',
+  info: 'Информация',
+}
+
+function auditOverallStatusLabel(severity: SectionInputAuditSeverity): string {
+  if (severity === 'error') {
+    return 'есть ошибки'
+  }
+  if (severity === 'warning') {
+    return 'есть предупреждения'
+  }
+  return 'OK'
+}
+
+function auditStatusBadge(severity: SectionInputAuditSeverity): 'ready' | 'processing' | 'error' | 'draft' {
+  if (severity === 'error') {
+    return 'error'
+  }
+  if (severity === 'warning') {
+    return 'processing'
+  }
+  return 'ready'
+}
+
+function groupAuditIssuesBySeverity(
+  issues: SectionInputAuditIssue[],
+): Record<Exclude<SectionInputAuditSeverity, 'ok'>, SectionInputAuditIssue[]> {
+  return {
+    error: issues.filter((issue) => issue.severity === 'error'),
+    warning: issues.filter((issue) => issue.severity === 'warning'),
+    info: issues.filter((issue) => issue.severity === 'info'),
+  }
+}
+
 export function FoundationsTab() {
   const {
     bundleResult,
     bundleLoading,
     bundleError,
     synthesisPreview,
+    sectionInputAudit,
     handleBuildReferenceBundle,
     chart,
     setDrawerSelection,
@@ -28,6 +75,7 @@ export function FoundationsTab() {
   const [kindFilter, setKindFilter] = useState<string>('all')
   const [showJson, setShowJson] = useState(false)
   const [showSectionDebugJson, setShowSectionDebugJson] = useState(false)
+  const [showAuditJson, setShowAuditJson] = useState(false)
 
   const coverage = bundleResult?.coverage
   const bundle = bundleResult?.bundle
@@ -63,6 +111,10 @@ export function FoundationsTab() {
 
   const sectionMeta = MVP_TALENT_MAP_SECTIONS.find((s) => s.key === sectionFilter)
   const sectionPreview = synthesisPreview?.sections.find((s) => s.section_key === sectionFilter)
+  const groupedAuditIssues = useMemo(
+    () => groupAuditIssuesBySeverity(sectionInputAudit?.issues ?? []),
+    [sectionInputAudit?.issues],
+  )
 
   const sourceQualitySummary = useMemo(() => {
     if (!bundle?.items.length) {
@@ -299,6 +351,102 @@ export function FoundationsTab() {
           {showSectionDebugJson ? (
             <pre className="debug-json-block__pre">
               {JSON.stringify(sectionPreview, null, 2)}
+            </pre>
+          ) : null}
+        </Card>
+      ) : null}
+
+      {sectionInputAudit ? (
+        <Card title="QA входа разделов">
+          <dl className="info-list info-list--compact">
+            <div className="info-list__row">
+              <dt>Общий статус проверки входа</dt>
+              <dd>
+                <StatusBadge
+                  status={auditStatusBadge(sectionInputAudit.overall_severity)}
+                  label={auditOverallStatusLabel(sectionInputAudit.overall_severity)}
+                />
+              </dd>
+            </div>
+            <div className="info-list__row">
+              <dt>Разделы карты талантов</dt>
+              <dd>{sectionInputAudit.section_count}</dd>
+            </div>
+            <div className="info-list__row">
+              <dt>OK / info / warning / error</dt>
+              <dd>
+                {sectionInputAudit.summary.ok} / {sectionInputAudit.summary.info} /{' '}
+                {sectionInputAudit.summary.warning} / {sectionInputAudit.summary.error}
+              </dd>
+            </div>
+          </dl>
+
+          <div className="stack">
+            <h4 className="bundle-coverage__subtitle">По разделам</h4>
+            <ul className="compact-list">
+              {sectionInputAudit.section_summaries.map((sectionSummary) => (
+                <li
+                  key={sectionSummary.section_key}
+                  className="compact-list__item compact-list__item--static"
+                >
+                  <span className="compact-list__primary">{sectionSummary.section_title}</span>
+                  <span className="compact-list__secondary">
+                    {sectionSummary.total_selected} подготовленных источников ·{' '}
+                    {sectionSummary.omitted_by_budget} отложено ·{' '}
+                    {auditOverallStatusLabel(sectionSummary.severity)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {sectionInputAudit.issues.length > 0 ? (
+            <div className="stack">
+              <h4 className="bundle-coverage__subtitle">Замечания проверки входа</h4>
+              {AUDIT_SEVERITY_ORDER.map((severity) => {
+                const issues = groupedAuditIssues[severity]
+                if (issues.length === 0) {
+                  return null
+                }
+
+                return (
+                  <div key={severity} className="stack">
+                    <h5 className="bundle-coverage__subtitle">{AUDIT_SEVERITY_LABELS[severity]}</h5>
+                    <ul className="compact-list">
+                      {issues.map((issue, index) => (
+                        <li
+                          key={`${issue.check_id}:${issue.section_key ?? 'global'}:${index}`}
+                          className="compact-list__item compact-list__item--static"
+                        >
+                          <span className="compact-list__primary">{issue.message}</span>
+                          <span className="compact-list__secondary mono-text">
+                            {issue.section_key ? `раздел ${issue.section_key}` : 'глобально'}
+                            {issue.element_kind ? ` · ${issue.element_kind}` : ''}
+                            {issue.element_key ? `/${issue.element_key}` : ''}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="city-autocomplete__hint">
+              Подготовленные источники для разделов карты талантов прошли проверку входа без
+              замечаний.
+            </p>
+          )}
+
+          <div className="form-actions">
+            <Button type="button" variant="ghost" onClick={() => setShowAuditJson((prev) => !prev)}>
+              {showAuditJson ? 'Скрыть JSON проверки' : 'Показать JSON проверки'}
+            </Button>
+          </div>
+
+          {showAuditJson ? (
+            <pre className="debug-json-block__pre">
+              {JSON.stringify(sectionInputAudit, null, 2)}
             </pre>
           ) : null}
         </Card>

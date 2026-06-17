@@ -27,6 +27,7 @@ export function FoundationsTab() {
   const [contentMode, setContentMode] = useState<ContentMode>('base')
   const [kindFilter, setKindFilter] = useState<string>('all')
   const [showJson, setShowJson] = useState(false)
+  const [showSectionDebugJson, setShowSectionDebugJson] = useState(false)
 
   const coverage = bundleResult?.coverage
   const bundle = bundleResult?.bundle
@@ -60,7 +61,8 @@ export function FoundationsTab() {
     return groups
   }, [filteredItems])
 
-  const sectionTitle = MVP_TALENT_MAP_SECTIONS.find((s) => s.key === sectionFilter)?.title
+  const sectionMeta = MVP_TALENT_MAP_SECTIONS.find((s) => s.key === sectionFilter)
+  const sectionPreview = synthesisPreview?.sections.find((s) => s.section_key === sectionFilter)
 
   const sourceQualitySummary = useMemo(() => {
     if (!bundle?.items.length) {
@@ -102,8 +104,8 @@ export function FoundationsTab() {
         </Button>
       </div>
 
-      {sectionTitle ? (
-        <p className="city-autocomplete__hint">Фильтр по разделу: {sectionTitle}</p>
+      {sectionMeta ? (
+        <p className="city-autocomplete__hint">Основания раздела: {sectionMeta.title}</p>
       ) : null}
 
       {bundleError ? (
@@ -117,6 +119,189 @@ export function FoundationsTab() {
           <span className="spinner" aria-hidden="true" />
           <span>Загрузка оснований…</span>
         </div>
+      ) : null}
+
+      {sectionPreview ? (
+        <Card title={`Подготовленные источники · ${sectionPreview.section_title}`}>
+          <dl className="info-list info-list--compact">
+            <div className="info-list__row">
+              <dt>Статус подготовки входа</dt>
+              <dd>{sectionPreview.user_status_label}</dd>
+            </div>
+            <div className="info-list__row">
+              <dt>Выбрано источников</dt>
+              <dd>{sectionPreview.budget_summary.total_selected}</dd>
+            </div>
+            <div className="info-list__row">
+              <dt>Primary / Supporting / Context</dt>
+              <dd>
+                {sectionPreview.budget_summary.primary_selected} /{' '}
+                {sectionPreview.budget_summary.supporting_selected} /{' '}
+                {sectionPreview.budget_summary.context_selected}
+              </dd>
+            </div>
+            <div className="info-list__row">
+              <dt>Отложено по budget</dt>
+              <dd>{sectionPreview.budget_summary.omitted_count}</dd>
+            </div>
+            <div className="info-list__row">
+              <dt>Примерный размер входа для будущей сборки</dt>
+              <dd>
+                ~{sectionPreview.budget_summary.total_digest_chars.toLocaleString('ru-RU')} симв. (
+                ~{sectionPreview.budget_summary.estimated_input_tokens.toLocaleString('ru-RU')} ед.)
+              </dd>
+            </div>
+            <div className="info-list__row">
+              <dt>Стоимость раздела</dt>
+              <dd>{sectionPreview.credit_cost} токен</dd>
+            </div>
+          </dl>
+
+          {sectionPreview.warnings.length > 0 ? (
+            <div className="stack">
+              <h4 className="bundle-coverage__subtitle">Предупреждения</h4>
+              <ul className="compact-list">
+                {sectionPreview.warnings.map((warning) => (
+                  <li key={warning} className="compact-list__item compact-list__item--static">
+                    <span className="compact-list__primary">{warning}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {sectionPreview.guardrails.section_guardrails.length > 0 ? (
+            <div className="stack">
+              <h4 className="bundle-coverage__subtitle">Guardrails раздела</h4>
+              <ul className="compact-list">
+                {sectionPreview.guardrails.section_guardrails.map((rule) => (
+                  <li key={rule} className="compact-list__item compact-list__item--static">
+                    <span className="compact-list__primary">{rule}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          <div className="stack">
+            <h4 className="bundle-coverage__subtitle">Выбранные источники</h4>
+            <ul className="compact-list">
+              {sectionPreview.source_items.map((item) => (
+                <li key={`${item.element_kind}:${item.element_key}`} className="compact-list__item">
+                  <button
+                    type="button"
+                    className="compact-list__button"
+                    onClick={() =>
+                      setDrawerSelection({
+                        elementKind: item.element_kind,
+                        elementKey: item.element_key,
+                        label: item.element_label ?? item.element_key,
+                      })
+                    }
+                  >
+                    <span className="compact-list__primary">
+                      {item.element_label ?? item.element_key}
+                    </span>
+                    <span className="compact-list__secondary mono-text">
+                      {item.source_role} · score {item.rank_score}
+                    </span>
+                  </button>
+                  <StatusBadge
+                    status={item.matched ? 'ready' : 'error'}
+                    label={item.matched ? 'matched' : 'missing'}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {sectionPreview.omitted_by_budget.length > 0 ? (
+            <div className="stack">
+              <h4 className="bundle-coverage__subtitle">Отложено по budget</h4>
+              <ul className="compact-list">
+                {sectionPreview.omitted_by_budget.map((item) => (
+                  <li
+                    key={`omitted:${item.element_kind}:${item.element_key}`}
+                    className="compact-list__item compact-list__item--static"
+                  >
+                    <span className="compact-list__primary">
+                      {item.element_label ?? item.element_key}
+                    </span>
+                    <span className="compact-list__secondary mono-text">
+                      {item.source_role} · score {item.rank_score}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          <div className="stack">
+            <h4 className="bundle-coverage__subtitle">Ranking reasons (выбранные)</h4>
+            <ul className="compact-list">
+              {sectionPreview.source_items.slice(0, 12).map((item) => (
+                <li
+                  key={`rank:${item.element_kind}:${item.element_key}`}
+                  className="compact-list__item compact-list__item--static"
+                >
+                  <span className="compact-list__primary mono-text">
+                    {item.element_kind}/{item.element_key}
+                  </span>
+                  <span className="compact-list__secondary">{item.rank_reasons.join(' · ')}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="stack">
+            <h4 className="bundle-coverage__subtitle">Digest preview</h4>
+            <ul className="synthesis-layer-list__items">
+              {sectionPreview.source_digests.map((digestItem) => (
+                <li
+                  key={`digest:${digestItem.element_kind}:${digestItem.element_key}`}
+                  className="synthesis-layer-list__item"
+                >
+                  <div className="synthesis-layer-list__header">
+                    <span className="synthesis-layer-list__title">
+                      {digestItem.element_label ?? digestItem.element_key}
+                    </span>
+                    <span className="synthesis-layer-list__stats">{digestItem.source_role}</span>
+                  </div>
+                  {digestItem.digest.plain_meaning ? (
+                    <p className="city-autocomplete__hint">{digestItem.digest.plain_meaning}</p>
+                  ) : null}
+                  {digestItem.digest.work_manifestation ? (
+                    <p className="city-autocomplete__hint">{digestItem.digest.work_manifestation}</p>
+                  ) : null}
+                  {contentMode === 'pro' && digestItem.digest.composition_meta ? (
+                    <p className="city-autocomplete__hint mono-text">
+                      composition: {digestItem.digest.composition_meta.composition_mode ?? '—'} ·
+                      components:{' '}
+                      {(digestItem.digest.composition_meta.source_component_keys ?? []).join(', ') ||
+                        '—'}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="form-actions">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowSectionDebugJson((prev) => !prev)}
+            >
+              {showSectionDebugJson ? 'Скрыть JSON раздела' : 'Показать JSON раздела'}
+            </Button>
+          </div>
+
+          {showSectionDebugJson ? (
+            <pre className="debug-json-block__pre">
+              {JSON.stringify(sectionPreview, null, 2)}
+            </pre>
+          ) : null}
+        </Card>
       ) : null}
 
       {coverage ? (
@@ -303,29 +488,34 @@ export function FoundationsTab() {
             </div>
           </Card>
         )
-      })}
+      )}
 
-      {synthesisPreview ? (
-        <Card title="Source preview по разделам карты">
+      {synthesisPreview && !sectionFilter ? (
+        <Card title="Подготовленные источники по разделам карты талантов">
           <ul className="synthesis-layer-list__items">
-            {synthesisPreview.layers.map((layer) => (
-              <li key={layer.layer_key} className="synthesis-layer-list__item">
+            {synthesisPreview.sections.map((section) => (
+              <li key={section.section_key} className="synthesis-layer-list__item">
                 <div className="synthesis-layer-list__header">
-                  <span className="synthesis-layer-list__title">{layer.layer_title}</span>
+                  <span className="synthesis-layer-list__title">{section.section_title}</span>
                   <span className="synthesis-layer-list__stats">
-                    source_items: {layer.source_items.length}
+                    {section.budget_summary.total_selected} выбрано ·{' '}
+                    {section.budget_summary.omitted_count} отложено
                   </span>
                 </div>
-                {contentMode === 'base' ? (
-                  <p className="city-autocomplete__hint">
-                    Base preview: {layer.source_items.filter((i) => i.matched).length} matched
-                    sources
-                  </p>
-                ) : (
-                  <p className="city-autocomplete__hint">
-                    Pro preview: {layer.source_chips.length} source chips
-                  </p>
-                )}
+                <p className="city-autocomplete__hint">
+                  {section.budget_summary.primary_selected} primary ·{' '}
+                  {section.budget_summary.supporting_selected} supporting ·{' '}
+                  {section.budget_summary.context_selected} context · ~{' '}
+                  {section.budget_summary.total_digest_chars.toLocaleString('ru-RU')} симв.
+                </p>
+                <div className="form-actions">
+                  <Button
+                    variant="secondary"
+                    to={`/app/candidate/foundations?section=${section.section_key}`}
+                  >
+                    Основания раздела
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>

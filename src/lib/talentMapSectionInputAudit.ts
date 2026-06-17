@@ -373,7 +373,7 @@ function auditSectionContract(preview: TalentMapSynthesisInputPreview, issues: I
     })
   }
 
-  if (preview.sections.some((section) => section.section_key === 'pro_foundation')) {
+  if (preview.sections.some((section) => String(section.section_key) === 'pro_foundation')) {
     addIssue(issues, {
       severity: 'error',
       check_id: 'section_contract.pro_foundation_section',

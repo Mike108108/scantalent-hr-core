@@ -14,6 +14,10 @@ import { calculateCandidateChart } from '../../lib/chartApi'
 import { resolveDisplayElementCounts } from '../../lib/chartElementCounts'
 import { parseNormalizedChart } from '../../lib/chartDataHelpers'
 import { buildTalentMapSynthesisInput } from '../../lib/buildTalentMapSynthesisInput'
+import {
+  buildTalentMapSectionInputAudit,
+  type TalentMapSectionInputAuditReport,
+} from '../../lib/talentMapSectionInputAudit'
 import { buildReferenceBundle } from '../../lib/referenceBundleApi'
 import {
   getChartElementCounts,
@@ -180,6 +184,7 @@ type CandidateWorkspaceContextValue = {
   bundleError: string | null
   normalizedChart: ReturnType<typeof parseNormalizedChart>
   synthesisPreview: ReturnType<typeof buildTalentMapSynthesisInput> | null
+  sectionInputAudit: TalentMapSectionInputAuditReport | null
   drawerSelection: ElementDrawerSelection | null
   setDrawerSelection: (selection: ElementDrawerSelection | null) => void
   updateField: (field: keyof FormValues, value: string) => void
@@ -487,6 +492,14 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     })
   }, [chart?.id, bundleResult, state])
 
+  const sectionInputAudit = useMemo(() => {
+    if (!synthesisPreview) {
+      return null
+    }
+
+    return buildTalentMapSectionInputAudit(synthesisPreview)
+  }, [synthesisPreview])
+
   const value: CandidateWorkspaceContextValue = {
     state,
     values,
@@ -504,6 +517,7 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     bundleError,
     normalizedChart,
     synthesisPreview,
+    sectionInputAudit,
     drawerSelection,
     setDrawerSelection,
     updateField,

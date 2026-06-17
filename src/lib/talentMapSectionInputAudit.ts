@@ -1,10 +1,6 @@
 import type { TalentMapSynthesisInputPreview, SectionInputPreview } from './buildTalentMapSynthesisInput'
 import { TALENT_MAP_SECTION_KEYS, type TalentMapSectionKey } from './talentMapSections'
 import { SECTION_DIGEST_TOTAL_MAX } from './talentMapSourceBudget'
-import {
-  GLOBAL_FORBIDDEN_FIELDS,
-  GLOBAL_FORBIDDEN_PHRASES,
-} from './talentMapSynthesisContract'
 import type { SectionSourceDigest } from './talentMapSectionTypes'
 
 export type SectionInputAuditSeverity = 'ok' | 'info' | 'warning' | 'error'
@@ -75,28 +71,54 @@ const FORBIDDEN_STANDALONE_SOURCE_KINDS = new Set([
   'side',
 ])
 
-const FORBIDDEN_OUTPUT_FIELDS = [
-  ...GLOBAL_FORBIDDEN_FIELDS,
+const HARD_ERROR_FORBIDDEN_FIELDS = [
   'fit_score',
   'fit_percent',
+  'fit_percentage',
   'match_score',
   'match_percentage',
   'role_fit',
   'vacancy_fit',
 ] as const
 
-const FORBIDDEN_OUTPUT_PHRASES = [
-  ...GLOBAL_FORBIDDEN_PHRASES,
-  'подходит на',
-  'соответствует на',
-  'нанять',
-  'не нанять',
-  'не нанимать',
-] as const
+const HARD_ERROR_FIELD_PATTERNS: ReadonlyArray<{ pattern: RegExp; term: string }> = [
+  { pattern: /\bfit_score\b/i, term: 'fit_score' },
+  { pattern: /\bfit[\s_-]?percent(?:age)?\b/i, term: 'fit_percent' },
+  { pattern: /\bfit_percent\b/i, term: 'fit_percent' },
+  { pattern: /\bmatch_score\b/i, term: 'match_score' },
+  { pattern: /\bmatch_percentage\b/i, term: 'match_percentage' },
+  { pattern: /\bmatch[\s_-]?percent(?:age)?\b/i, term: 'match_percentage' },
+  { pattern: /\brole_fit\b/i, term: 'role_fit' },
+  { pattern: /\brole[\s_-]?fit\b/i, term: 'role_fit' },
+  { pattern: /\bvacancy_fit\b/i, term: 'vacancy_fit' },
+  { pattern: /\bvacancy[\s_-]?fit\b/i, term: 'vacancy_fit' },
+]
+
+const HARD_ERROR_HIRING_PHRASE_PATTERNS: ReadonlyArray<{ pattern: RegExp; term: string }> = [
+  { pattern: /\bнанять\b/i, term: 'нанять' },
+  { pattern: /\bне\s+нанять\b/i, term: 'не нанять' },
+  { pattern: /\b(?:не\s+)?брать\s+кандидата\b/i, term: 'брать кандидата' },
+  { pattern: /\b(?:не\s+)?брать\s+на\s+работу\b/i, term: 'брать на работу' },
+  { pattern: /\b(?:не\s+)?брать\s+в\s+команду\b/i, term: 'брать в команду' },
+  { pattern: /\b(?:не\s+)?брать\s+на\s+роль\b/i, term: 'брать на роль' },
+  { pattern: /\b(?:не\s+)?брать\s+на\s+позицию\b/i, term: 'брать на позицию' },
+]
+
+const HARD_ERROR_OTHER_PHRASE_PATTERNS: ReadonlyArray<{ pattern: RegExp; term: string }> = [
+  { pattern: /(?:подходит|соответствует)\s+на\s+\d+\s*%/i, term: 'percentage_hire_wording' },
+  { pattern: /\bне\s+нанимать\b/i, term: 'не нанимать' },
+  { pattern: /\bрекомендуем\s+нанять\b/i, term: 'рекомендуем нанять' },
+  { pattern: /\bне\s+рекомендуем\s+нанимать\b/i, term: 'не рекомендуем нанимать' },
+  { pattern: /\bидеально\s+подходит\s+на\s+роль\b/i, term: 'идеально подходит на роль' },
+]
+
+const HARD_ERROR_FORBIDDEN_FIELD_SET = new Set<string>(HARD_ERROR_FORBIDDEN_FIELDS)
 
 const PRO_PAYLOAD_KEYS = new Set(['pro_markdown', 'pro_layers', 'classic_markdown'])
 
 const CLOSE_TO_ALL_SOURCES_RATIO = 0.85
+
+let currentIssueSeen: Set<string> | null = null
 
 type OldKeyOccurrence = {
   path: string
@@ -105,22 +127,27 @@ type OldKeyOccurrence = {
 
 type IssueDraft = Omit<SectionInputAuditIssue, 'severity'> & {
   severity: Exclude<SectionInputAuditSeverity, 'ok'>
+  path?: string
+  forbidden_term?: string
 }
 
-function worstSeverity(
-  current: SectionInputAuditSeverity,
-  next: Exclude<SectionInputAuditSeverity, 'ok'>,
-): SectionInputAuditSeverity {
-  const order: Record<SectionInputAuditSeverity, number> = {
-    ok: 0,
-    info: 1,
-    warning: 2,
-    error: 3,
-  }
-  return order[next] > order[current] ? next : current
+function issueDedupeKey(issue: IssueDraft): string {
+  return [
+    issue.check_id,
+    issue.section_key ?? 'global',
+    issue.path ?? '',
+    issue.forbidden_term ?? issue.message,
+  ].join('|')
 }
 
 function addIssue(issues: IssueDraft[], issue: IssueDraft): void {
+  if (currentIssueSeen) {
+    const key = issueDedupeKey(issue)
+    if (currentIssueSeen.has(key)) {
+      return
+    }
+    currentIssueSeen.add(key)
+  }
   issues.push(issue)
 }
 
@@ -170,6 +197,46 @@ function findOldD0KeyOccurrences(
   return []
 }
 
+function worstSeverity(
+  current: SectionInputAuditSeverity,
+  next: Exclude<SectionInputAuditSeverity, 'ok'>,
+): SectionInputAuditSeverity {
+  const order: Record<SectionInputAuditSeverity, number> = {
+    ok: 0,
+    info: 1,
+    warning: 2,
+    error: 3,
+  }
+  return order[next] > order[current] ? next : current
+}
+
+function collectStringForbiddenHits(
+  value: string,
+  path: string,
+): Array<{ path: string; field: string }> {
+  const hits: Array<{ path: string; field: string }> = []
+
+  for (const { pattern, term } of HARD_ERROR_FIELD_PATTERNS) {
+    if (pattern.test(value)) {
+      hits.push({ path, field: term })
+    }
+  }
+
+  for (const { pattern, term } of HARD_ERROR_HIRING_PHRASE_PATTERNS) {
+    if (pattern.test(value)) {
+      hits.push({ path, field: term })
+    }
+  }
+
+  for (const { pattern, term } of HARD_ERROR_OTHER_PHRASE_PATTERNS) {
+    if (pattern.test(value)) {
+      hits.push({ path, field: term })
+    }
+  }
+
+  return dedupeForbiddenHits(hits)
+}
+
 function collectForbiddenFieldHits(
   value: unknown,
   path = '$',
@@ -179,32 +246,7 @@ function collectForbiddenFieldHits(
   }
 
   if (typeof value === 'string') {
-    const lower = value.toLowerCase()
-    const hits: Array<{ path: string; field: string }> = []
-
-    for (const field of FORBIDDEN_OUTPUT_FIELDS) {
-      if (lower.includes(field.toLowerCase())) {
-        hits.push({ path, field })
-      }
-    }
-
-    for (const phrase of FORBIDDEN_OUTPUT_PHRASES) {
-      if (lower.includes(phrase.toLowerCase())) {
-        hits.push({ path, field: phrase })
-      }
-    }
-
-    const percentHirePattern = /(подходит|соответствует)\s+на\s+\d+\s*%/i
-    if (percentHirePattern.test(value)) {
-      hits.push({ path, field: 'percentage_hire_wording' })
-    }
-
-    const hireDecisionPattern = /(нанять|не\s+нанять)/i
-    if (hireDecisionPattern.test(value)) {
-      hits.push({ path, field: 'hire_decision_wording' })
-    }
-
-    return hits
+    return collectStringForbiddenHits(value, path)
   }
 
   if (Array.isArray(value)) {
@@ -219,16 +261,35 @@ function collectForbiddenFieldHits(
       const keyPath = path === '$' ? key : `${path}.${key}`
       const hits: Array<{ path: string; field: string }> = []
 
-      if (FORBIDDEN_OUTPUT_FIELDS.some((field) => field.toLowerCase() === key.toLowerCase())) {
+      if (HARD_ERROR_FORBIDDEN_FIELD_SET.has(key.toLowerCase())) {
         hits.push({ path: keyPath, field: key })
       }
 
+      hits.push(...collectStringForbiddenHits(key, keyPath))
       hits.push(...collectForbiddenFieldHits(nested, keyPath))
       return hits
     })
   }
 
   return []
+}
+
+function dedupeForbiddenHits(
+  hits: Array<{ path: string; field: string }>,
+): Array<{ path: string; field: string }> {
+  const seen = new Set<string>()
+  const result: Array<{ path: string; field: string }> = []
+
+  for (const hit of hits) {
+    const key = `${hit.path}|${hit.field}`
+    if (seen.has(key)) {
+      continue
+    }
+    seen.add(key)
+    result.push(hit)
+  }
+
+  return result
 }
 
 function hasProPayload(value: unknown): boolean {
@@ -610,13 +671,15 @@ function auditForbiddenOutput(section: SectionInputPreview, issues: IssueDraft[]
     selected_fields_for_ai: section.selected_fields_for_ai,
   }
 
-  const hits = collectForbiddenFieldHits(selectedFutureInput)
+  const hits = dedupeForbiddenHits(collectForbiddenFieldHits(selectedFutureInput))
   for (const hit of hits) {
     addIssue(issues, {
       severity: 'error',
       check_id: 'forbidden_output.future_input',
       section_key: section.section_key,
       message: `Запрещённое поле или формулировка «${hit.field}» в подготовленном входе (${hit.path}).`,
+      path: hit.path,
+      forbidden_term: hit.field,
     })
   }
 }
@@ -725,6 +788,7 @@ export function buildTalentMapSectionInputAudit(
   preview: TalentMapSynthesisInputPreview,
 ): TalentMapSectionInputAuditReport {
   const issues: IssueDraft[] = []
+  currentIssueSeen = new Set<string>()
   const flags: TalentMapSectionInputAuditReport['flags'] = {
     old_d0_keys_in_selected_digests: false,
     old_d0_keys_in_selected_fields: false,
@@ -772,6 +836,8 @@ export function buildTalentMapSectionInputAudit(
   for (const issue of finalizedIssues) {
     overall_severity = worstSeverity(overall_severity, issue.severity)
   }
+
+  currentIssueSeen = null
 
   return {
     overall_severity,

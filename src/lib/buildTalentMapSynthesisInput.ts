@@ -32,6 +32,10 @@ import type {
   SectionGenerationStatus,
   SectionSourceDigest,
 } from './talentMapSectionTypes'
+import {
+  sanitizeDigestPayload,
+  sanitizeFutureInputValue,
+} from './talentMapFutureInputSanitizer'
 import type {
   ReferenceBundleCoverage,
   ReferenceBundleItem,
@@ -643,7 +647,7 @@ function pickInterpretationFields(
     }
   }
 
-  return selected
+  return sanitizeFutureInputValue(selected) as Partial<Record<InterpretationFieldKey, unknown>>
 }
 
 function truncateText(text: string, maxChars: number): string {
@@ -737,7 +741,7 @@ function buildDigestPayload(
     }
   }
 
-  return digest
+  return sanitizeDigestPayload(digest)
 }
 
 function activationRoleInSection(

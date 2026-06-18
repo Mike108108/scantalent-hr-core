@@ -25,6 +25,10 @@ import {
   getTalentMapSectionReports,
   type TalentMapSectionReport,
 } from '../../lib/talentMapSectionApi'
+import {
+  DEFAULT_TALENT_MAP_MODEL_PRESET_ID,
+  type TalentMapModelPresetId,
+} from '../../lib/talentMapModelPresets'
 import { formatSectionErrorUserMessage } from '../../lib/talentMapSectionErrors'
 import type { TalentMapSectionKey } from '../../lib/talentMapSections'
 import {
@@ -198,7 +202,7 @@ type CandidateWorkspaceContextValue = {
   sectionReportsError: string | null
   sectionGenerationLoading: boolean
   sectionGenerationError: string | null
-  handleGenerateWorkModeAndEntrySection: () => Promise<void>
+  handleGenerateWorkModeAndEntrySection: (modelPresetId: TalentMapModelPresetId) => Promise<void>
   refreshSectionReports: () => Promise<void>
   drawerSelection: ElementDrawerSelection | null
   setDrawerSelection: (selection: ElementDrawerSelection | null) => void
@@ -524,7 +528,8 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     }
   }, [chart?.id])
 
-  const handleGenerateWorkModeAndEntrySection = useCallback(async () => {
+  const handleGenerateWorkModeAndEntrySection = useCallback(
+    async (modelPresetId: TalentMapModelPresetId = DEFAULT_TALENT_MAP_MODEL_PRESET_ID) => {
     if (!chart?.id) {
       return
     }
@@ -536,6 +541,7 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
       const result = await generateTalentMapSection({
         chart_id: chart.id,
         section_key: 'work_mode_and_entry',
+        model_preset_id: modelPresetId,
       })
 
       if (!result.ok) {
@@ -564,7 +570,9 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     } finally {
       setSectionGenerationLoading(false)
     }
-  }, [chart?.id, refreshSectionReports])
+  },
+  [chart?.id, refreshSectionReports],
+)
 
   const normalizedChart = useMemo(() => parseNormalizedChart(chart), [chart])
 

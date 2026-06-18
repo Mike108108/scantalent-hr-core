@@ -3,8 +3,14 @@ import { buildTalentMapSynthesisInput } from '../../src/lib/buildTalentMapSynthe
 import {
   renderGeneratedSectionBaseMarkdown,
   renderGeneratedSectionProMarkdown,
+  type TalentMapGeneratedSectionV1_1,
 } from '../../src/lib/talentMapGeneratedSectionContract'
 import { runTalentMapGeneratedSectionQa } from '../../src/lib/talentMapGeneratedSectionQa'
+import {
+  estimateOpenAiCostUsd,
+  getTalentMapModelPreset,
+  type TalentMapModelPreset,
+} from '../../src/lib/talentMapModelPresets'
 import { buildTalentMapSectionInputAudit } from '../../src/lib/talentMapSectionInputAudit'
 import {
   buildSanitizedSectionInputForAi,
@@ -25,14 +31,11 @@ import { AuthError, getSupabaseAdmin, verifyBearerUser } from '../lib/supabaseAd
 type GenerateSectionPayload = {
   chart_id?: string
   section_key?: string
+  model_preset_id?: string
 }
 
 const WORK_MODE_SECTION_KEY = 'work_mode_and_entry'
 const WORK_MODE_SECTION_TITLE = 'Рабочий формат и вход в задачи'
-
-const OPENAI_MODEL = process.env.OPENAI_RESPONSES_MODEL?.trim() || 'gpt-5-nano'
-const OPENAI_REASONING_EFFORT = 'low' as const
-const OPENAI_MAX_OUTPUT_TOKENS = 5000
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -51,7 +54,35 @@ function jsonResponse(statusCode: number, body: unknown) {
   }
 }
 
-async function callOpenAiForSection(sanitizedInput: unknown): Promise<{
+function readUsageTokenCount(usage: Record<string, unknown> | null, key: string): number | null {
+  if (!usage) {
+    return null
+  }
+
+  const value = usage[key]
+  return typeof value === 'number' ? value : null
+}
+
+function buildUsageJson(params: {
+  openAiUsage: Record<string, unknown> | null
+  modelPreset: TalentMapModelPreset
+  modelPresetFallbackUsed: boolean
+}) {
+  return {
+    ...(params.openAiUsage ?? {}),
+    model_preset_id: params.modelPreset.id,
+    model_preset_label: params.modelPreset.ui_label,
+    model_preset_fallback_used: params.modelPresetFallbackUsed,
+    reasoning_effort: params.modelPreset.reasoning_effort,
+    max_output_tokens: params.modelPreset.max_output_tokens,
+    internal_credit_cost: params.modelPreset.internal_credit_cost,
+  }
+}
+
+async function callOpenAiForSection(
+  sanitizedInput: unknown,
+  modelPreset: TalentMapModelPreset,
+): Promise<{
   parsed: unknown
   model: string
   usage: Record<string, unknown> | null
@@ -64,11 +95,11 @@ async function callOpenAiForSection(sanitizedInput: unknown): Promise<{
   const userPayloadText = JSON.stringify(sanitizedInput)
 
   const requestBody: Record<string, unknown> = {
-    model: OPENAI_MODEL,
+    model: modelPreset.model,
     reasoning: {
-      effort: OPENAI_REASONING_EFFORT,
+      effort: modelPreset.reasoning_effort,
     },
-    max_output_tokens: OPENAI_MAX_OUTPUT_TOKENS,
+    max_output_tokens: modelPreset.max_output_tokens,
     input: [
       {
         role: 'developer',
@@ -92,7 +123,7 @@ async function callOpenAiForSection(sanitizedInput: unknown): Promise<{
     text: {
       format: {
         type: 'json_schema',
-        name: 'talent_map_generated_section_v1',
+        name: 'talent_map_generated_section_v1_1',
         strict: true,
         schema: TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA,
       },
@@ -135,7 +166,7 @@ async function callOpenAiForSection(sanitizedInput: unknown): Promise<{
 
   return {
     parsed,
-    model: OPENAI_MODEL,
+    model: modelPreset.model,
     usage: extractOpenAiUsage(payload),
   }
 }
@@ -176,6 +207,7 @@ async function upsertLayerReport(params: {
   qualityFlags: string[]
   model: string | null
   usageJson: unknown
+  estimatedCostUsd: number | null
   generationError: string | null
 }) {
   const admin = getSupabaseAdmin()
@@ -210,7 +242,7 @@ async function upsertLayerReport(params: {
     quality_flags: params.qualityFlags,
     model: params.model,
     usage_json: params.usageJson ?? {},
-    estimated_cost_usd: null,
+    estimated_cost_usd: params.estimatedCostUsd,
     generation_error: params.generationError,
   }
 
@@ -256,6 +288,9 @@ export const handler: Handler = async (event) => {
     const payload = JSON.parse(event.body ?? '{}') as GenerateSectionPayload
     const chartId = payload.chart_id?.trim()
     const sectionKey = payload.section_key?.trim()
+    const { preset: modelPreset, fallback_used: modelPresetFallbackUsed } = getTalentMapModelPreset(
+      payload.model_preset_id,
+    )
 
     if (!chartId) {
       return jsonResponse(400, { ok: false, error: 'chart_id is required.' })
@@ -381,14 +416,22 @@ export const handler: Handler = async (event) => {
         section_summary: sectionAuditSummary ?? null,
       },
       chart_input_hash: chart.input_hash ?? null,
+      model_preset_id: modelPreset.id,
+      model_preset_fallback_used: modelPresetFallbackUsed,
     }
 
     let openAiResult: Awaited<ReturnType<typeof callOpenAiForSection>>
     try {
-      openAiResult = await callOpenAiForSection(sanitizedInput)
+      openAiResult = await callOpenAiForSection(sanitizedInput, modelPreset)
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'OpenAI section synthesis failed.'
+
+      const usageJson = buildUsageJson({
+        openAiUsage: null,
+        modelPreset,
+        modelPresetFallbackUsed,
+      })
 
       const errorReport = await upsertLayerReport({
         companyId: chart.company_id,
@@ -402,8 +445,9 @@ export const handler: Handler = async (event) => {
         summaryForSynthesis: {},
         evidenceJson: buildEvidenceJson(sectionInput),
         qualityFlags: [message],
-        model: OPENAI_MODEL,
-        usageJson: {},
+        model: modelPreset.model,
+        usageJson,
+        estimatedCostUsd: null,
         generationError: message,
       })
 
@@ -415,6 +459,18 @@ export const handler: Handler = async (event) => {
         report: errorReport,
       })
     }
+
+    const usageJson = buildUsageJson({
+      openAiUsage: openAiResult.usage,
+      modelPreset,
+      modelPresetFallbackUsed,
+    })
+
+    const estimatedCostUsd = estimateOpenAiCostUsd({
+      input_tokens: readUsageTokenCount(openAiResult.usage, 'input_tokens'),
+      output_tokens: readUsageTokenCount(openAiResult.usage, 'output_tokens'),
+      preset: modelPreset,
+    })
 
     const qaResult = runTalentMapGeneratedSectionQa({
       generated: openAiResult.parsed,
@@ -437,7 +493,8 @@ export const handler: Handler = async (event) => {
         evidenceJson: buildEvidenceJson(sectionInput),
         qualityFlags: qaResult.issues,
         model: openAiResult.model,
-        usageJson: openAiResult.usage ?? {},
+        usageJson,
+        estimatedCostUsd,
         generationError,
       })
 
@@ -451,7 +508,19 @@ export const handler: Handler = async (event) => {
       })
     }
 
-    const generatedSection = qaResult.data
+    const generatedSection: TalentMapGeneratedSectionV1_1 = {
+      ...qaResult.data,
+      generation_meta: {
+        model_preset_id: modelPreset.id,
+        model_preset_label: modelPreset.ui_label,
+        model: modelPreset.model,
+        reasoning_effort: modelPreset.reasoning_effort,
+        max_output_tokens: modelPreset.max_output_tokens,
+        internal_credit_cost: modelPreset.internal_credit_cost,
+        estimated_cost_usd: estimatedCostUsd,
+      },
+    }
+
     const baseMarkdown = renderGeneratedSectionBaseMarkdown(generatedSection)
     const proMarkdown = renderGeneratedSectionProMarkdown(generatedSection)
 
@@ -468,7 +537,8 @@ export const handler: Handler = async (event) => {
       evidenceJson: buildEvidenceJson(sectionInput),
       qualityFlags: [],
       model: openAiResult.model,
-      usageJson: openAiResult.usage ?? {},
+      usageJson,
+      estimatedCostUsd,
       generationError: null,
     })
 

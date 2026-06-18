@@ -1,6 +1,7 @@
 import { authGetSession } from './auth'
 import { getSupabaseClient } from './supabaseClient'
-import type { TalentMapGeneratedSectionV1 } from './talentMapGeneratedSectionContract'
+import type { TalentMapGeneratedSection } from './talentMapGeneratedSectionContract'
+import type { TalentMapModelPresetId } from './talentMapModelPresets'
 import type { SectionGenerationErrorKind } from './talentMapSectionErrors'
 import type { TalentMapSectionKey } from './talentMapSections'
 
@@ -15,7 +16,7 @@ export type TalentMapSectionReport = {
   layer_title: string | null
   status: TalentMapSectionReportStatus
   input_bundle_json: unknown
-  content_json: TalentMapGeneratedSectionV1 | Record<string, unknown>
+  content_json: TalentMapGeneratedSection | Record<string, unknown>
   base_markdown: string | null
   pro_markdown: string | null
   summary_for_synthesis: unknown
@@ -51,6 +52,7 @@ export type GenerateTalentMapSectionResponse =
 export async function generateTalentMapSection(payload: {
   chart_id: string
   section_key: 'work_mode_and_entry'
+  model_preset_id: TalentMapModelPresetId
 }): Promise<GenerateTalentMapSectionResponse> {
   const session = await authGetSession()
   if (!session?.access_token) {

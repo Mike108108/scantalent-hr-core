@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useCandidateWorkspace } from '../CandidateWorkspaceContext'
 import { Button } from '../../ui/Button'
 import { Card } from '../../ui/Card'
@@ -15,35 +16,37 @@ import {
   shouldShowTechnicalErrorDetails,
 } from '../../../lib/talentMapSectionErrors'
 import type { SectionGenerationStatus } from '../../../lib/talentMapSectionTypes'
-import type { TalentMapGeneratedSectionV1 } from '../../../lib/talentMapGeneratedSectionContract'
+import {
+  DEFAULT_TALENT_MAP_MODEL_PRESET_ID,
+  TALENT_MAP_MODEL_PRESET_ORDER,
+  TALENT_MAP_MODEL_PRESETS,
+  type TalentMapModelPresetId,
+} from '../../../lib/talentMapModelPresets'
+import {
+  isTalentMapGeneratedSectionContent,
+} from '../../../lib/talentMapGeneratedSectionContract'
+import type { TalentMapStatus } from '../../../lib/types'
 
-function statusBadgeVariant(status: SectionGenerationStatus | TalentMapSectionStatus) {
+function statusBadgeVariant(
+  status: SectionGenerationStatus | TalentMapSectionStatus,
+): TalentMapStatus {
   switch (status) {
     case 'ready':
-    case 'input_ready':
-      return 'ready' as const
+      return 'ready'
     case 'error':
     case 'failed':
     case 'input_not_ready':
-      return 'error' as const
+      return 'error'
     case 'needs_update':
     case 'stale':
     case 'generating':
-      return 'processing' as const
+      return 'processing'
+    case 'input_ready':
+    case 'not_generated':
+      return 'pending'
     default:
-      return 'draft' as const
+      return 'draft'
   }
-}
-
-function isGeneratedSectionContent(
-  content: TalentMapSectionReport['content_json'],
-): content is TalentMapGeneratedSectionV1 {
-  return (
-    typeof content === 'object' &&
-    content !== null &&
-    'schema_version' in content &&
-    content.schema_version === 'talent_map_section_v1'
-  )
 }
 
 function resolveSectionUiStatus(params: {
@@ -122,7 +125,9 @@ function SectionGeneratedResult({ report }: { report: TalentMapSectionReport }) 
     )
   }
 
-  const content = isGeneratedSectionContent(report.content_json) ? report.content_json : null
+  const content = isTalentMapGeneratedSectionContent(report.content_json)
+    ? report.content_json
+    : null
 
   return (
     <div className="generated-section-result stack">
@@ -156,6 +161,28 @@ function SectionGeneratedResult({ report }: { report: TalentMapSectionReport }) 
         </details>
       ) : null}
 
+      {content && 'generation_meta' in content && content.generation_meta ? (
+        <details className="generated-section-details">
+          <summary>Сборка</summary>
+          <ul className="generated-section-list">
+            <li>
+              Качество: {content.generation_meta.model_preset_label} (
+              {content.generation_meta.model})
+            </li>
+            <li>Reasoning effort: {content.generation_meta.reasoning_effort}</li>
+            <li>Max output tokens: {content.generation_meta.max_output_tokens}</li>
+            <li>Внутренние токены: {content.generation_meta.internal_credit_cost}</li>
+            {content.generation_meta.estimated_cost_usd !== null ? (
+              <li>
+                Оценка стоимости: ~${content.generation_meta.estimated_cost_usd.toFixed(4)} USD
+              </li>
+            ) : null}
+          </ul>
+        </details>
+      ) : report.model ? (
+        <p className="city-autocomplete__hint">Модель сборки: {report.model}</p>
+      ) : null}
+
       {content?.qa ? (
         <details className="generated-section-details">
           <summary>QA результата</summary>
@@ -167,6 +194,52 @@ function SectionGeneratedResult({ report }: { report: TalentMapSectionReport }) 
           </ul>
         </details>
       ) : null}
+    </div>
+  )
+}
+
+function ModelPresetSelector(props: {
+  selectedPresetId: TalentMapModelPresetId
+  onChange: (presetId: TalentMapModelPresetId) => void
+  disabled: boolean
+}) {
+  return (
+    <div className="model-preset-selector stack">
+      <div>
+        <p className="model-preset-selector__title">Качество сборки</p>
+        <p className="city-autocomplete__hint">
+          Выберите, какой моделью собрать раздел. Чем выше качество, тем дороже сборка во внутренних
+          токенах.
+        </p>
+      </div>
+      <div className="model-preset-selector__options stack">
+        {TALENT_MAP_MODEL_PRESET_ORDER.map((presetId) => {
+          const preset = TALENT_MAP_MODEL_PRESETS[presetId]
+          const inputId = `model-preset-${presetId}`
+
+          return (
+            <label key={presetId} className="model-preset-option" htmlFor={inputId}>
+              <input
+                id={inputId}
+                type="radio"
+                name="model_preset_id"
+                value={presetId}
+                checked={props.selectedPresetId === presetId}
+                disabled={props.disabled}
+                onChange={() => {
+                  props.onChange(presetId)
+                }}
+              />
+              <span className="model-preset-option__content">
+                <span className="model-preset-option__label">
+                  {preset.ui_label} — {preset.internal_credit_cost} токенов
+                </span>
+                <span className="model-preset-option__description">{preset.ui_description}</span>
+              </span>
+            </label>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -185,6 +258,10 @@ export function TalentMapTab() {
     handleGenerateWorkModeAndEntrySection,
   } = useCandidateWorkspace()
 
+  const [selectedModelPresetId, setSelectedModelPresetId] = useState<TalentMapModelPresetId>(
+    DEFAULT_TALENT_MAP_MODEL_PRESET_ID,
+  )
+
   const collectedCount = MVP_TALENT_MAP_SECTIONS.filter(
     (section) => sectionReports[section.key]?.status === 'ready',
   ).length
@@ -193,6 +270,8 @@ export function TalentMapTab() {
   const workModePreview = synthesisPreview?.sections.find(
     (section) => section.section_key === 'work_mode_and_entry',
   )
+
+  const selectedPreset = TALENT_MAP_MODEL_PRESETS[selectedModelPresetId]
 
   const canGenerateWorkMode =
     chartUiStatus === 'calculated' &&
@@ -262,6 +341,7 @@ export function TalentMapTab() {
           const sourcesReady = budget?.total_selected ?? bundleResult?.coverage?.matched_elements ?? 0
           const isWorkModeSection = section.key === 'work_mode_and_entry'
           const canGenerateSection = isWorkModeSection && canGenerateWorkMode
+          const sectionIsReady = report?.status === 'ready'
 
           return (
             <Card key={section.key} className="talent-section-card">
@@ -308,10 +388,6 @@ export function TalentMapTab() {
                     </>
                   ) : null}
                   <div className="info-list__row">
-                    <dt>Стоимость</dt>
-                    <dd>{section.creditCost} токен</dd>
-                  </div>
-                  <div className="info-list__row">
                     <dt>Сложность сборки</dt>
                     <dd>{section.compute_weight}</dd>
                   </div>
@@ -319,17 +395,34 @@ export function TalentMapTab() {
 
                 {report ? <SectionGeneratedResult report={report} /> : null}
 
+                {isWorkModeSection ? (
+                  <ModelPresetSelector
+                    selectedPresetId={selectedModelPresetId}
+                    onChange={setSelectedModelPresetId}
+                    disabled={!canGenerateSection || sectionGenerationLoading}
+                  />
+                ) : null}
+
                 <div className="form-actions">
                   {isWorkModeSection ? (
-                    <Button
-                      type="button"
-                      disabled={!canGenerateSection}
-                      onClick={() => {
-                        void handleGenerateWorkModeAndEntrySection()
-                      }}
-                    >
-                      {sectionGenerationLoading ? 'Сборка…' : 'Собрать раздел'}
-                    </Button>
+                    <>
+                      <Button
+                        type="button"
+                        disabled={!canGenerateSection}
+                        onClick={() => {
+                          void handleGenerateWorkModeAndEntrySection(selectedModelPresetId)
+                        }}
+                      >
+                        {sectionGenerationLoading
+                          ? 'Сборка…'
+                          : sectionIsReady
+                            ? 'Пересобрать раздел'
+                            : 'Собрать раздел'}
+                      </Button>
+                      <p className="city-autocomplete__hint">
+                        Будет списано: {selectedPreset.internal_credit_cost} токенов
+                      </p>
+                    </>
                   ) : (
                     <>
                       <Button type="button" disabled>

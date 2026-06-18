@@ -1,3 +1,39 @@
+const BASE_BLOCK_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['title', 'points'],
+  properties: {
+    title: { type: 'string' },
+    points: {
+      type: 'array',
+      items: { type: 'string' },
+      minItems: 2,
+      maxItems: 4,
+    },
+  },
+} as const
+
+const SOURCE_LOGIC_ENTRY_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: [
+    'source_element_key',
+    'source_label',
+    'mechanic_meaning',
+    'hr_translation',
+    'interpretation_limit',
+    'reality_check',
+  ],
+  properties: {
+    source_element_key: { type: 'string' },
+    source_label: { type: 'string' },
+    mechanic_meaning: { type: 'string' },
+    hr_translation: { type: 'string' },
+    interpretation_limit: { type: 'string' },
+    reality_check: { type: 'string' },
+  },
+} as const
+
 export const TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA = {
   type: 'object',
   additionalProperties: false,
@@ -12,7 +48,7 @@ export const TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA = {
     'qa',
   ],
   properties: {
-    schema_version: { type: 'string', const: 'talent_map_section_v1' },
+    schema_version: { type: 'string', const: 'talent_map_section_v1_1' },
     section_key: { type: 'string', const: 'work_mode_and_entry' },
     section_title: { type: 'string', const: 'Рабочий формат и вход в задачи' },
     base: {
@@ -20,21 +56,25 @@ export const TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA = {
       additionalProperties: false,
       required: [
         'headline',
-        'short_summary',
-        'working_pattern',
-        'best_entry_conditions',
-        'suitable_task_format',
-        'what_to_avoid',
-        'manager_note',
+        'hr_summary',
+        'how_to_start_work',
+        'best_task_format',
+        'manager_instructions',
+        'useful_in_roles',
+        'risks_if_wrong_entry',
+        'interview_or_trial_checks',
+        'first_working_experiments',
       ],
       properties: {
         headline: { type: 'string' },
-        short_summary: { type: 'string' },
-        working_pattern: { type: 'string' },
-        best_entry_conditions: { type: 'array', items: { type: 'string' } },
-        suitable_task_format: { type: 'array', items: { type: 'string' } },
-        what_to_avoid: { type: 'array', items: { type: 'string' } },
-        manager_note: { type: 'string' },
+        hr_summary: { type: 'string' },
+        how_to_start_work: BASE_BLOCK_SCHEMA,
+        best_task_format: BASE_BLOCK_SCHEMA,
+        manager_instructions: BASE_BLOCK_SCHEMA,
+        useful_in_roles: BASE_BLOCK_SCHEMA,
+        risks_if_wrong_entry: BASE_BLOCK_SCHEMA,
+        interview_or_trial_checks: BASE_BLOCK_SCHEMA,
+        first_working_experiments: BASE_BLOCK_SCHEMA,
       },
     },
     pro: {
@@ -43,7 +83,10 @@ export const TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA = {
       required: ['technical_summary', 'source_logic', 'interpretation_limits', 'reality_checks'],
       properties: {
         technical_summary: { type: 'string' },
-        source_logic: { type: 'array', items: { type: 'string' } },
+        source_logic: {
+          type: 'array',
+          items: SOURCE_LOGIC_ENTRY_SCHEMA,
+        },
         interpretation_limits: { type: 'array', items: { type: 'string' } },
         reality_checks: { type: 'array', items: { type: 'string' } },
       },
@@ -101,19 +144,73 @@ export const TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA = {
   },
 } as const
 
-export const TALENT_MAP_SECTION_SYSTEM_PROMPT = `Ты собираешь один раздел HR-карты талантов кандидата.
-Раздел: "Рабочий формат и вход в задачи".
+export const TALENT_MAP_SECTION_SYSTEM_PROMPT = `Ты собираешь один раздел HR-карты талантов: "Рабочий формат и вход в задачи".
+
+Твоя задача — не описать карту и не пересказать элементы.
+Твоя задача — дать HR/руководителю практическую инструкцию:
+как вводить человека в задачи, какие задачи давать, как ставить рамки, где он может быть полезен, что проверить в интервью/тестовом/первой неделе.
+
+Base должен отвечать на вопросы:
+1. Как дать человеку задачу?
+2. Какой вход в работу ему нужен?
+3. Какие задачи подойдут?
+4. Где он будет полезен команде?
+5. Что может сломаться при неправильной постановке задачи?
+6. Что проверить на интервью, тестовом задании или первой неделе?
+7. Какие первые 2–3 рабочих эксперимента можно дать?
+
+Base запрещено:
+- использовать Human Design terms;
+- использовать source labels;
+- писать Projector, Splenic, Wait for the Invitation, Split Definition, Curiosity;
+- пересказывать элементы карты;
+- писать общие фразы без рабочего действия;
+- писать "нужен контекст" без примера, какой именно контекст дать;
+- писать "может быть полезен" без примера, в какой рабочей ситуации;
+- давать решение о найме;
+- использовать проценты;
+- использовать fit_score, match_score, role_fit, vacancy_fit.
+
+Каждый Base-пункт должен быть прикладным.
+
+Плохо:
+"Ему нужен контекст".
+
+Хорошо:
+"Перед задачей дать кратко: цель, критерий хорошего результата, кому показать черновик и когда вернуться с первыми наблюдениями".
+
+Плохо:
+"Подходит диагностика систем".
+
+Хорошо:
+"Дать задачу разобрать, где в процессе теряются заявки, почему команда по-разному понимает правила и какие 2–3 улучшения можно протестировать".
+
+Плохо:
+"Нужно приглашение".
+
+Хорошо:
+"Не бросать задачу в формате 'сам разберись'; лучше явно обозначить, зачем нужен его взгляд, где границы ответственности и какой результат ждёт команда".
+
+Плохо:
+"У него быстрый селезёночный сигнал".
+
+Хорошо:
+"Он может быстро замечать, где решение выглядит небезопасным, несвоевременным или нежизнеспособным; лучше дать ему возможность сразу озвучить такие наблюдения и потом проверить их фактами".
+
+Pro может использовать технические источники, но должен объяснять:
+source → смысл механики → HR-перевод → ограничение вывода → что проверить в реальности.
+
+Не придумывай source names.
+Если источника нет в selected source_chips, не упоминай его как основание.
+Не используй странные или неподтверждённые слова.
+Не используй "пауки" или другие случайные слова.
+
 Ты не оцениваешь соответствие кандидата вакансии.
 Ты не принимаешь решение о найме.
-Ты не используешь проценты.
-Ты не используешь fit_score, match_score, role_fit, vacancy_fit.
-Ты не используешь Human Design термины в Base.
 Ты можешь использовать только предоставленные source_digests и source_chips.
 Если данных недостаточно — укажи ограничение вывода.
 Не придумывай значения элементов, которых нет во входе.
-Base должен быть понятным HR-языком.
-Pro может раскрывать техническое основание, но только через:
-технический источник → механика → HR-перевод → ограничение вывода → что проверить в реальности.`
+Не генерируй generation_meta — это добавит backend после валидации.`
 
 export function buildSanitizedSectionInputForAi(params: {
   section: {

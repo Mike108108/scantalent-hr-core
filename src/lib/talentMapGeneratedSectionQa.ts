@@ -1,39 +1,72 @@
 import type { SourceChip } from './talentMapSynthesisContract'
 import {
-  validateTalentMapGeneratedSectionV1,
-  type TalentMapGeneratedSectionV1,
+  isTalentMapGeneratedSectionV1_1,
+  renderGeneratedSectionBaseMarkdown,
+  validateTalentMapGeneratedSectionV1_1,
+  type TalentMapGeneratedSectionV1_1,
 } from './talentMapGeneratedSectionContract'
 
 export type GeneratedSectionQaResult = {
   ok: boolean
   issues: string[]
-  data?: TalentMapGeneratedSectionV1
+  data?: TalentMapGeneratedSectionV1_1
 }
 
 export const GENERATED_BASE_FORBIDDEN_TERMS = [
   'human design',
   'дизайн человека',
   'бодиграф',
+  'projector',
   'проектор',
+  'manifestor',
   'манифестор',
+  'generator',
   'генератор',
+  'reflector',
   'рефлектор',
-  'ворота',
-  'канал',
-  'центр',
-  'авторитет',
-  'стратегия',
-  'профиль',
-  'активация',
+  'splenic',
+  'spleen',
+  'селезёночный',
+  'селезеночный',
   'селезёнка',
   'селезенка',
+  'sacral',
   'сакрал',
-  'горло',
+  'authority',
+  'авторитет',
+  'strategy',
+  'стратегия',
+  'profile',
+  'профиль',
+  'gate',
+  'ворота',
+  'channel',
+  'канал',
+  'center',
+  'центр',
+  'ajna',
   'аджна',
+  'throat',
+  'горло',
+  'root',
   'корень',
+  'g center',
   'g-центр',
-  'эго-центр',
+  'ego',
+  'эго',
+  'split definition',
+  'definition',
+  'wait for the invitation',
+  'curiosity',
+  'activation',
+  'активация',
+  'personality sun',
+  'design sun',
+  'personality earth',
+  'design earth',
 ] as const
+
+export const GENERATED_GARBAGE_TERMS = ['пауки'] as const
 
 const FORBIDDEN_PRODUCT_PATTERNS: ReadonlyArray<{ pattern: RegExp; label: string }> = [
   { pattern: /\bfit_score\b/i, label: 'fit_score' },
@@ -55,25 +88,35 @@ function sourceChipKey(chip: { element_kind: string; element_key: string }): str
   return `${chip.element_kind}:${chip.element_key}`
 }
 
-function collectBaseText(section: TalentMapGeneratedSectionV1): string {
-  const { base } = section
-  return [
-    base.headline,
-    base.short_summary,
-    base.working_pattern,
-    base.manager_note,
-    ...base.best_entry_conditions,
-    ...base.suitable_task_format,
-    ...base.what_to_avoid,
-  ].join('\n')
+function isSourceKeyAllowed(
+  key: string,
+  allowedSourceKeys: Set<string>,
+  inputSourceChips: SourceChip[],
+): boolean {
+  if (allowedSourceKeys.has(key)) {
+    return true
+  }
+
+  return inputSourceChips.some((chip) => chip.element_key === key)
 }
 
-function collectAllText(section: TalentMapGeneratedSectionV1): string {
+function collectBaseScanText(section: TalentMapGeneratedSectionV1_1): string {
+  return [JSON.stringify(section.base), renderGeneratedSectionBaseMarkdown(section)].join('\n')
+}
+
+function collectAllText(section: TalentMapGeneratedSectionV1_1): string {
   const { pro, summary_for_synthesis } = section
   return [
-    collectBaseText(section),
+    collectBaseScanText(section),
     pro.technical_summary,
-    ...pro.source_logic,
+    ...pro.source_logic.flatMap((entry) => [
+      entry.source_element_key,
+      entry.source_label,
+      entry.mechanic_meaning,
+      entry.hr_translation,
+      entry.interpretation_limit,
+      entry.reality_check,
+    ]),
     ...pro.interpretation_limits,
     ...pro.reality_checks,
     summary_for_synthesis.one_sentence,
@@ -82,9 +125,9 @@ function collectAllText(section: TalentMapGeneratedSectionV1): string {
   ].join('\n')
 }
 
-function findForbiddenBaseTerms(text: string): string[] {
+function findForbiddenTerms(text: string, terms: readonly string[]): string[] {
   const lower = text.toLowerCase()
-  return GENERATED_BASE_FORBIDDEN_TERMS.filter((term) => lower.includes(term))
+  return terms.filter((term) => lower.includes(term.toLowerCase()))
 }
 
 function findForbiddenProductHits(text: string): string[] {
@@ -97,23 +140,32 @@ function findForbiddenProductHits(text: string): string[] {
   return hits
 }
 
-function isProEmpty(section: TalentMapGeneratedSectionV1): boolean {
+function isProEmpty(section: TalentMapGeneratedSectionV1_1): boolean {
   const { pro } = section
   return (
     !pro.technical_summary.trim() &&
-    pro.source_logic.every((item) => !item.trim()) &&
+    pro.source_logic.length === 0 &&
     pro.interpretation_limits.every((item) => !item.trim()) &&
     pro.reality_checks.every((item) => !item.trim())
   )
 }
 
-function isBaseEmpty(section: TalentMapGeneratedSectionV1): boolean {
+function isBaseEmpty(section: TalentMapGeneratedSectionV1_1): boolean {
   const { base } = section
+  const blocks = [
+    base.how_to_start_work,
+    base.best_task_format,
+    base.manager_instructions,
+    base.useful_in_roles,
+    base.risks_if_wrong_entry,
+    base.interview_or_trial_checks,
+    base.first_working_experiments,
+  ]
+
   return (
     !base.headline.trim() &&
-    !base.short_summary.trim() &&
-    !base.working_pattern.trim() &&
-    !base.manager_note.trim()
+    !base.hr_summary.trim() &&
+    blocks.every((block) => !block.title.trim() && block.points.every((point) => !point.trim()))
   )
 }
 
@@ -123,7 +175,7 @@ export function runTalentMapGeneratedSectionQa(params: {
 }): GeneratedSectionQaResult {
   const issues: string[] = []
 
-  const validation = validateTalentMapGeneratedSectionV1(params.generated)
+  const validation = validateTalentMapGeneratedSectionV1_1(params.generated)
   if (!validation.ok || !validation.data) {
     return {
       ok: false,
@@ -132,6 +184,10 @@ export function runTalentMapGeneratedSectionQa(params: {
   }
 
   const section = validation.data
+
+  if (!isTalentMapGeneratedSectionV1_1(section)) {
+    issues.push('Generated section must use schema talent_map_section_v1_1.')
+  }
 
   if (section.section_key !== 'work_mode_and_entry') {
     issues.push('section_key must be work_mode_and_entry.')
@@ -145,12 +201,23 @@ export function runTalentMapGeneratedSectionQa(params: {
     issues.push('Pro section content is empty.')
   }
 
-  const baseForbiddenTerms = findForbiddenBaseTerms(collectBaseText(section))
+  const baseScanText = collectBaseScanText(section)
+  const baseForbiddenTerms = findForbiddenTerms(baseScanText, GENERATED_BASE_FORBIDDEN_TERMS)
   if (baseForbiddenTerms.length > 0) {
-    issues.push(`Base contains forbidden HD terms: ${baseForbiddenTerms.join(', ')}.`)
+    for (const term of baseForbiddenTerms) {
+      issues.push(`base.forbidden_term: ${term}`)
+    }
   }
 
-  const productHits = findForbiddenProductHits(collectAllText(section))
+  const allText = collectAllText(section)
+  const garbageTerms = findForbiddenTerms(allText, GENERATED_GARBAGE_TERMS)
+  if (garbageTerms.length > 0) {
+    for (const term of garbageTerms) {
+      issues.push(`garbage_term: ${term}`)
+    }
+  }
+
+  const productHits = findForbiddenProductHits(allText)
   if (productHits.length > 0) {
     issues.push(`Output contains forbidden product logic: ${[...new Set(productHits)].join(', ')}.`)
   }
@@ -178,8 +245,20 @@ export function runTalentMapGeneratedSectionQa(params: {
   const allowedSourceKeys = new Set(
     params.inputSourceChips.map((chip) => `${chip.element_kind}:${chip.element_key}`),
   )
+
+  const invalidSourceLogicKeys = section.pro.source_logic.filter(
+    (entry) => !isSourceKeyAllowed(entry.source_element_key, allowedSourceKeys, params.inputSourceChips),
+  )
+  if (invalidSourceLogicKeys.length > 0) {
+    issues.push(
+      `pro.source_logic contains unknown source_element_key values: ${invalidSourceLogicKeys
+        .map((entry) => entry.source_element_key)
+        .join(', ')}.`,
+    )
+  }
+
   const invalidSummaryKeys = section.summary_for_synthesis.source_element_keys.filter(
-    (key) => !allowedSourceKeys.has(key) && !params.inputSourceChips.some((chip) => chip.element_key === key),
+    (key) => !isSourceKeyAllowed(key, allowedSourceKeys, params.inputSourceChips),
   )
   if (invalidSummaryKeys.length > 0) {
     issues.push(

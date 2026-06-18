@@ -11,8 +11,8 @@ const REQUIRED_ENV_KEYS = [
 
 const OPTIONAL_ENV_KEYS = {
   OPENAI_RESPONSES_MODEL: {
-    default: 'gpt-5-nano',
-    note: 'optional, default gpt-5-nano',
+    default: 'deprecated',
+    note: 'deprecated dev env only; talent map section generation uses client model presets',
   },
 } as const
 

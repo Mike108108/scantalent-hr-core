@@ -352,7 +352,8 @@ ol {
   border: 1px solid transparent;
 }
 
-.status-badge--draft {
+.status-badge--draft,
+.status-badge--pending {
   background: rgba(154, 164, 184, 0.15);
   color: var(--text-muted);
   border-color: var(--border);
@@ -978,6 +979,48 @@ ol {
 
 .generated-section-chip-reason {
   margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.model-preset-selector {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.model-preset-selector__title {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+}
+
+.model-preset-selector__options {
+  gap: 0.65rem;
+}
+
+.model-preset-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  cursor: pointer;
+}
+
+.model-preset-option input {
+  margin-top: 0.2rem;
+}
+
+.model-preset-option__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.model-preset-option__label {
+  font-weight: 600;
+}
+
+.model-preset-option__description {
   color: var(--text-muted);
   font-size: 0.85rem;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useCandidateWorkspace } from '../CandidateWorkspaceContext'
 import { Button } from '../../ui/Button'
 import { Card } from '../../ui/Card'
@@ -95,6 +95,54 @@ function resolveSectionUiStatus(params: {
   }
 
   return { badgeStatus: 'not_generated', label: 'Ещё не собран' }
+}
+
+function SectionCollapseButton(props: {
+  expanded: boolean
+  sectionTitle: string
+  onToggle: () => void
+}) {
+  return (
+    <button
+      type="button"
+      className="icon-button icon-button--ghost"
+      aria-expanded={props.expanded}
+      aria-label={
+        props.expanded
+          ? `Свернуть раздел «${props.sectionTitle}»`
+          : `Развернуть раздел «${props.sectionTitle}»`
+      }
+      title={props.expanded ? 'Свернуть раздел' : 'Развернуть раздел'}
+      onClick={props.onToggle}
+    >
+      <svg
+        className={`icon-button__icon icon-button__icon--chevron${props.expanded ? ' icon-button__icon--chevron-expanded' : ''}`}
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path
+          d="M8 10l4 4 4-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
+  )
+}
+
+function SectionGenerationProgress() {
+  return (
+    <div className="section-generation-progress" role="status" aria-live="polite">
+      <p className="section-generation-progress__label">Идёт сборка раздела…</p>
+      <div className="section-generation-progress__track" aria-hidden="true">
+        <div className="section-generation-progress__bar" />
+      </div>
+    </div>
+  )
 }
 
 function SectionReportDownloadButton({ report }: { report: TalentMapSectionReport }) {
@@ -389,6 +437,24 @@ function ModelPresetSelector(props: {
   )
 }
 
+function buildInitialExpandedSectionKeys(
+  sectionReports: Partial<Record<TalentMapSectionKey, TalentMapSectionReport>>,
+): Set<TalentMapSectionKey> {
+  const keys = new Set<TalentMapSectionKey>()
+
+  for (const section of MVP_TALENT_MAP_SECTIONS) {
+    const report = sectionReports[section.key]
+    const isReadyOrProcessing =
+      report?.status === 'ready' || report?.status === 'processing'
+
+    if (section.key === 'work_mode_and_entry' || isReadyOrProcessing) {
+      keys.add(section.key)
+    }
+  }
+
+  return keys
+}
+
 export function TalentMapTab() {
   const {
     bundleResult,
@@ -408,6 +474,31 @@ export function TalentMapTab() {
     DEFAULT_TALENT_MAP_MODEL_PRESET_ID,
   )
   const [localGenerationStartedAt, setLocalGenerationStartedAt] = useState<string | null>(null)
+  const [expandedSectionKeys, setExpandedSectionKeys] = useState<Set<TalentMapSectionKey>>(
+    () => new Set(['work_mode_and_entry']),
+  )
+  const accordionInitializedRef = useRef(false)
+
+  useEffect(() => {
+    if (accordionInitializedRef.current || sectionReportsLoading) {
+      return
+    }
+
+    accordionInitializedRef.current = true
+    setExpandedSectionKeys(buildInitialExpandedSectionKeys(sectionReports))
+  }, [sectionReports, sectionReportsLoading])
+
+  const toggleSectionExpanded = (sectionKey: TalentMapSectionKey) => {
+    setExpandedSectionKeys((prev) => {
+      const next = new Set(prev)
+      if (next.has(sectionKey)) {
+        next.delete(sectionKey)
+      } else {
+        next.add(sectionKey)
+      }
+      return next
+    })
+  }
 
   const collectedCount = MVP_TALENT_MAP_SECTIONS.filter(
     (section) => sectionReports[section.key]?.status === 'ready',
@@ -502,9 +593,13 @@ export function TalentMapTab() {
           const sectionIsReady = report?.status === 'ready'
           const sectionIsProcessing =
             (sectionGenerationLoading || report?.status === 'processing') && isWorkModeSection
+          const isSectionExpanded = expandedSectionKeys.has(section.key)
 
           return (
-            <Card key={section.key} className="talent-section-card">
+            <Card
+              key={section.key}
+              className={`talent-section-card${isSectionExpanded ? '' : ' talent-section-card--collapsed'}`}
+            >
               <div className="stack">
                 <div className="talent-section-card__header">
                   <h3 className="talent-section-card__title">{section.title}</h3>
@@ -516,111 +611,139 @@ export function TalentMapTab() {
                     {sectionIsReady && report ? (
                       <SectionReportDownloadButton report={report} />
                     ) : null}
+                    <SectionCollapseButton
+                      expanded={isSectionExpanded}
+                      sectionTitle={section.title}
+                      onToggle={() => {
+                        toggleSectionExpanded(section.key)
+                      }}
+                    />
                   </div>
                 </div>
-                {isWorkModeSection ? (
-                  <SectionGenerationTimer
-                    report={report}
-                    isProcessing={sectionIsProcessing}
-                    fallbackStartedAt={localGenerationStartedAt}
-                  />
-                ) : null}
-                <p className="talent-section-card__description">{section.description}</p>
-                <dl className="info-list info-list--compact">
-                  <div className="info-list__row">
-                    <dt>Подготовка входа</dt>
-                    <dd>
-                      {generationStatus === 'input_ready'
-                        ? 'Готово к сборке'
-                        : generationStatus === 'input_not_ready'
-                          ? 'Вход не готов'
-                          : 'Ожидает данных карты'}
-                    </dd>
-                  </div>
-                  <div className="info-list__row">
-                    <dt>Подготовленные источники</dt>
-                    <dd>{sourcesReady}</dd>
-                  </div>
-                  {budget ? (
-                    <>
+
+                {isSectionExpanded ? (
+                  <div className="talent-section-card__body stack">
+                    {sectionIsProcessing ? (
+                      <div className="section-generation-status stack">
+                        <SectionGenerationProgress />
+                        {isWorkModeSection ? (
+                          <SectionGenerationTimer
+                            report={report}
+                            isProcessing={sectionIsProcessing}
+                            fallbackStartedAt={localGenerationStartedAt}
+                          />
+                        ) : null}
+                      </div>
+                    ) : isWorkModeSection ? (
+                      <SectionGenerationTimer
+                        report={report}
+                        isProcessing={sectionIsProcessing}
+                        fallbackStartedAt={localGenerationStartedAt}
+                      />
+                    ) : null}
+                    <p className="talent-section-card__description">{section.description}</p>
+                    <dl className="info-list info-list--compact">
                       <div className="info-list__row">
-                        <dt>Primary / Supporting / Context</dt>
+                        <dt>Подготовка входа</dt>
                         <dd>
-                          {budget.primary_selected} / {budget.supporting_selected} /{' '}
-                          {budget.context_selected}
+                          {generationStatus === 'input_ready'
+                            ? 'Готово к сборке'
+                            : generationStatus === 'input_not_ready'
+                              ? 'Вход не готов'
+                              : 'Ожидает данных карты'}
                         </dd>
                       </div>
                       <div className="info-list__row">
-                        <dt>Примерный размер входа</dt>
-                        <dd>
-                          ~{budget.total_digest_chars.toLocaleString('ru-RU')} симв. (
-                          ~{budget.estimated_input_tokens.toLocaleString('ru-RU')} ед.)
-                        </dd>
+                        <dt>Подготовленные источники</dt>
+                        <dd>{sourcesReady}</dd>
                       </div>
-                    </>
-                  ) : null}
-                  <div className="info-list__row">
-                    <dt>Сложность сборки</dt>
-                    <dd>{section.compute_weight}</dd>
-                  </div>
-                </dl>
+                      {budget ? (
+                        <>
+                          <div className="info-list__row">
+                            <dt>Primary / Supporting / Context</dt>
+                            <dd>
+                              {budget.primary_selected} / {budget.supporting_selected} /{' '}
+                              {budget.context_selected}
+                            </dd>
+                          </div>
+                          <div className="info-list__row">
+                            <dt>Примерный размер входа</dt>
+                            <dd>
+                              ~{budget.total_digest_chars.toLocaleString('ru-RU')} симв. (
+                              ~{budget.estimated_input_tokens.toLocaleString('ru-RU')} ед.)
+                            </dd>
+                          </div>
+                        </>
+                      ) : null}
+                      <div className="info-list__row">
+                        <dt>Сложность сборки</dt>
+                        <dd>{section.compute_weight}</dd>
+                      </div>
+                    </dl>
 
-                {report && report.status !== 'processing' ? (
-                  <SectionGeneratedResult report={report} />
-                ) : null}
+                    {report && report.status !== 'processing' ? (
+                      <SectionGeneratedResult report={report} />
+                    ) : null}
 
-                {isWorkModeSection ? (
-                  <ModelPresetSelector
-                    selectedPresetId={selectedModelPresetId}
-                    onChange={setSelectedModelPresetId}
-                    disabled={!canGenerateSection || sectionIsProcessing}
-                  />
-                ) : null}
-
-                <div className="form-actions">
-                  {isWorkModeSection ? (
-                    <>
-                      <Button
-                        type="button"
+                    {isWorkModeSection ? (
+                      <ModelPresetSelector
+                        selectedPresetId={selectedModelPresetId}
+                        onChange={setSelectedModelPresetId}
                         disabled={!canGenerateSection || sectionIsProcessing}
-                        onClick={() => {
-                          setLocalGenerationStartedAt(new Date().toISOString())
-                          void handleGenerateWorkModeAndEntrySection(selectedModelPresetId)
-                        }}
-                      >
-                        {sectionIsProcessing
-                          ? 'Собирается…'
-                          : sectionIsReady
-                            ? 'Пересобрать раздел'
-                            : 'Собрать раздел'}
-                      </Button>
-                      {sectionIsProcessing ? (
-                        <p className="city-autocomplete__hint">
-                          Собирается. Обычно это занимает до минуты.
-                        </p>
+                      />
+                    ) : null}
+
+                    <div className="form-actions">
+                      {isWorkModeSection ? (
+                        <>
+                          <Button
+                            type="button"
+                            disabled={!canGenerateSection || sectionIsProcessing}
+                            onClick={() => {
+                              setLocalGenerationStartedAt(new Date().toISOString())
+                              setExpandedSectionKeys((prev) => {
+                                const next = new Set(prev)
+                                next.add(section.key)
+                                return next
+                              })
+                              void handleGenerateWorkModeAndEntrySection(selectedModelPresetId)
+                            }}
+                          >
+                            {sectionIsProcessing
+                              ? 'Собирается…'
+                              : sectionIsReady
+                                ? 'Пересобрать раздел'
+                                : 'Собрать раздел'}
+                          </Button>
+                          {sectionIsProcessing ? (
+                            <p className="city-autocomplete__hint">
+                              Собирается. Обычно это занимает до минуты.
+                            </p>
+                          ) : (
+                            <p className="city-autocomplete__hint">
+                              Будет списано: {selectedPreset.internal_credit_cost} токенов
+                            </p>
+                          )}
+                        </>
                       ) : (
-                        <p className="city-autocomplete__hint">
-                          Будет списано: {selectedPreset.internal_credit_cost} токенов
-                        </p>
+                        <>
+                          <Button type="button" disabled>
+                            Собрать раздел
+                          </Button>
+                          <p className="city-autocomplete__hint">
+                            Будет подключено после проверки первого раздела
+                          </p>
+                        </>
                       )}
-                    </>
-                  ) : (
-                    <>
-                      <Button type="button" disabled>
-                        Собрать раздел
+                      <Button
+                        variant="secondary"
+                        to={`/app/candidate/foundations?section=${section.key}`}
+                      >
+                        Показать основания
                       </Button>
-                      <p className="city-autocomplete__hint">
-                        Будет подключено после проверки первого раздела
-                      </p>
-                    </>
-                  )}
-                  <Button
-                    variant="secondary"
-                    to={`/app/candidate/foundations?section=${section.key}`}
-                  >
-                    Показать основания
-                  </Button>
-                </div>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </Card>
           )

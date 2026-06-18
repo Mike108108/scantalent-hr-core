@@ -12,7 +12,6 @@ import type { TalentMapSectionReport } from '../../../lib/talentMapSectionApi'
 import {
   formatSectionErrorBadgeLabel,
   formatSectionErrorUserMessage,
-  isPostGenerationQaFailure,
   shouldShowTechnicalErrorDetails,
 } from '../../../lib/talentMapSectionErrors'
 import type { SectionGenerationStatus } from '../../../lib/talentMapSectionTypes'
@@ -63,6 +62,12 @@ function resolveSectionUiStatus(params: {
   }
 
   if (params.report?.status === 'ready') {
+    const qualityFlags = Array.isArray(params.report.quality_flags)
+      ? params.report.quality_flags.filter((item): item is string => typeof item === 'string')
+      : []
+    if (qualityFlags.length > 0) {
+      return { badgeStatus: 'ready', label: 'Раздел собран с предупреждениями' }
+    }
     return { badgeStatus: 'ready', label: 'Раздел собран' }
   }
 
@@ -90,26 +95,15 @@ function SectionGeneratedResult({ report }: { report: TalentMapSectionReport }) 
     : []
 
   if (report.status === 'error') {
-    const isQaFailure = isPostGenerationQaFailure(report)
     const userMessage = formatSectionErrorUserMessage(report.generation_error)
     const showTechnicalDetails = shouldShowTechnicalErrorDetails(report)
 
     return (
       <div className="generated-section-result generated-section-result--error stack">
         <p className="generated-section-result__message">{userMessage}</p>
-        {isQaFailure && qualityFlags.length > 0 ? (
-          <details className="generated-section-details">
-            <summary>QA результата</summary>
-            <ul className="generated-section-list">
-              {qualityFlags.map((flag) => (
-                <li key={flag}>{flag}</li>
-              ))}
-            </ul>
-          </details>
-        ) : null}
         {showTechnicalDetails ? (
           <details className="generated-section-details">
-            <summary>QA результата</summary>
+            <summary>Технические детали</summary>
             <div className="stack">
               {report.generation_error ? (
                 <p className="generated-section-result__technical">{report.generation_error}</p>
@@ -194,6 +188,18 @@ function SectionGeneratedResult({ report }: { report: TalentMapSectionReport }) 
             <li>Forbidden terms checked: {content.qa.forbidden_terms_checked ? 'да' : 'нет'}</li>
             <li>Source chips checked: {content.qa.source_chips_checked ? 'да' : 'нет'}</li>
             <li>Limitations present: {content.qa.limitations_present ? 'да' : 'нет'}</li>
+          </ul>
+        </details>
+      ) : null}
+
+      {qualityFlags.length > 0 ? (
+        <details className="generated-section-details">
+          <summary>QA предупреждения</summary>
+          <p className="city-autocomplete__hint">Есть предупреждения качества:</p>
+          <ul className="generated-section-list">
+            {qualityFlags.map((flag) => (
+              <li key={flag}>{flag}</li>
+            ))}
           </ul>
         </details>
       ) : null}

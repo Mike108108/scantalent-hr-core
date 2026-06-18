@@ -1,7 +1,9 @@
 import { buildTalentMapSynthesisInput } from '../../src/lib/buildTalentMapSynthesisInput'
 import {
+  cleanGeneratedSectionText,
   renderGeneratedSectionBaseMarkdown,
   renderGeneratedSectionProMarkdown,
+  validateTalentMapGeneratedSection,
   type TalentMapGeneratedSection,
 } from '../../src/lib/talentMapGeneratedSectionContract'
 import { runTalentMapGeneratedSectionQa } from '../../src/lib/talentMapGeneratedSectionQa'
@@ -18,7 +20,6 @@ import {
   TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA,
   TALENT_MAP_SECTION_SYSTEM_PROMPT,
 } from '../../src/lib/talentMapSectionOpenAiSchema'
-import { QA_FAILURE_GENERATION_ERROR } from '../../src/lib/talentMapSectionErrors'
 import { getTalentMapSectionDefinition } from '../../src/lib/talentMapSynthesisContract'
 import type { SourceChip } from '../../src/lib/talentMapSynthesisContract'
 import {
@@ -551,28 +552,35 @@ export async function runBackgroundSectionGeneration(params: {
     preset: modelPreset,
   })
 
-  const qaResult = runTalentMapGeneratedSectionQa({
-    generated: openAiResult.parsed,
-    inputSourceChips: sourceChips,
-  })
-
-  if (!qaResult.ok || !qaResult.data) {
+  const schemaValidation = validateTalentMapGeneratedSection(openAiResult.parsed)
+  if (!schemaValidation.ok || !schemaValidation.data) {
+    const schemaIssues =
+      schemaValidation.issues.length > 0
+        ? schemaValidation.issues
+        : ['Generated section JSON is invalid.']
     await markLayerReportError({
       reportId: params.reportId,
       inputBundleJson,
       evidenceJson,
-      contentJson: qaResult.data ?? openAiResult.parsed,
-      qualityFlags: qaResult.issues,
+      contentJson: openAiResult.parsed,
+      qualityFlags: schemaIssues,
       model: openAiResult.model,
       usageJson,
       estimatedCostUsd,
-      generationError: QA_FAILURE_GENERATION_ERROR,
+      generationError: schemaIssues.join('; '),
     })
     return
   }
 
+  const cleanedSection = cleanGeneratedSectionText(schemaValidation.data)
+
+  const qaResult = runTalentMapGeneratedSectionQa({
+    generated: cleanedSection,
+    inputSourceChips: sourceChips,
+  })
+
   const generatedSection: TalentMapGeneratedSection = {
-    ...qaResult.data,
+    ...cleanedSection,
     generation_meta: {
       model_preset_id: modelPreset.id,
       model_preset_label: modelPreset.ui_label,
@@ -595,7 +603,7 @@ export async function runBackgroundSectionGeneration(params: {
     pro_markdown: proMarkdown,
     summary_for_synthesis: generatedSection.summary_for_synthesis,
     evidence_json: evidenceJson,
-    quality_flags: [],
+    quality_flags: qaResult.warnings,
     model: openAiResult.model,
     usage_json: usageJson,
     estimated_cost_usd: estimatedCostUsd,

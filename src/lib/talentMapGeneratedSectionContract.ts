@@ -288,6 +288,74 @@ export function validateTalentMapGeneratedSection(value: unknown): {
 /** @deprecated Use validateTalentMapGeneratedSection */
 export const validateTalentMapGeneratedSectionV1_1 = validateTalentMapGeneratedSection
 
+export function cleanGeneratedText(value: string): string {
+  return value
+    .replace(/\t+/g, ' ')
+    .replace(/[ ]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+function cleanGeneratedSectionBaseBlock(
+  block: TalentMapGeneratedSectionBaseBlock,
+): TalentMapGeneratedSectionBaseBlock {
+  return {
+    title: cleanGeneratedText(block.title),
+    points: block.points.map(cleanGeneratedText),
+  }
+}
+
+function cleanGeneratedSectionSourceLogicEntry(
+  entry: TalentMapGeneratedSectionSourceLogicEntry,
+): TalentMapGeneratedSectionSourceLogicEntry {
+  return {
+    source_element_key: cleanGeneratedText(entry.source_element_key),
+    source_label: cleanGeneratedText(entry.source_label),
+    mechanic_meaning: cleanGeneratedText(entry.mechanic_meaning),
+    hr_translation: cleanGeneratedText(entry.hr_translation),
+    interpretation_limit: cleanGeneratedText(entry.interpretation_limit),
+    reality_check: cleanGeneratedText(entry.reality_check),
+  }
+}
+
+export function cleanGeneratedSectionText(section: TalentMapGeneratedSection): TalentMapGeneratedSection {
+  return {
+    ...section,
+    base: {
+      headline: cleanGeneratedText(section.base.headline),
+      hr_summary: cleanGeneratedText(section.base.hr_summary),
+      how_to_start_work: cleanGeneratedSectionBaseBlock(section.base.how_to_start_work),
+      best_task_format: cleanGeneratedSectionBaseBlock(section.base.best_task_format),
+      manager_instructions: cleanGeneratedSectionBaseBlock(section.base.manager_instructions),
+      useful_in_roles: cleanGeneratedSectionBaseBlock(section.base.useful_in_roles),
+      risks_if_wrong_entry: cleanGeneratedSectionBaseBlock(section.base.risks_if_wrong_entry),
+      interview_or_trial_checks: cleanGeneratedSectionBaseBlock(section.base.interview_or_trial_checks),
+      first_working_experiments: cleanGeneratedSectionBaseBlock(section.base.first_working_experiments),
+    },
+    pro: {
+      technical_summary: cleanGeneratedText(section.pro.technical_summary),
+      source_logic: section.pro.source_logic.map(cleanGeneratedSectionSourceLogicEntry),
+      interpretation_limits: section.pro.interpretation_limits.map(cleanGeneratedText),
+      reality_checks: section.pro.reality_checks.map(cleanGeneratedText),
+    },
+    source_chips: section.source_chips.map((chip) => ({
+      ...chip,
+      element_kind: cleanGeneratedText(chip.element_kind),
+      element_key: cleanGeneratedText(chip.element_key),
+      element_label: cleanGeneratedText(chip.element_label),
+      role_in_layer: cleanGeneratedText(chip.role_in_layer),
+      reason_used: cleanGeneratedText(chip.reason_used),
+      link_target: cleanGeneratedText(chip.link_target),
+    })),
+    summary_for_synthesis: {
+      one_sentence: cleanGeneratedText(section.summary_for_synthesis.one_sentence),
+      key_conditions: section.summary_for_synthesis.key_conditions.map(cleanGeneratedText),
+      potential_risks: section.summary_for_synthesis.potential_risks.map(cleanGeneratedText),
+      source_element_keys: section.summary_for_synthesis.source_element_keys.map(cleanGeneratedText),
+    },
+  }
+}
+
 function renderMarkdownList(title: string, items: string[]): string {
   if (items.length === 0) {
     return `## ${title}\n\n—`

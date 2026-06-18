@@ -6,8 +6,12 @@ import {
 } from './talentMapGeneratedSectionContract'
 
 export type GeneratedSectionQaResult = {
+  /** False only when schema/JSON validation fails (technical blocker). */
   ok: boolean
+  /** Blocking schema/validation issues — cause status = error. */
   issues: string[]
+  /** Non-blocking content quality warnings — stored in quality_flags. */
+  warnings: string[]
   data?: TalentMapGeneratedSection
 }
 
@@ -168,102 +172,119 @@ function isBaseEmpty(section: TalentMapGeneratedSection): boolean {
   )
 }
 
+function qaWarning(category: string, detail: string): string {
+  return `warning: ${category}: ${detail}`
+}
+
+function collectContentQaWarnings(
+  section: TalentMapGeneratedSection,
+  inputSourceChips: SourceChip[],
+): string[] {
+  const warnings: string[] = []
+
+  if (isBaseEmpty(section)) {
+    warnings.push(qaWarning('text_quality.empty_base', 'Base section content is empty.'))
+  }
+
+  if (isProEmpty(section)) {
+    warnings.push(qaWarning('text_quality.empty_pro', 'Pro section content is empty.'))
+  }
+
+  const baseScanText = collectBaseScanText(section)
+  const baseForbiddenTerms = findForbiddenTerms(baseScanText, GENERATED_BASE_FORBIDDEN_TERMS)
+  for (const term of baseForbiddenTerms) {
+    warnings.push(qaWarning('base.technical_language', term))
+  }
+
+  const allText = collectAllText(section)
+  const garbageTerms = findForbiddenTerms(allText, GENERATED_GARBAGE_TERMS)
+  for (const term of garbageTerms) {
+    warnings.push(qaWarning('text_quality.garbage_term', term))
+  }
+
+  const productHits = findForbiddenProductHits(allText)
+  for (const hit of [...new Set(productHits)]) {
+    if (hit.includes('hire') || hit === 'hire_decision' || hit === 'hire_recommendation') {
+      warnings.push(qaWarning('forbidden_hiring_phrase', hit))
+    } else {
+      warnings.push(qaWarning('forbidden_score_language', hit))
+    }
+  }
+
+  const inputChipKeys = new Set(inputSourceChips.map(sourceChipKey))
+  const unknownChips = section.source_chips.filter(
+    (chip) => !inputChipKeys.has(sourceChipKey(chip)),
+  )
+  if (unknownChips.length > 0) {
+    warnings.push(
+      qaWarning(
+        'base.source_chips',
+        `source_chips contain elements not present in input: ${unknownChips
+          .map((chip) => sourceChipKey(chip))
+          .join(', ')}`,
+      ),
+    )
+  }
+
+  if (section.pro.interpretation_limits.length === 0) {
+    warnings.push(qaWarning('pro.interpretation_limits', 'interpretation_limits is empty.'))
+  }
+
+  if (section.pro.reality_checks.length === 0) {
+    warnings.push(qaWarning('pro.reality_checks', 'reality_checks is empty.'))
+  }
+
+  const allowedSourceKeys = new Set(
+    inputSourceChips.map((chip) => `${chip.element_kind}:${chip.element_key}`),
+  )
+
+  const invalidSourceLogicKeys = section.pro.source_logic.filter(
+    (entry) => !isSourceKeyAllowed(entry.source_element_key, allowedSourceKeys, inputSourceChips),
+  )
+  if (invalidSourceLogicKeys.length > 0) {
+    warnings.push(
+      qaWarning(
+        'pro.source_logic',
+        `unknown source_element_key values: ${invalidSourceLogicKeys
+          .map((entry) => entry.source_element_key)
+          .join(', ')}`,
+      ),
+    )
+  }
+
+  const invalidSummaryKeys = section.summary_for_synthesis.source_element_keys.filter(
+    (key) => !isSourceKeyAllowed(key, allowedSourceKeys, inputSourceChips),
+  )
+  if (invalidSummaryKeys.length > 0) {
+    warnings.push(
+      qaWarning(
+        'summary_for_synthesis.source_element_keys',
+        `unknown elements: ${invalidSummaryKeys.join(', ')}`,
+      ),
+    )
+  }
+
+  if (/\t+/.test(allText) || /[ ]{2,}/.test(allText) || /\n{3,}/.test(allText)) {
+    warnings.push(qaWarning('text_quality.excessive_whitespace', 'excessive whitespace detected'))
+  }
+
+  return warnings
+}
+
 export function runTalentMapGeneratedSectionQa(params: {
   generated: unknown
   inputSourceChips: SourceChip[]
 }): GeneratedSectionQaResult {
-  const issues: string[] = []
-
   const validation = validateTalentMapGeneratedSection(params.generated)
   if (!validation.ok || !validation.data) {
     return {
       ok: false,
       issues: validation.issues.length > 0 ? validation.issues : ['Generated section JSON is invalid.'],
+      warnings: [],
     }
   }
 
-  const section = validation.data
+  const warnings = collectContentQaWarnings(validation.data, params.inputSourceChips)
 
-  if (section.section_key !== 'work_mode_and_entry') {
-    issues.push('section_key must be work_mode_and_entry.')
-  }
-
-  if (isBaseEmpty(section)) {
-    issues.push('Base section content is empty.')
-  }
-
-  if (isProEmpty(section)) {
-    issues.push('Pro section content is empty.')
-  }
-
-  const baseScanText = collectBaseScanText(section)
-  const baseForbiddenTerms = findForbiddenTerms(baseScanText, GENERATED_BASE_FORBIDDEN_TERMS)
-  if (baseForbiddenTerms.length > 0) {
-    for (const term of baseForbiddenTerms) {
-      issues.push(`base.forbidden_term: ${term}`)
-    }
-  }
-
-  const allText = collectAllText(section)
-  const garbageTerms = findForbiddenTerms(allText, GENERATED_GARBAGE_TERMS)
-  if (garbageTerms.length > 0) {
-    for (const term of garbageTerms) {
-      issues.push(`garbage_term: ${term}`)
-    }
-  }
-
-  const productHits = findForbiddenProductHits(allText)
-  if (productHits.length > 0) {
-    issues.push(`Output contains forbidden product logic: ${[...new Set(productHits)].join(', ')}.`)
-  }
-
-  const inputChipKeys = new Set(params.inputSourceChips.map(sourceChipKey))
-  const unknownChips = section.source_chips.filter(
-    (chip) => !inputChipKeys.has(sourceChipKey(chip)),
-  )
-  if (unknownChips.length > 0) {
-    issues.push(
-      `source_chips contain elements not present in input: ${unknownChips
-        .map((chip) => sourceChipKey(chip))
-        .join(', ')}.`,
-    )
-  }
-
-  if (section.pro.interpretation_limits.length === 0) {
-    issues.push('pro.interpretation_limits is required.')
-  }
-
-  if (section.pro.reality_checks.length === 0) {
-    issues.push('pro.reality_checks is required.')
-  }
-
-  const allowedSourceKeys = new Set(
-    params.inputSourceChips.map((chip) => `${chip.element_kind}:${chip.element_key}`),
-  )
-
-  const invalidSourceLogicKeys = section.pro.source_logic.filter(
-    (entry) => !isSourceKeyAllowed(entry.source_element_key, allowedSourceKeys, params.inputSourceChips),
-  )
-  if (invalidSourceLogicKeys.length > 0) {
-    issues.push(
-      `pro.source_logic contains unknown source_element_key values: ${invalidSourceLogicKeys
-        .map((entry) => entry.source_element_key)
-        .join(', ')}.`,
-    )
-  }
-
-  const invalidSummaryKeys = section.summary_for_synthesis.source_element_keys.filter(
-    (key) => !isSourceKeyAllowed(key, allowedSourceKeys, params.inputSourceChips),
-  )
-  if (invalidSummaryKeys.length > 0) {
-    issues.push(
-      `summary_for_synthesis.source_element_keys contains unknown elements: ${invalidSummaryKeys.join(', ')}.`,
-    )
-  }
-
-  if (issues.length > 0) {
-    return { ok: false, issues, data: section }
-  }
-
-  return { ok: true, issues: [], data: section }
+  return { ok: true, issues: [], warnings, data: validation.data }
 }

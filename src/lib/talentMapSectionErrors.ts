@@ -52,9 +52,7 @@ export function formatSectionErrorBadgeLabel(report: {
   }
 
   if (report.status === 'error') {
-    return isPostGenerationQaFailure(report)
-      ? 'Раздел не прошёл проверку'
-      : 'Не удалось собрать раздел'
+    return 'Не удалось собрать раздел'
   }
 
   return 'Ещё не собран'
@@ -68,8 +66,12 @@ export function formatSectionErrorUserMessage(
     return formatSectionGenerationTransportUserMessage()
   }
 
+  if (errorKind === 'audit_failed') {
+    return 'Вход для сборки раздела не прошёл проверку.'
+  }
+
   if (errorKind === 'qa_failed' || technicalMessage === QA_FAILURE_GENERATION_ERROR) {
-    return 'Раздел не прошёл проверку'
+    return 'Не удалось собрать раздел'
   }
 
   if (
@@ -132,5 +134,5 @@ export function shouldShowTechnicalErrorDetails(report: {
   status: string
   generation_error: string | null
 }): boolean {
-  return report.status === 'error' && !isPostGenerationQaFailure(report)
+  return report.status === 'error'
 }

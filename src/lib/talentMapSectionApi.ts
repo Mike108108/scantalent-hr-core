@@ -8,7 +8,10 @@ import type { TalentMapSectionKey } from './talentMapSections'
 export const TALENT_MAP_SECTION_GENERATE_ENDPOINT =
   '/.netlify/functions/talent-map-section-generate'
 
-export type TalentMapSectionReportStatus = 'draft' | 'ready' | 'error'
+export const TALENT_MAP_SECTION_GENERATE_STATUS_ENDPOINT =
+  '/.netlify/functions/talent-map-section-generate-status'
+
+export type TalentMapSectionReportStatus = 'draft' | 'processing' | 'ready' | 'error'
 
 export type TalentMapSectionReport = {
   id: string
@@ -36,6 +39,10 @@ export type TalentMapSectionReport = {
 export type GenerateTalentMapSectionResponse =
   | {
       ok: true
+      status: 'processing'
+      report_id: string
+      section_key: 'work_mode_and_entry'
+      model_preset_id: TalentMapModelPresetId
       report: TalentMapSectionReport
     }
   | {
@@ -53,12 +60,25 @@ export type GenerateTalentMapSectionResponse =
       diagnostics?: Record<string, unknown>
     }
 
+export type TalentMapSectionGenerationStatusResponse =
+  | {
+      ok: true
+      report: TalentMapSectionReport
+    }
+  | {
+      ok: false
+      error: string
+      error_kind?: SectionGenerationErrorKind
+      diagnostics?: Record<string, unknown>
+    }
+
 async function readJsonResponseSafely(
   response: Response,
   endpointUrl: string,
   requestContext?: {
     section_key?: string
     model_preset_id?: string
+    report_id?: string
   },
 ): Promise<unknown> {
   const contentType = response.headers.get('content-type') || ''
@@ -69,6 +89,7 @@ async function readJsonResponseSafely(
     requestContext?.model_preset_id
       ? `Payload model_preset_id: ${requestContext.model_preset_id}`
       : null,
+    requestContext?.report_id ? `Report id: ${requestContext.report_id}` : null,
   ].filter(Boolean)
 
   if (!contentType.toLowerCase().includes('application/json')) {
@@ -128,15 +149,69 @@ export async function generateTalentMapSection(payload: {
     model_preset_id: payload.model_preset_id,
   })) as GenerateTalentMapSectionResponse
 
+  if (!data.ok) {
+    return {
+      ok: false,
+      error: data.error,
+      error_kind: data.error_kind,
+      report: data.report,
+      audit: data.audit,
+      quality_flags: data.quality_flags,
+      generation_error: data.generation_error,
+      diagnostics: data.diagnostics,
+    }
+  }
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      error: 'Не удалось запустить сборку раздела карты талантов.',
+    }
+  }
+
+  return data
+}
+
+export async function getTalentMapSectionGenerationStatus(params: {
+  report_id?: string
+  chart_id?: string
+  section_key?: 'work_mode_and_entry'
+}): Promise<TalentMapSectionGenerationStatusResponse> {
+  const session = await authGetSession()
+  if (!session?.access_token) {
+    throw new Error('Пользователь не авторизован.')
+  }
+
+  const searchParams = new URLSearchParams()
+  if (params.report_id) {
+    searchParams.set('report_id', params.report_id)
+  }
+  if (params.chart_id) {
+    searchParams.set('chart_id', params.chart_id)
+  }
+  if (params.section_key) {
+    searchParams.set('section_key', params.section_key)
+  }
+
+  const endpointUrl = `${TALENT_MAP_SECTION_GENERATE_STATUS_ENDPOINT}?${searchParams.toString()}`
+
+  const response = await fetch(endpointUrl, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  })
+
+  const data = (await readJsonResponseSafely(response, endpointUrl, {
+    report_id: params.report_id,
+    section_key: params.section_key,
+  })) as TalentMapSectionGenerationStatusResponse
+
   if (!response.ok || !data.ok) {
     return {
       ok: false,
-      error: data.ok ? 'Не удалось собрать раздел карты талантов.' : data.error,
+      error: data.ok ? 'Не удалось получить статус сборки раздела.' : data.error,
       error_kind: !data.ok ? data.error_kind : undefined,
-      report: !data.ok ? data.report : undefined,
-      audit: !data.ok ? data.audit : undefined,
-      quality_flags: !data.ok ? data.quality_flags : undefined,
-      generation_error: !data.ok ? data.generation_error : undefined,
       diagnostics: !data.ok ? data.diagnostics : undefined,
     }
   }
@@ -176,4 +251,13 @@ export function getSectionReportMap(
   reports: TalentMapSectionReport[],
 ): Partial<Record<TalentMapSectionKey, TalentMapSectionReport>> {
   return Object.fromEntries(reports.map((report) => [report.layer_key, report]))
+}
+
+export const TALENT_MAP_SECTION_POLL_INTERVAL_MS = 2500
+export const TALENT_MAP_SECTION_POLL_TIMEOUT_MS = 180000
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms)
+  })
 }

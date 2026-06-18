@@ -56,8 +56,11 @@ function resolveSectionUiStatus(params: {
   report: TalentMapSectionReport | undefined
   isGenerating: boolean
 }): { badgeStatus: SectionGenerationStatus | TalentMapSectionStatus; label: string } {
-  if (params.isGenerating && params.sectionKey === 'work_mode_and_entry') {
-    return { badgeStatus: 'generating', label: 'Сборка…' }
+  if (
+    (params.isGenerating || params.report?.status === 'processing') &&
+    params.sectionKey === 'work_mode_and_entry'
+  ) {
+    return { badgeStatus: 'generating', label: 'Собирается' }
   }
 
   if (params.report?.status === 'ready') {
@@ -281,7 +284,8 @@ export function TalentMapTab() {
     Boolean(synthesisPreview) &&
     sectionInputAudit?.overall_severity === 'ok' &&
     workModePreview?.generation_status === 'input_ready' &&
-    !sectionGenerationLoading
+    !sectionGenerationLoading &&
+    sectionReports.work_mode_and_entry?.status !== 'processing'
 
   return (
     <div className="stack workspace-sections">
@@ -355,6 +359,8 @@ export function TalentMapTab() {
           const isWorkModeSection = section.key === 'work_mode_and_entry'
           const canGenerateSection = isWorkModeSection && canGenerateWorkMode
           const sectionIsReady = report?.status === 'ready'
+          const sectionIsProcessing =
+            (sectionGenerationLoading || report?.status === 'processing') && isWorkModeSection
 
           return (
             <Card key={section.key} className="talent-section-card">
@@ -406,13 +412,15 @@ export function TalentMapTab() {
                   </div>
                 </dl>
 
-                {report ? <SectionGeneratedResult report={report} /> : null}
+                {report && report.status !== 'processing' ? (
+                  <SectionGeneratedResult report={report} />
+                ) : null}
 
                 {isWorkModeSection ? (
                   <ModelPresetSelector
                     selectedPresetId={selectedModelPresetId}
                     onChange={setSelectedModelPresetId}
-                    disabled={!canGenerateSection || sectionGenerationLoading}
+                    disabled={!canGenerateSection || sectionIsProcessing}
                   />
                 ) : null}
 
@@ -421,20 +429,26 @@ export function TalentMapTab() {
                     <>
                       <Button
                         type="button"
-                        disabled={!canGenerateSection}
+                        disabled={!canGenerateSection || sectionIsProcessing}
                         onClick={() => {
                           void handleGenerateWorkModeAndEntrySection(selectedModelPresetId)
                         }}
                       >
-                        {sectionGenerationLoading
-                          ? 'Сборка…'
+                        {sectionIsProcessing
+                          ? 'Собирается…'
                           : sectionIsReady
                             ? 'Пересобрать раздел'
                             : 'Собрать раздел'}
                       </Button>
-                      <p className="city-autocomplete__hint">
-                        Будет списано: {selectedPreset.internal_credit_cost} токенов
-                      </p>
+                      {sectionIsProcessing ? (
+                        <p className="city-autocomplete__hint">
+                          Раздел собирается. Обычно это занимает до минуты.
+                        </p>
+                      ) : (
+                        <p className="city-autocomplete__hint">
+                          Будет списано: {selectedPreset.internal_credit_cost} токенов
+                        </p>
+                      )}
                     </>
                   ) : (
                     <>

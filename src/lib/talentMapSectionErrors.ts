@@ -3,6 +3,23 @@ export const QA_FAILURE_GENERATION_ERROR =
 
 export type SectionGenerationErrorKind = 'technical' | 'qa_failed' | 'audit_failed'
 
+const ENDPOINT_TRANSPORT_ERROR_PREFIXES = [
+  'Endpoint returned non-JSON response.',
+  'Endpoint returned invalid JSON.',
+] as const
+
+export function isEndpointTransportError(message: string | null | undefined): boolean {
+  if (!message) {
+    return false
+  }
+
+  return ENDPOINT_TRANSPORT_ERROR_PREFIXES.some((prefix) => message.startsWith(prefix))
+}
+
+export function formatSectionGenerationTransportUserMessage(): string {
+  return 'Не удалось вызвать функцию сборки раздела.'
+}
+
 export function isPostGenerationQaFailure(report: {
   generation_error: string | null
 }): boolean {
@@ -40,6 +57,10 @@ export function formatSectionErrorUserMessage(
   technicalMessage: string | null | undefined,
   errorKind?: SectionGenerationErrorKind,
 ): string {
+  if (isEndpointTransportError(technicalMessage)) {
+    return formatSectionGenerationTransportUserMessage()
+  }
+
   if (errorKind === 'qa_failed' || technicalMessage === QA_FAILURE_GENERATION_ERROR) {
     return 'Раздел не прошёл проверку'
   }

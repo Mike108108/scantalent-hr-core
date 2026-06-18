@@ -5,6 +5,9 @@ import type { TalentMapModelPresetId } from './talentMapModelPresets'
 import type { SectionGenerationErrorKind } from './talentMapSectionErrors'
 import type { TalentMapSectionKey } from './talentMapSections'
 
+export const TALENT_MAP_SECTION_GENERATE_ENDPOINT =
+  '/.netlify/functions/talent-map-section-generate'
+
 export type TalentMapSectionReportStatus = 'draft' | 'ready' | 'error'
 
 export type TalentMapSectionReport = {
@@ -47,7 +50,59 @@ export type GenerateTalentMapSectionResponse =
       }
       quality_flags?: string[]
       generation_error?: string
+      diagnostics?: Record<string, unknown>
     }
+
+async function readJsonResponseSafely(
+  response: Response,
+  endpointUrl: string,
+  requestContext?: {
+    section_key?: string
+    model_preset_id?: string
+  },
+): Promise<unknown> {
+  const contentType = response.headers.get('content-type') || ''
+  const responseText = await response.text()
+
+  const contextLines = [
+    requestContext?.section_key ? `Payload section_key: ${requestContext.section_key}` : null,
+    requestContext?.model_preset_id
+      ? `Payload model_preset_id: ${requestContext.model_preset_id}`
+      : null,
+  ].filter(Boolean)
+
+  if (!contentType.toLowerCase().includes('application/json')) {
+    const preview = responseText.slice(0, 800)
+
+    throw new Error(
+      [
+        'Endpoint returned non-JSON response.',
+        `Endpoint: ${endpointUrl}`,
+        `Status: ${response.status}`,
+        `Content-Type: ${contentType || 'unknown'}`,
+        ...contextLines,
+        `Body preview: ${preview}`,
+      ].join('\n'),
+    )
+  }
+
+  try {
+    return JSON.parse(responseText)
+  } catch {
+    const preview = responseText.slice(0, 800)
+
+    throw new Error(
+      [
+        'Endpoint returned invalid JSON.',
+        `Endpoint: ${endpointUrl}`,
+        `Status: ${response.status}`,
+        `Content-Type: ${contentType || 'unknown'}`,
+        ...contextLines,
+        `Body preview: ${preview}`,
+      ].join('\n'),
+    )
+  }
+}
 
 export async function generateTalentMapSection(payload: {
   chart_id: string
@@ -59,7 +114,7 @@ export async function generateTalentMapSection(payload: {
     throw new Error('Пользователь не авторизован.')
   }
 
-  const response = await fetch('/.netlify/functions/talent-map-section-generate', {
+  const response = await fetch(TALENT_MAP_SECTION_GENERATE_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -68,7 +123,10 @@ export async function generateTalentMapSection(payload: {
     body: JSON.stringify(payload),
   })
 
-  const data = (await response.json()) as GenerateTalentMapSectionResponse
+  const data = (await readJsonResponseSafely(response, TALENT_MAP_SECTION_GENERATE_ENDPOINT, {
+    section_key: payload.section_key,
+    model_preset_id: payload.model_preset_id,
+  })) as GenerateTalentMapSectionResponse
 
   if (!response.ok || !data.ok) {
     return {
@@ -79,6 +137,7 @@ export async function generateTalentMapSection(payload: {
       audit: !data.ok ? data.audit : undefined,
       quality_flags: !data.ok ? data.quality_flags : undefined,
       generation_error: !data.ok ? data.generation_error : undefined,
+      diagnostics: !data.ok ? data.diagnostics : undefined,
     }
   }
 

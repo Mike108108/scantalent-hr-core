@@ -29,7 +29,10 @@ import {
   DEFAULT_TALENT_MAP_MODEL_PRESET_ID,
   type TalentMapModelPresetId,
 } from '../../lib/talentMapModelPresets'
-import { formatSectionErrorUserMessage } from '../../lib/talentMapSectionErrors'
+import {
+  formatSectionErrorUserMessage,
+  isEndpointTransportError,
+} from '../../lib/talentMapSectionErrors'
 import type { TalentMapSectionKey } from '../../lib/talentMapSections'
 import {
   getChartElementCounts,
@@ -202,6 +205,7 @@ type CandidateWorkspaceContextValue = {
   sectionReportsError: string | null
   sectionGenerationLoading: boolean
   sectionGenerationError: string | null
+  sectionGenerationTechnicalError: string | null
   handleGenerateWorkModeAndEntrySection: (modelPresetId: TalentMapModelPresetId) => Promise<void>
   refreshSectionReports: () => Promise<void>
   drawerSelection: ElementDrawerSelection | null
@@ -242,6 +246,9 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
   const [sectionReportsError, setSectionReportsError] = useState<string | null>(null)
   const [sectionGenerationLoading, setSectionGenerationLoading] = useState(false)
   const [sectionGenerationError, setSectionGenerationError] = useState<string | null>(null)
+  const [sectionGenerationTechnicalError, setSectionGenerationTechnicalError] = useState<
+    string | null
+  >(null)
   const bundleFetchAttemptedRef = useRef<string | null>(null)
 
   const loadChartData = useCallback(async (candidateId: string) => {
@@ -454,6 +461,7 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     setSectionReports({})
     setSectionReportsError(null)
     setSectionGenerationError(null)
+    setSectionGenerationTechnicalError(null)
     bundleFetchAttemptedRef.current = null
 
     try {
@@ -536,6 +544,7 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
 
     setSectionGenerationLoading(true)
     setSectionGenerationError(null)
+    setSectionGenerationTechnicalError(null)
 
     try {
       const result = await generateTalentMapSection({
@@ -548,6 +557,7 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
         setSectionGenerationError(
           formatSectionErrorUserMessage(result.error, result.error_kind),
         )
+        setSectionGenerationTechnicalError(result.error || null)
         if (result.report) {
           setSectionReports((prev) => ({
             ...prev,
@@ -564,9 +574,12 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
         work_mode_and_entry: result.report,
       }))
     } catch (error) {
-      setSectionGenerationError(
-        error instanceof Error ? error.message : 'Не удалось собрать раздел карты талантов.',
+      const technicalMessage =
+        error instanceof Error ? error.message : 'Не удалось собрать раздел карты талантов.'
+      setSectionGenerationTechnicalError(
+        isEndpointTransportError(technicalMessage) ? technicalMessage : null,
       )
+      setSectionGenerationError(formatSectionErrorUserMessage(technicalMessage))
     } finally {
       setSectionGenerationLoading(false)
     }
@@ -630,6 +643,7 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     sectionReportsError,
     sectionGenerationLoading,
     sectionGenerationError,
+    sectionGenerationTechnicalError,
     handleGenerateWorkModeAndEntrySection,
     refreshSectionReports,
     drawerSelection,

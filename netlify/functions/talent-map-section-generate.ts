@@ -280,7 +280,11 @@ export const handler: Handler = async (event) => {
   }
 
   if (event.httpMethod !== 'POST') {
-    return jsonResponse(405, { ok: false, error: 'Method not allowed.' })
+    return jsonResponse(405, {
+      ok: false,
+      error_kind: 'technical',
+      error: 'Method not allowed.',
+    })
   }
 
   try {
@@ -293,16 +297,25 @@ export const handler: Handler = async (event) => {
     )
 
     if (!chartId) {
-      return jsonResponse(400, { ok: false, error: 'chart_id is required.' })
+      return jsonResponse(400, {
+        ok: false,
+        error_kind: 'technical',
+        error: 'chart_id is required.',
+      })
     }
 
     if (!sectionKey) {
-      return jsonResponse(400, { ok: false, error: 'section_key is required.' })
+      return jsonResponse(400, {
+        ok: false,
+        error_kind: 'technical',
+        error: 'section_key is required.',
+      })
     }
 
     if (sectionKey !== WORK_MODE_SECTION_KEY) {
       return jsonResponse(400, {
         ok: false,
+        error_kind: 'technical',
         error: 'Only work_mode_and_entry is supported in Stage 4-F0.1.',
       })
     }
@@ -319,7 +332,11 @@ export const handler: Handler = async (event) => {
       throw new Error(chartError.message)
     }
     if (!chart) {
-      return jsonResponse(404, { ok: false, error: 'Chart not found.' })
+      return jsonResponse(404, {
+        ok: false,
+        error_kind: 'technical',
+        error: 'Chart not found.',
+      })
     }
 
     const { data: company, error: companyError } = await admin
@@ -332,7 +349,11 @@ export const handler: Handler = async (event) => {
       throw new Error(companyError.message)
     }
     if (!company || company.owner_user_id !== user.id) {
-      return jsonResponse(403, { ok: false, error: 'Chart does not belong to your company.' })
+      return jsonResponse(403, {
+        ok: false,
+        error_kind: 'technical',
+        error: 'Chart does not belong to your company.',
+      })
     }
 
     const { data: elementRows, error: elementsError } = await admin
@@ -548,11 +569,23 @@ export const handler: Handler = async (event) => {
     })
   } catch (error) {
     if (error instanceof AuthError) {
-      return jsonResponse(error.statusCode, { ok: false, error: error.message })
+      return jsonResponse(error.statusCode, {
+        ok: false,
+        error_kind: 'technical',
+        error: error.message,
+      })
     }
 
     const message =
-      error instanceof Error ? error.message : 'Talent map section generation failed.'
-    return jsonResponse(500, { ok: false, error: message })
+      error instanceof Error ? error.message : 'Unexpected generation error'
+    return jsonResponse(500, {
+      ok: false,
+      error_kind: 'technical',
+      error: message,
+      diagnostics: {
+        stage: 'unexpected_catch',
+        section_key: WORK_MODE_SECTION_KEY,
+      },
+    })
   }
 }

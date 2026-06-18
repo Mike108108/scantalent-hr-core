@@ -25,6 +25,10 @@ import {
   isTalentMapGeneratedSectionContent,
 } from '../../../lib/talentMapGeneratedSectionContract'
 import {
+  readSectionParseDiagnostics,
+  type SectionParseDiagnosticsContent,
+} from '../../../lib/talentMapSectionOpenAiSchema'
+import {
   downloadTalentMapSectionReport,
   formatGenerationDurationClock,
   formatGenerationDurationMs,
@@ -293,6 +297,94 @@ function SectionAssemblyDetails({ report }: { report: TalentMapSectionReport }) 
   )
 }
 
+function SectionParseFailureDetails(props: {
+  parseDiagnostics: SectionParseDiagnosticsContent
+  report: TalentMapSectionReport
+}) {
+  const { parseDiagnostics, report } = props
+  const openAiDiagnostics = parseDiagnostics.openai_response_diagnostics
+  const meta = resolveReportGenerationMeta(report)
+  const tokenUsage = resolveOpenAiTokenUsage(report)
+
+  return (
+    <div className="generated-section-parse-diagnostics stack">
+      {parseDiagnostics.stage ? (
+        <p className="generated-section-result__technical">
+          <strong>stage:</strong> {parseDiagnostics.stage}
+        </p>
+      ) : null}
+      {parseDiagnostics.parse_error_message ? (
+        <p className="generated-section-result__technical">
+          <strong>parse_error_message:</strong> {parseDiagnostics.parse_error_message}
+        </p>
+      ) : null}
+      {openAiDiagnostics?.status ? (
+        <p className="generated-section-result__technical">
+          <strong>openai status:</strong> {String(openAiDiagnostics.status)}
+        </p>
+      ) : null}
+      {openAiDiagnostics?.incomplete_details ? (
+        <p className="generated-section-result__technical">
+          <strong>incomplete_details:</strong>{' '}
+          {JSON.stringify(openAiDiagnostics.incomplete_details)}
+        </p>
+      ) : null}
+      {meta.estimatedCostUsd !== 'not_available' ? (
+        <p className="generated-section-result__technical">
+          <strong>Техническая оценка API cost:</strong> {meta.estimatedCostUsd}
+        </p>
+      ) : null}
+      {tokenUsage.inputTokens !== null ? (
+        <p className="generated-section-result__technical">
+          <strong>input_tokens:</strong> {tokenUsage.inputTokens.toLocaleString('ru-RU')}
+        </p>
+      ) : null}
+      {tokenUsage.outputTokens !== null ? (
+        <p className="generated-section-result__technical">
+          <strong>output_tokens:</strong> {tokenUsage.outputTokens.toLocaleString('ru-RU')}
+        </p>
+      ) : null}
+      {tokenUsage.totalTokens !== null ? (
+        <p className="generated-section-result__technical">
+          <strong>total_tokens:</strong> {tokenUsage.totalTokens.toLocaleString('ru-RU')}
+        </p>
+      ) : null}
+      {parseDiagnostics.cleaned_response_preview ? (
+        <details className="generated-section-details">
+          <summary>cleaned_response_preview</summary>
+          <pre className="generated-section-result__technical">
+            {parseDiagnostics.cleaned_response_preview}
+          </pre>
+        </details>
+      ) : null}
+      {parseDiagnostics.raw_response_preview ? (
+        <details className="generated-section-details">
+          <summary>raw_response_preview</summary>
+          <pre className="generated-section-result__technical">
+            {parseDiagnostics.raw_response_preview}
+          </pre>
+        </details>
+      ) : null}
+      {parseDiagnostics.parse_strategy_attempts?.length ? (
+        <details className="generated-section-details">
+          <summary>parse_strategy_attempts</summary>
+          <pre className="generated-section-result__technical">
+            {JSON.stringify(parseDiagnostics.parse_strategy_attempts, null, 2)}
+          </pre>
+        </details>
+      ) : null}
+      {openAiDiagnostics ? (
+        <details className="generated-section-details">
+          <summary>openai_response_diagnostics</summary>
+          <pre className="generated-section-result__technical">
+            {JSON.stringify(openAiDiagnostics, null, 2)}
+          </pre>
+        </details>
+      ) : null}
+    </div>
+  )
+}
+
 function SectionGeneratedResult({ report }: { report: TalentMapSectionReport }) {
   const qualityFlags = Array.isArray(report.quality_flags)
     ? report.quality_flags.filter((item): item is string => typeof item === 'string')
@@ -301,6 +393,7 @@ function SectionGeneratedResult({ report }: { report: TalentMapSectionReport }) 
   if (report.status === 'error') {
     const userMessage = formatSectionErrorUserMessage(report.generation_error)
     const showTechnicalDetails = shouldShowTechnicalErrorDetails(report)
+    const parseDiagnostics = readSectionParseDiagnostics(report.content_json)
 
     return (
       <div className="generated-section-result generated-section-result--error stack">
@@ -311,6 +404,12 @@ function SectionGeneratedResult({ report }: { report: TalentMapSectionReport }) 
             <div className="stack">
               {report.generation_error ? (
                 <p className="generated-section-result__technical">{report.generation_error}</p>
+              ) : null}
+              {parseDiagnostics ? (
+                <SectionParseFailureDetails
+                  parseDiagnostics={parseDiagnostics}
+                  report={report}
+                />
               ) : null}
               {qualityFlags.length > 0 ? (
                 <ul className="generated-section-list">

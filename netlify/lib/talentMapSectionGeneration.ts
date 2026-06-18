@@ -14,9 +14,14 @@ import {
 } from '../../src/lib/talentMapModelPresets'
 import { buildTalentMapSectionInputAudit } from '../../src/lib/talentMapSectionInputAudit'
 import {
+  buildOpenAiParseFailureContentJson,
   buildSanitizedSectionInputForAi,
+  extractOpenAiResponseDiagnostics,
   extractOpenAiResponseText,
   extractOpenAiUsage,
+  isOpenAiSectionParseError,
+  OpenAiSectionParseError,
+  parseOpenAiJsonOutput,
   TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA,
   TALENT_MAP_SECTION_SYSTEM_PROMPT,
 } from '../../src/lib/talentMapSectionOpenAiSchema'
@@ -124,6 +129,45 @@ export function buildEvidenceJson(sectionInput: {
   }
 }
 
+function resolveOpenAiCallErrorContext(
+  error: unknown,
+  modelPreset: TalentMapModelPreset,
+): {
+  message: string
+  usage: Record<string, unknown> | null
+  model: string
+  contentJson: Record<string, unknown>
+  qualityFlags: string[]
+} {
+  if (isOpenAiSectionParseError(error)) {
+    const stage =
+      typeof error.diagnostics.stage === 'string'
+        ? error.diagnostics.stage
+        : 'openai_json_parse_failed'
+
+    return {
+      message: error.message,
+      usage: error.usage,
+      model: error.model,
+      contentJson: buildOpenAiParseFailureContentJson({
+        message: error.message,
+        diagnostics: error.diagnostics,
+      }),
+      qualityFlags: [error.message, `stage: ${stage}`],
+    }
+  }
+
+  const message = error instanceof Error ? error.message : 'OpenAI section synthesis failed.'
+
+  return {
+    message,
+    usage: null,
+    model: modelPreset.model,
+    contentJson: {},
+    qualityFlags: [message],
+  }
+}
+
 export async function callOpenAiForSection(
   sanitizedInput: unknown,
   modelPreset: TalentMapModelPreset,
@@ -131,6 +175,8 @@ export async function callOpenAiForSection(
   parsed: unknown
   model: string
   usage: Record<string, unknown> | null
+  diagnostics: Record<string, unknown>
+  parse_strategy: string
 }> {
   const apiKey = process.env.OPENAI_API_KEY?.trim()
   if (!apiKey) {
@@ -197,22 +243,53 @@ export async function callOpenAiForSection(
     throw new Error(message)
   }
 
+  const usage = extractOpenAiUsage(payload)
   const outputText = extractOpenAiResponseText(payload)
+  const openAiDiagnostics = extractOpenAiResponseDiagnostics(payload, outputText)
+
   if (!outputText) {
-    throw new Error('OpenAI response did not contain JSON output.')
+    throw new OpenAiSectionParseError({
+      message: 'OpenAI response did not contain JSON output.',
+      diagnostics: {
+        stage: 'openai_json_output_missing',
+        openai_response_diagnostics: openAiDiagnostics,
+        model_preset_id: modelPreset.id,
+        model_preset_label: modelPreset.ui_label,
+      },
+      usage,
+      model: modelPreset.model,
+      modelPresetId: modelPreset.id,
+      modelPresetLabel: modelPreset.ui_label,
+    })
   }
 
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(outputText)
-  } catch {
-    throw new Error('OpenAI response JSON could not be parsed.')
+  const parseResult = parseOpenAiJsonOutput(outputText)
+  if (!parseResult.ok) {
+    throw new OpenAiSectionParseError({
+      message: 'OpenAI response JSON could not be parsed.',
+      diagnostics: {
+        stage: 'openai_json_parse_failed',
+        parse_error_message: parseResult.error,
+        raw_response_preview: parseResult.raw_preview,
+        cleaned_response_preview: parseResult.cleaned_preview,
+        parse_strategy_attempts: parseResult.parse_strategy_attempts,
+        openai_response_diagnostics: openAiDiagnostics,
+        model_preset_id: modelPreset.id,
+        model_preset_label: modelPreset.ui_label,
+      },
+      usage,
+      model: modelPreset.model,
+      modelPresetId: modelPreset.id,
+      modelPresetLabel: modelPreset.ui_label,
+    })
   }
 
   return {
-    parsed,
+    parsed: parseResult.parsed,
     model: modelPreset.model,
-    usage: extractOpenAiUsage(payload),
+    usage,
+    diagnostics: openAiDiagnostics,
+    parse_strategy: parseResult.parse_strategy,
   }
 }
 
@@ -513,9 +590,9 @@ export async function runBackgroundSectionGeneration(params: {
   try {
     openAiResult = await callOpenAiForSection(sanitizedInput, modelPreset)
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'OpenAI section synthesis failed.'
+    const errorContext = resolveOpenAiCallErrorContext(error, modelPreset)
     const usageJson = buildUsageJson({
-      openAiUsage: null,
+      openAiUsage: errorContext.usage,
       modelPreset,
       modelPresetFallbackUsed,
       asyncGeneration: true,
@@ -523,16 +600,22 @@ export async function runBackgroundSectionGeneration(params: {
       finishedAt: new Date().toISOString(),
     })
 
+    const estimatedCostUsd = estimateOpenAiCostUsd({
+      input_tokens: readUsageTokenCount(errorContext.usage, 'input_tokens'),
+      output_tokens: readUsageTokenCount(errorContext.usage, 'output_tokens'),
+      preset: modelPreset,
+    })
+
     await markLayerReportError({
       reportId: params.reportId,
       inputBundleJson,
       evidenceJson,
-      contentJson: {},
-      qualityFlags: [message],
-      model: modelPreset.model,
+      contentJson: errorContext.contentJson,
+      qualityFlags: errorContext.qualityFlags,
+      model: errorContext.model,
       usageJson,
-      estimatedCostUsd: null,
-      generationError: message,
+      estimatedCostUsd,
+      generationError: errorContext.message,
     })
     return
   }

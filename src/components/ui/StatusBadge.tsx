@@ -7,6 +7,7 @@ type StatusBadgeProps = {
 
 const labels: Record<string, string> = {
   draft: 'Черновик',
+  pending: 'Ожидает',
   processing: 'В обработке',
   ready: 'Готово',
   error: 'Ошибка',

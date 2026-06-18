@@ -352,7 +352,8 @@ ol {
   border: 1px solid transparent;
 }
 
-.status-badge--draft {
+.status-badge--draft,
+.status-badge--pending {
   background: rgba(154, 164, 184, 0.15);
   color: var(--text-muted);
   border-color: var(--border);
@@ -921,6 +922,107 @@ ol {
   color: var(--text-muted);
   font-size: 0.9rem;
   line-height: 1.5;
+}
+
+.generated-section-result {
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.generated-section-result--error {
+  color: var(--danger, #c0392b);
+}
+
+.generated-section-result__message {
+  margin: 0;
+}
+
+.generated-section-result__technical {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
+.generated-section-markdown {
+  white-space: pre-wrap;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.generated-section-markdown--pro {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.generated-section-details {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  background: var(--bg-elevated);
+}
+
+.generated-section-details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.generated-section-list {
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.generated-section-chip-reason {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.model-preset-selector {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.model-preset-selector__title {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+}
+
+.model-preset-selector__options {
+  gap: 0.65rem;
+}
+
+.model-preset-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  cursor: pointer;
+}
+
+.model-preset-option input {
+  margin-top: 0.2rem;
+}
+
+.model-preset-option__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.model-preset-option__label {
+  font-weight: 600;
+}
+
+.model-preset-option__description {
+  color: var(--text-muted);
+  font-size: 0.85rem;
 }
 
 .info-list--compact .info-list__row dt {

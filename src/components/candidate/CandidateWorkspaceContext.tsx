@@ -20,6 +20,26 @@ import {
 } from '../../lib/talentMapSectionInputAudit'
 import { buildReferenceBundle } from '../../lib/referenceBundleApi'
 import {
+  generateTalentMapSection,
+  getSectionReportMap,
+  getTalentMapSectionGenerationStatus,
+  getTalentMapSectionReports,
+  isSectionGenerationErrorPresentation,
+  sleep,
+  TALENT_MAP_SECTION_POLL_INTERVAL_MS,
+  TALENT_MAP_SECTION_POLL_TIMEOUT_MS,
+  type TalentMapSectionReport,
+} from '../../lib/talentMapSectionApi'
+import {
+  DEFAULT_TALENT_MAP_MODEL_PRESET_ID,
+  type TalentMapModelPresetId,
+} from '../../lib/talentMapModelPresets'
+import {
+  buildSectionGenerationErrorPresentation,
+} from '../../lib/talentMapSectionErrors'
+import { useAuth } from '../../lib/auth'
+import type { TalentMapSectionKey } from '../../lib/talentMapSections'
+import {
   getChartElementCounts,
   getFirstCandidateForCompany,
   getLatestChartForCandidate,
@@ -185,6 +205,14 @@ type CandidateWorkspaceContextValue = {
   normalizedChart: ReturnType<typeof parseNormalizedChart>
   synthesisPreview: ReturnType<typeof buildTalentMapSynthesisInput> | null
   sectionInputAudit: TalentMapSectionInputAuditReport | null
+  sectionReports: Partial<Record<TalentMapSectionKey, TalentMapSectionReport>>
+  sectionReportsLoading: boolean
+  sectionReportsError: string | null
+  sectionGenerationLoading: boolean
+  sectionGenerationError: string | null
+  sectionGenerationTechnicalError: string | null
+  handleGenerateWorkModeAndEntrySection: (modelPresetId: TalentMapModelPresetId) => Promise<void>
+  refreshSectionReports: () => Promise<void>
   drawerSelection: ElementDrawerSelection | null
   setDrawerSelection: (selection: ElementDrawerSelection | null) => void
   updateField: (field: keyof FormValues, value: string) => void
@@ -200,6 +228,7 @@ type CandidateWorkspaceContextValue = {
 const CandidateWorkspaceContext = createContext<CandidateWorkspaceContextValue | null>(null)
 
 export function CandidateWorkspaceProvider({ children }: { children: ReactNode }) {
+  const { session } = useAuth()
   const [state, setState] = useState<WorkspaceState>({ status: 'loading' })
   const [values, setValues] = useState<FormValues>(emptyValues)
   const [selectedCity, setSelectedCity] = useState<SelectedCity | null>(null)
@@ -216,7 +245,65 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
   const [bundleError, setBundleError] = useState<string | null>(null)
   const [bundleResult, setBundleResult] = useState<ReferenceBundleResponse | null>(null)
   const [drawerSelection, setDrawerSelection] = useState<ElementDrawerSelection | null>(null)
+  const [sectionReports, setSectionReports] = useState<
+    Partial<Record<TalentMapSectionKey, TalentMapSectionReport>>
+  >({})
+  const [sectionReportsLoading, setSectionReportsLoading] = useState(false)
+  const [sectionReportsError, setSectionReportsError] = useState<string | null>(null)
+  const [sectionGenerationLoading, setSectionGenerationLoading] = useState(false)
+  const [sectionGenerationError, setSectionGenerationError] = useState<string | null>(null)
+  const [sectionGenerationTechnicalError, setSectionGenerationTechnicalError] = useState<
+    string | null
+  >(null)
   const bundleFetchAttemptedRef = useRef<string | null>(null)
+  const sectionPollAbortRef = useRef(0)
+  const activePollingReportIdRef = useRef<string | null>(null)
+
+  const pollWorkModeSectionUntilComplete = useCallback(async (reportId: string) => {
+    if (activePollingReportIdRef.current === reportId) {
+      return null
+    }
+
+    activePollingReportIdRef.current = reportId
+    const pollToken = sectionPollAbortRef.current + 1
+    sectionPollAbortRef.current = pollToken
+    const startedAt = Date.now()
+
+    try {
+      while (Date.now() - startedAt < TALENT_MAP_SECTION_POLL_TIMEOUT_MS) {
+        if (sectionPollAbortRef.current !== pollToken) {
+          return null
+        }
+
+        await sleep(TALENT_MAP_SECTION_POLL_INTERVAL_MS)
+
+        const statusResult = await getTalentMapSectionGenerationStatus(
+          { report_id: reportId },
+          { accessToken: session?.access_token },
+        )
+        if (!statusResult.ok) {
+          throw statusResult.presentation
+        }
+
+        setSectionReports((prev) => ({
+          ...prev,
+          work_mode_and_entry: statusResult.report,
+        }))
+
+        if (statusResult.report.status === 'ready' || statusResult.report.status === 'error') {
+          return statusResult.report
+        }
+      }
+
+      throw new Error(
+        'Сборка занимает больше времени, чем ожидалось. Обновите статус позже.',
+      )
+    } finally {
+      if (activePollingReportIdRef.current === reportId) {
+        activePollingReportIdRef.current = null
+      }
+    }
+  }, [session?.access_token])
 
   const loadChartData = useCallback(async (candidateId: string) => {
     const latestChart = await getLatestChartForCandidate(candidateId)
@@ -315,6 +402,91 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     }
   }, [chart?.id, bundleResult])
 
+  const refreshSectionReports = useCallback(async () => {
+    if (!chart?.id) {
+      setSectionReports({})
+      return
+    }
+
+    setSectionReportsLoading(true)
+    setSectionReportsError(null)
+
+    try {
+      const reports = await getTalentMapSectionReports(chart.id)
+      setSectionReports(getSectionReportMap(reports))
+    } catch (error) {
+      setSectionReportsError(
+        error instanceof Error ? error.message : 'Не удалось загрузить разделы карты талантов.',
+      )
+      setSectionReports({})
+    } finally {
+      setSectionReportsLoading(false)
+    }
+  }, [chart?.id])
+
+  useEffect(() => {
+    if (!chart?.id) {
+      setSectionReports({})
+      setSectionReportsError(null)
+      return
+    }
+
+    void refreshSectionReports()
+  }, [chart?.id, refreshSectionReports])
+
+  useEffect(() => {
+    const workModeReport = sectionReports.work_mode_and_entry
+    if (!workModeReport || workModeReport.status !== 'processing') {
+      return
+    }
+
+    let cancelled = false
+    setSectionGenerationLoading(true)
+    setSectionGenerationError(null)
+    setSectionGenerationTechnicalError(null)
+
+    void (async () => {
+      try {
+        const finalReport = await pollWorkModeSectionUntilComplete(workModeReport.id)
+        if (cancelled || !finalReport) {
+          return
+        }
+
+        if (finalReport.status === 'error') {
+          const presentation = buildSectionGenerationErrorPresentation({
+            technicalMessage: finalReport.generation_error,
+          })
+          setSectionGenerationError(presentation.userMessage)
+          setSectionGenerationTechnicalError(presentation.technicalDetails)
+        }
+      } catch (error) {
+        if (!cancelled) {
+          if (isSectionGenerationErrorPresentation(error)) {
+            setSectionGenerationTechnicalError(error.technicalDetails)
+            setSectionGenerationError(error.userMessage)
+          } else {
+            const technicalMessage =
+              error instanceof Error ? error.message : 'Не удалось получить статус сборки раздела.'
+            const presentation = buildSectionGenerationErrorPresentation({
+              technicalMessage,
+            })
+            setSectionGenerationTechnicalError(presentation.technicalDetails)
+            setSectionGenerationError(presentation.userMessage)
+          }
+        }
+      } finally {
+        if (!cancelled) {
+          setSectionGenerationLoading(false)
+        }
+      }
+    })()
+
+    return () => {
+      cancelled = true
+      sectionPollAbortRef.current += 1
+    }
+  }, [sectionReports.work_mode_and_entry?.id, sectionReports.work_mode_and_entry?.status, pollWorkModeSectionUntilComplete, session?.access_token])
+
   const updateField = useCallback((field: keyof FormValues, value: string) => {
     setValues((prev) => ({ ...prev, [field]: value }))
     setSaved(false)
@@ -393,6 +565,10 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     setChartUiStatus('calculating')
     setChartError(null)
     setBundleResult(null)
+    setSectionReports({})
+    setSectionReportsError(null)
+    setSectionGenerationError(null)
+    setSectionGenerationTechnicalError(null)
     bundleFetchAttemptedRef.current = null
 
     try {
@@ -467,6 +643,64 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     }
   }, [chart?.id])
 
+  const handleGenerateWorkModeAndEntrySection = useCallback(
+    async (modelPresetId: TalentMapModelPresetId = DEFAULT_TALENT_MAP_MODEL_PRESET_ID) => {
+      if (!chart?.id) {
+        return
+      }
+
+      setSectionGenerationLoading(true)
+      setSectionGenerationError(null)
+      setSectionGenerationTechnicalError(null)
+
+      try {
+        const result = await generateTalentMapSection(
+          {
+            chart_id: chart.id,
+            section_key: 'work_mode_and_entry',
+            model_preset_id: modelPresetId,
+          },
+          { accessToken: session?.access_token },
+        )
+
+        if (!result.ok) {
+          setSectionGenerationLoading(false)
+          setSectionGenerationError(result.presentation.userMessage)
+          setSectionGenerationTechnicalError(result.presentation.technicalDetails)
+          if (result.report) {
+            setSectionReports((prev) => ({
+              ...prev,
+              work_mode_and_entry: result.report,
+            }))
+          } else {
+            await refreshSectionReports()
+          }
+          return
+        }
+
+        setSectionReports((prev) => ({
+          ...prev,
+          work_mode_and_entry: result.report,
+        }))
+      } catch (error) {
+        setSectionGenerationLoading(false)
+        if (isSectionGenerationErrorPresentation(error)) {
+          setSectionGenerationTechnicalError(error.technicalDetails)
+          setSectionGenerationError(error.userMessage)
+        } else {
+          const technicalMessage =
+            error instanceof Error ? error.message : 'Не удалось собрать раздел карты талантов.'
+          const presentation = buildSectionGenerationErrorPresentation({
+            technicalMessage,
+          })
+          setSectionGenerationTechnicalError(presentation.technicalDetails)
+          setSectionGenerationError(presentation.userMessage)
+        }
+      }
+    },
+    [chart?.id, refreshSectionReports, session?.access_token],
+  )
+
   const normalizedChart = useMemo(() => parseNormalizedChart(chart), [chart])
 
   const displayElementCounts = useMemo(
@@ -518,6 +752,14 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     normalizedChart,
     synthesisPreview,
     sectionInputAudit,
+    sectionReports,
+    sectionReportsLoading,
+    sectionReportsError,
+    sectionGenerationLoading,
+    sectionGenerationError,
+    sectionGenerationTechnicalError,
+    handleGenerateWorkModeAndEntrySection,
+    refreshSectionReports,
     drawerSelection,
     setDrawerSelection,
     updateField,

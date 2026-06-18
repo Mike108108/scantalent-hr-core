@@ -85,3 +85,39 @@ export async function authGetSession(): Promise<Session | null> {
   const { data } = await client.auth.getSession()
   return data.session
 }
+
+export async function getAccessTokenForProtectedRequest(
+  preferredAccessToken?: string | null,
+): Promise<string> {
+  if (preferredAccessToken?.trim()) {
+    return preferredAccessToken.trim()
+  }
+
+  const client = getClientOrThrow()
+  const { data: sessionData, error: sessionError } = await client.auth.getSession()
+
+  if (sessionError) {
+    throw new Error(`Не удалось получить токен авторизации: ${sessionError.message}`)
+  }
+
+  let accessToken = sessionData.session?.access_token ?? null
+
+  if (!accessToken) {
+    const { data: refreshData, error: refreshError } = await client.auth.refreshSession()
+    if (refreshError) {
+      throw new Error('Не удалось получить токен авторизации. Войдите заново.')
+    }
+    accessToken = refreshData.session?.access_token ?? null
+  }
+
+  if (!accessToken) {
+    throw new Error('Не удалось получить токен авторизации. Войдите заново.')
+  }
+
+  const { error: userError } = await client.auth.getUser(accessToken)
+  if (userError) {
+    throw new Error('Не удалось получить токен авторизации. Войдите заново.')
+  }
+
+  return accessToken
+}

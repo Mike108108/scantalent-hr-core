@@ -47,9 +47,10 @@ export type ChartElementCounts = {
   activations: number
 }
 
-export type TalentMapStatus = 'draft' | 'processing' | 'ready' | 'error'
+export type TalentMapStatus = 'draft' | 'pending' | 'processing' | 'ready' | 'error'
 
 export type { LayerKey, TalentMapSectionKey } from './talentMapSectionTypes'
+export type { TalentMapSectionReport } from './talentMapSectionApi'
 
 export type ReferenceInterpretationLayers = {
   plain_meaning?: string

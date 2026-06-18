@@ -3,7 +3,7 @@ import { buildTalentMapSynthesisInput } from '../../src/lib/buildTalentMapSynthe
 import {
   renderGeneratedSectionBaseMarkdown,
   renderGeneratedSectionProMarkdown,
-  type TalentMapGeneratedSectionV1_1,
+  type TalentMapGeneratedSection,
 } from '../../src/lib/talentMapGeneratedSectionContract'
 import { runTalentMapGeneratedSectionQa } from '../../src/lib/talentMapGeneratedSectionQa'
 import {
@@ -508,7 +508,7 @@ export const handler: Handler = async (event) => {
       })
     }
 
-    const generatedSection: TalentMapGeneratedSectionV1_1 = {
+    const generatedSection: TalentMapGeneratedSection = {
       ...qaResult.data,
       generation_meta: {
         model_preset_id: modelPreset.id,

@@ -1,15 +1,14 @@
 import type { SourceChip } from './talentMapSynthesisContract'
 import {
-  isTalentMapGeneratedSectionV1_1,
   renderGeneratedSectionBaseMarkdown,
-  validateTalentMapGeneratedSectionV1_1,
-  type TalentMapGeneratedSectionV1_1,
+  validateTalentMapGeneratedSection,
+  type TalentMapGeneratedSection,
 } from './talentMapGeneratedSectionContract'
 
 export type GeneratedSectionQaResult = {
   ok: boolean
   issues: string[]
-  data?: TalentMapGeneratedSectionV1_1
+  data?: TalentMapGeneratedSection
 }
 
 export const GENERATED_BASE_FORBIDDEN_TERMS = [
@@ -100,11 +99,11 @@ function isSourceKeyAllowed(
   return inputSourceChips.some((chip) => chip.element_key === key)
 }
 
-function collectBaseScanText(section: TalentMapGeneratedSectionV1_1): string {
+function collectBaseScanText(section: TalentMapGeneratedSection): string {
   return [JSON.stringify(section.base), renderGeneratedSectionBaseMarkdown(section)].join('\n')
 }
 
-function collectAllText(section: TalentMapGeneratedSectionV1_1): string {
+function collectAllText(section: TalentMapGeneratedSection): string {
   const { pro, summary_for_synthesis } = section
   return [
     collectBaseScanText(section),
@@ -140,7 +139,7 @@ function findForbiddenProductHits(text: string): string[] {
   return hits
 }
 
-function isProEmpty(section: TalentMapGeneratedSectionV1_1): boolean {
+function isProEmpty(section: TalentMapGeneratedSection): boolean {
   const { pro } = section
   return (
     !pro.technical_summary.trim() &&
@@ -150,7 +149,7 @@ function isProEmpty(section: TalentMapGeneratedSectionV1_1): boolean {
   )
 }
 
-function isBaseEmpty(section: TalentMapGeneratedSectionV1_1): boolean {
+function isBaseEmpty(section: TalentMapGeneratedSection): boolean {
   const { base } = section
   const blocks = [
     base.how_to_start_work,
@@ -175,7 +174,7 @@ export function runTalentMapGeneratedSectionQa(params: {
 }): GeneratedSectionQaResult {
   const issues: string[] = []
 
-  const validation = validateTalentMapGeneratedSectionV1_1(params.generated)
+  const validation = validateTalentMapGeneratedSection(params.generated)
   if (!validation.ok || !validation.data) {
     return {
       ok: false,
@@ -184,10 +183,6 @@ export function runTalentMapGeneratedSectionQa(params: {
   }
 
   const section = validation.data
-
-  if (!isTalentMapGeneratedSectionV1_1(section)) {
-    issues.push('Generated section must use schema talent_map_section_v1_1.')
-  }
 
   if (section.section_key !== 'work_mode_and_entry') {
     issues.push('section_key must be work_mode_and_entry.')

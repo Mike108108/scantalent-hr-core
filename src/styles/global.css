@@ -923,6 +923,58 @@ ol {
   line-height: 1.5;
 }
 
+.generated-section-result {
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.generated-section-result--error {
+  color: var(--danger, #c0392b);
+}
+
+.generated-section-result__message {
+  margin: 0;
+}
+
+.generated-section-markdown {
+  white-space: pre-wrap;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.generated-section-markdown--pro {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.generated-section-details {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  background: var(--bg-elevated);
+}
+
+.generated-section-details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.generated-section-list {
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.generated-section-chip-reason {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
 .info-list--compact .info-list__row dt {
   min-width: 6.5rem;
 }

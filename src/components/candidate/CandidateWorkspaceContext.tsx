@@ -20,6 +20,13 @@ import {
 } from '../../lib/talentMapSectionInputAudit'
 import { buildReferenceBundle } from '../../lib/referenceBundleApi'
 import {
+  generateTalentMapSection,
+  getSectionReportMap,
+  getTalentMapSectionReports,
+  type TalentMapSectionReport,
+} from '../../lib/talentMapSectionApi'
+import type { TalentMapSectionKey } from '../../lib/talentMapSections'
+import {
   getChartElementCounts,
   getFirstCandidateForCompany,
   getLatestChartForCandidate,
@@ -185,6 +192,13 @@ type CandidateWorkspaceContextValue = {
   normalizedChart: ReturnType<typeof parseNormalizedChart>
   synthesisPreview: ReturnType<typeof buildTalentMapSynthesisInput> | null
   sectionInputAudit: TalentMapSectionInputAuditReport | null
+  sectionReports: Partial<Record<TalentMapSectionKey, TalentMapSectionReport>>
+  sectionReportsLoading: boolean
+  sectionReportsError: string | null
+  sectionGenerationLoading: boolean
+  sectionGenerationError: string | null
+  handleGenerateWorkModeAndEntrySection: () => Promise<void>
+  refreshSectionReports: () => Promise<void>
   drawerSelection: ElementDrawerSelection | null
   setDrawerSelection: (selection: ElementDrawerSelection | null) => void
   updateField: (field: keyof FormValues, value: string) => void
@@ -216,6 +230,13 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
   const [bundleError, setBundleError] = useState<string | null>(null)
   const [bundleResult, setBundleResult] = useState<ReferenceBundleResponse | null>(null)
   const [drawerSelection, setDrawerSelection] = useState<ElementDrawerSelection | null>(null)
+  const [sectionReports, setSectionReports] = useState<
+    Partial<Record<TalentMapSectionKey, TalentMapSectionReport>>
+  >({})
+  const [sectionReportsLoading, setSectionReportsLoading] = useState(false)
+  const [sectionReportsError, setSectionReportsError] = useState<string | null>(null)
+  const [sectionGenerationLoading, setSectionGenerationLoading] = useState(false)
+  const [sectionGenerationError, setSectionGenerationError] = useState<string | null>(null)
   const bundleFetchAttemptedRef = useRef<string | null>(null)
 
   const loadChartData = useCallback(async (candidateId: string) => {
@@ -315,6 +336,38 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     }
   }, [chart?.id, bundleResult])
 
+  const refreshSectionReports = useCallback(async () => {
+    if (!chart?.id) {
+      setSectionReports({})
+      return
+    }
+
+    setSectionReportsLoading(true)
+    setSectionReportsError(null)
+
+    try {
+      const reports = await getTalentMapSectionReports(chart.id)
+      setSectionReports(getSectionReportMap(reports))
+    } catch (error) {
+      setSectionReportsError(
+        error instanceof Error ? error.message : 'Не удалось загрузить разделы карты талантов.',
+      )
+      setSectionReports({})
+    } finally {
+      setSectionReportsLoading(false)
+    }
+  }, [chart?.id])
+
+  useEffect(() => {
+    if (!chart?.id) {
+      setSectionReports({})
+      setSectionReportsError(null)
+      return
+    }
+
+    void refreshSectionReports()
+  }, [chart?.id, refreshSectionReports])
+
   const updateField = useCallback((field: keyof FormValues, value: string) => {
     setValues((prev) => ({ ...prev, [field]: value }))
     setSaved(false)
@@ -393,6 +446,9 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     setChartUiStatus('calculating')
     setChartError(null)
     setBundleResult(null)
+    setSectionReports({})
+    setSectionReportsError(null)
+    setSectionGenerationError(null)
     bundleFetchAttemptedRef.current = null
 
     try {
@@ -467,6 +523,46 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     }
   }, [chart?.id])
 
+  const handleGenerateWorkModeAndEntrySection = useCallback(async () => {
+    if (!chart?.id) {
+      return
+    }
+
+    setSectionGenerationLoading(true)
+    setSectionGenerationError(null)
+
+    try {
+      const result = await generateTalentMapSection({
+        chart_id: chart.id,
+        section_key: 'work_mode_and_entry',
+      })
+
+      if (!result.ok) {
+        setSectionGenerationError(result.error)
+        if (result.report) {
+          setSectionReports((prev) => ({
+            ...prev,
+            work_mode_and_entry: result.report,
+          }))
+        } else {
+          await refreshSectionReports()
+        }
+        return
+      }
+
+      setSectionReports((prev) => ({
+        ...prev,
+        work_mode_and_entry: result.report,
+      }))
+    } catch (error) {
+      setSectionGenerationError(
+        error instanceof Error ? error.message : 'Не удалось собрать раздел карты талантов.',
+      )
+    } finally {
+      setSectionGenerationLoading(false)
+    }
+  }, [chart?.id, refreshSectionReports])
+
   const normalizedChart = useMemo(() => parseNormalizedChart(chart), [chart])
 
   const displayElementCounts = useMemo(
@@ -518,6 +614,13 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     normalizedChart,
     synthesisPreview,
     sectionInputAudit,
+    sectionReports,
+    sectionReportsLoading,
+    sectionReportsError,
+    sectionGenerationLoading,
+    sectionGenerationError,
+    handleGenerateWorkModeAndEntrySection,
+    refreshSectionReports,
     drawerSelection,
     setDrawerSelection,
     updateField,

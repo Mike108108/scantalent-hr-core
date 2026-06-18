@@ -149,7 +149,7 @@ export function extractOpenAiResponseText(payload: unknown): string | null {
   const record = payload as Record<string, unknown>
 
   if (typeof record.output_text === 'string' && record.output_text.trim()) {
-    return record.output_text
+    return record.output_text.trim()
   }
 
   const output = record.output
@@ -167,7 +167,7 @@ export function extractOpenAiResponseText(payload: unknown): string | null {
     const outputItem = item as Record<string, unknown>
 
     if (typeof outputItem.text === 'string' && outputItem.text.trim()) {
-      textParts.push(outputItem.text)
+      textParts.push(outputItem.text.trim())
     }
 
     if (Array.isArray(outputItem.content)) {
@@ -175,12 +175,26 @@ export function extractOpenAiResponseText(payload: unknown): string | null {
         if (!contentPart || typeof contentPart !== 'object') {
           continue
         }
+
         const part = contentPart as Record<string, unknown>
+        const partType = typeof part.type === 'string' ? part.type : ''
+
         if (typeof part.text === 'string' && part.text.trim()) {
-          textParts.push(part.text)
+          textParts.push(part.text.trim())
+          continue
         }
+
         if (typeof part.output_text === 'string' && part.output_text.trim()) {
-          textParts.push(part.output_text)
+          textParts.push(part.output_text.trim())
+          continue
+        }
+
+        if (
+          (partType === 'output_text' || partType === 'text') &&
+          typeof part.value === 'string' &&
+          part.value.trim()
+        ) {
+          textParts.push(part.value.trim())
         }
       }
     }

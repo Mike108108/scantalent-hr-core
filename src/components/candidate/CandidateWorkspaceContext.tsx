@@ -25,6 +25,7 @@ import {
   getTalentMapSectionReports,
   type TalentMapSectionReport,
 } from '../../lib/talentMapSectionApi'
+import { formatSectionErrorUserMessage } from '../../lib/talentMapSectionErrors'
 import type { TalentMapSectionKey } from '../../lib/talentMapSections'
 import {
   getChartElementCounts,
@@ -538,7 +539,9 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
       })
 
       if (!result.ok) {
-        setSectionGenerationError(result.error)
+        setSectionGenerationError(
+          formatSectionErrorUserMessage(result.error, result.error_kind),
+        )
         if (result.report) {
           setSectionReports((prev) => ({
             ...prev,

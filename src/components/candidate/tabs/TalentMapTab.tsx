@@ -8,6 +8,12 @@ import {
   type TalentMapSectionStatus,
 } from '../../../lib/talentMapSections'
 import type { TalentMapSectionReport } from '../../../lib/talentMapSectionApi'
+import {
+  formatSectionErrorBadgeLabel,
+  formatSectionErrorUserMessage,
+  isPostGenerationQaFailure,
+  shouldShowTechnicalErrorDetails,
+} from '../../../lib/talentMapSectionErrors'
 import type { SectionGenerationStatus } from '../../../lib/talentMapSectionTypes'
 import type { TalentMapGeneratedSectionV1 } from '../../../lib/talentMapGeneratedSectionContract'
 
@@ -55,7 +61,10 @@ function resolveSectionUiStatus(params: {
   }
 
   if (params.report?.status === 'error') {
-    return { badgeStatus: 'error', label: 'Раздел не прошёл проверку' }
+    return {
+      badgeStatus: 'error',
+      label: formatSectionErrorBadgeLabel(params.report),
+    }
   }
 
   if (params.sectionPreviewStatus === 'input_ready') {
@@ -75,12 +84,14 @@ function SectionGeneratedResult({ report }: { report: TalentMapSectionReport }) 
     : []
 
   if (report.status === 'error') {
+    const isQaFailure = isPostGenerationQaFailure(report)
+    const userMessage = formatSectionErrorUserMessage(report.generation_error)
+    const showTechnicalDetails = shouldShowTechnicalErrorDetails(report)
+
     return (
       <div className="generated-section-result generated-section-result--error stack">
-        <p className="generated-section-result__message">
-          {report.generation_error ?? 'Раздел не прошёл проверку.'}
-        </p>
-        {qualityFlags.length > 0 ? (
+        <p className="generated-section-result__message">{userMessage}</p>
+        {isQaFailure && qualityFlags.length > 0 ? (
           <details className="generated-section-details">
             <summary>QA результата</summary>
             <ul className="generated-section-list">
@@ -88,6 +99,23 @@ function SectionGeneratedResult({ report }: { report: TalentMapSectionReport }) 
                 <li key={flag}>{flag}</li>
               ))}
             </ul>
+          </details>
+        ) : null}
+        {showTechnicalDetails ? (
+          <details className="generated-section-details">
+            <summary>QA результата</summary>
+            <div className="stack">
+              {report.generation_error ? (
+                <p className="generated-section-result__technical">{report.generation_error}</p>
+              ) : null}
+              {qualityFlags.length > 0 ? (
+                <ul className="generated-section-list">
+                  {qualityFlags.map((flag) => (
+                    <li key={flag}>{flag}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
           </details>
         ) : null}
       </div>

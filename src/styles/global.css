@@ -937,6 +937,13 @@ ol {
   margin: 0;
 }
 
+.generated-section-result__technical {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
 .generated-section-markdown {
   white-space: pre-wrap;
   font-size: 0.92rem;

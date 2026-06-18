@@ -13,6 +13,7 @@ import {
   TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA,
   TALENT_MAP_SECTION_SYSTEM_PROMPT,
 } from '../../src/lib/talentMapSectionOpenAiSchema'
+import { QA_FAILURE_GENERATION_ERROR } from '../../src/lib/talentMapSectionErrors'
 import { getTalentMapSectionDefinition } from '../../src/lib/talentMapSynthesisContract'
 import {
   buildReferenceBundle,
@@ -28,6 +29,10 @@ type GenerateSectionPayload = {
 
 const WORK_MODE_SECTION_KEY = 'work_mode_and_entry'
 const WORK_MODE_SECTION_TITLE = 'Рабочий формат и вход в задачи'
+
+const OPENAI_MODEL = process.env.OPENAI_RESPONSES_MODEL?.trim() || 'gpt-5-nano'
+const OPENAI_REASONING_EFFORT = 'low' as const
+const OPENAI_MAX_OUTPUT_TOKENS = 5000
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -46,10 +51,6 @@ function jsonResponse(statusCode: number, body: unknown) {
   }
 }
 
-function resolveOpenAiModel(): string {
-  return process.env.OPENAI_RESPONSES_MODEL?.trim() || 'gpt-5-nano'
-}
-
 async function callOpenAiForSection(sanitizedInput: unknown): Promise<{
   parsed: unknown
   model: string
@@ -60,33 +61,40 @@ async function callOpenAiForSection(sanitizedInput: unknown): Promise<{
     throw new Error('OPENAI_API_KEY is not configured.')
   }
 
-  const model = resolveOpenAiModel()
+  const userPayloadText = JSON.stringify(sanitizedInput)
 
   const requestBody: Record<string, unknown> = {
-    model,
-    reasoning: { effort: 'low' },
+    model: OPENAI_MODEL,
+    reasoning: {
+      effort: OPENAI_REASONING_EFFORT,
+    },
+    max_output_tokens: OPENAI_MAX_OUTPUT_TOKENS,
     input: [
       {
-        role: 'system',
-        content: [{ type: 'input_text', text: TALENT_MAP_SECTION_SYSTEM_PROMPT }],
+        role: 'developer',
+        content: [
+          {
+            type: 'input_text',
+            text: TALENT_MAP_SECTION_SYSTEM_PROMPT,
+          },
+        ],
       },
       {
         role: 'user',
         content: [
           {
             type: 'input_text',
-            text: JSON.stringify(sanitizedInput),
+            text: userPayloadText,
           },
         ],
       },
     ],
     text: {
-      verbosity: 'medium',
       format: {
         type: 'json_schema',
-        name: 'talent_map_section_v1',
-        schema: TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA,
+        name: 'talent_map_generated_section_v1',
         strict: true,
+        schema: TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA,
       },
     },
   }
@@ -127,7 +135,7 @@ async function callOpenAiForSection(sanitizedInput: unknown): Promise<{
 
   return {
     parsed,
-    model,
+    model: OPENAI_MODEL,
     usage: extractOpenAiUsage(payload),
   }
 }
@@ -347,6 +355,7 @@ export const handler: Handler = async (event) => {
       return jsonResponse(422, {
         ok: false,
         error: 'Section input audit did not pass. OpenAI was not called.',
+        error_kind: 'audit_failed',
         audit: {
           overall_severity: auditReport.overall_severity,
           section_generation_status: sectionInput.generation_status,
@@ -393,7 +402,7 @@ export const handler: Handler = async (event) => {
         summaryForSynthesis: {},
         evidenceJson: buildEvidenceJson(sectionInput),
         qualityFlags: [message],
-        model: resolveOpenAiModel(),
+        model: OPENAI_MODEL,
         usageJson: {},
         generationError: message,
       })
@@ -401,6 +410,7 @@ export const handler: Handler = async (event) => {
       return jsonResponse(502, {
         ok: false,
         error: message,
+        error_kind: 'technical',
         generation_error: message,
         report: errorReport,
       })
@@ -412,7 +422,7 @@ export const handler: Handler = async (event) => {
     })
 
     if (!qaResult.ok || !qaResult.data) {
-      const generationError = 'Раздел не прошёл проверку качества после сборки.'
+      const generationError = QA_FAILURE_GENERATION_ERROR
 
       const errorReport = await upsertLayerReport({
         companyId: chart.company_id,
@@ -434,6 +444,7 @@ export const handler: Handler = async (event) => {
       return jsonResponse(422, {
         ok: false,
         error: generationError,
+        error_kind: 'qa_failed',
         quality_flags: qaResult.issues,
         generation_error: generationError,
         report: errorReport,

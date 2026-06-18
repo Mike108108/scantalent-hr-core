@@ -1,6 +1,7 @@
 import { authGetSession } from './auth'
 import { getSupabaseClient } from './supabaseClient'
 import type { TalentMapGeneratedSectionV1 } from './talentMapGeneratedSectionContract'
+import type { SectionGenerationErrorKind } from './talentMapSectionErrors'
 import type { TalentMapSectionKey } from './talentMapSections'
 
 export type TalentMapSectionReportStatus = 'draft' | 'ready' | 'error'
@@ -36,6 +37,7 @@ export type GenerateTalentMapSectionResponse =
   | {
       ok: false
       error: string
+      error_kind?: SectionGenerationErrorKind
       report?: TalentMapSectionReport
       audit?: {
         overall_severity: string
@@ -70,6 +72,7 @@ export async function generateTalentMapSection(payload: {
     return {
       ok: false,
       error: data.ok ? 'Не удалось собрать раздел карты талантов.' : data.error,
+      error_kind: !data.ok ? data.error_kind : undefined,
       report: !data.ok ? data.report : undefined,
       audit: !data.ok ? data.audit : undefined,
       quality_flags: !data.ok ? data.quality_flags : undefined,

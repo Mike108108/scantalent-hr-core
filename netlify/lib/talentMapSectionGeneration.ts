@@ -39,6 +39,26 @@ export const TALENT_MAP_SECTION_GENERATION_CORS_HEADERS = {
 
 export type LayerReportStatus = 'processing' | 'ready' | 'error'
 
+export function buildProcessingSummaryForSynthesis() {
+  return {
+    status: 'processing',
+    one_sentence: '',
+    key_conditions: [] as string[],
+    potential_risks: [] as string[],
+    source_element_keys: [] as string[],
+  }
+}
+
+export function buildErrorSummaryForSynthesis(message: string) {
+  return {
+    status: 'error',
+    one_sentence: '',
+    key_conditions: [] as string[],
+    potential_risks: [message],
+    source_element_keys: [] as string[],
+  }
+}
+
 export function jsonResponse(statusCode: number, body: unknown) {
   return {
     statusCode,
@@ -231,7 +251,7 @@ export async function upsertProcessingLayerReport(params: {
     content_json: {},
     base_markdown: null,
     pro_markdown: null,
-    summary_for_synthesis: null,
+    summary_for_synthesis: buildProcessingSummaryForSynthesis(),
     evidence_json: params.evidenceJson,
     quality_flags: [],
     model: params.model,
@@ -305,7 +325,7 @@ export async function markLayerReportError(params: {
     content_json: params.contentJson,
     base_markdown: null,
     pro_markdown: null,
-    summary_for_synthesis: null,
+    summary_for_synthesis: buildErrorSummaryForSynthesis(params.generationError),
     evidence_json: params.evidenceJson,
     quality_flags: params.qualityFlags,
     model: params.model,

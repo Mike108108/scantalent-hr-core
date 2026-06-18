@@ -1,6 +1,7 @@
 import type { Handler } from '@netlify/functions'
 import { getTalentMapModelPreset } from '../../src/lib/talentMapModelPresets'
 import {
+  buildErrorSummaryForSynthesis,
   buildUsageJson,
   jsonResponse,
   prepareWorkModeSectionInput,
@@ -166,15 +167,28 @@ export const handler: Handler = async (event) => {
       startedAt,
     })
 
-    const processingReport = await upsertProcessingLayerReport({
-      companyId: chart.company_id,
-      candidateId: chart.candidate_id,
-      chartId: chart.id,
-      inputBundleJson,
-      evidenceJson: preparedInput.evidenceJson,
-      model: modelPreset.model,
-      usageJson,
-    })
+    let processingReport: Awaited<ReturnType<typeof upsertProcessingLayerReport>>
+    try {
+      processingReport = await upsertProcessingLayerReport({
+        companyId: chart.company_id,
+        candidateId: chart.candidate_id,
+        chartId: chart.id,
+        inputBundleJson,
+        evidenceJson: preparedInput.evidenceJson,
+        model: modelPreset.model,
+        usageJson,
+      })
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to create processing layer report.'
+      return startErrorResponse(500, {
+        stage: 'processing_report_upsert',
+        error: message,
+        extraDiagnostics: {
+          chart_id: chartId,
+        },
+      })
+    }
 
     const origin = resolveFunctionOrigin(event)
     if (!origin) {
@@ -212,6 +226,7 @@ export const handler: Handler = async (event) => {
         .from('hr_candidate_layer_reports')
         .update({
           status: 'error',
+          summary_for_synthesis: buildErrorSummaryForSynthesis(message),
           generation_error: message,
           quality_flags: [message],
           usage_json: {

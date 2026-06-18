@@ -1,5 +1,6 @@
 import type { Handler } from '@netlify/functions'
 import {
+  buildErrorSummaryForSynthesis,
   jsonResponse,
   runBackgroundSectionGeneration,
   TALENT_MAP_SECTION_GENERATION_CORS_HEADERS,
@@ -132,6 +133,7 @@ export const handler: Handler = async (event) => {
           .from('hr_candidate_layer_reports')
           .update({
             status: 'error',
+            summary_for_synthesis: buildErrorSummaryForSynthesis(message),
             generation_error: message,
             quality_flags: [message],
             usage_json: {

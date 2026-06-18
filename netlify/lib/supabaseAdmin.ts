@@ -19,6 +19,21 @@ export function getSupabaseAdmin(): SupabaseClient {
   return adminClient
 }
 
+export function readBearerAuthorizationHeader(
+  headers: Record<string, string | undefined> | undefined,
+): string | undefined {
+  if (!headers) {
+    return undefined
+  }
+
+  return (
+    headers.authorization ??
+    headers.Authorization ??
+    headers['authorization'] ??
+    headers['Authorization']
+  )
+}
+
 export async function verifyBearerUser(authHeader: string | undefined): Promise<User> {
   if (!authHeader?.startsWith('Bearer ')) {
     throw new AuthError('Missing or invalid Authorization header.', 401)

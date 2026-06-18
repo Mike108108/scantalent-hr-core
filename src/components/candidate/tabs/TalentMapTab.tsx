@@ -12,7 +12,6 @@ import type { TalentMapSectionReport } from '../../../lib/talentMapSectionApi'
 import {
   formatSectionErrorBadgeLabel,
   formatSectionErrorUserMessage,
-  isEndpointTransportError,
   isPostGenerationQaFailure,
   shouldShowTechnicalErrorDetails,
 } from '../../../lib/talentMapSectionErrors'
@@ -325,9 +324,8 @@ export function TalentMapTab() {
           <p className="form-error" role="alert">
             {sectionGenerationError}
           </p>
-          {sectionGenerationTechnicalError &&
-          isEndpointTransportError(sectionGenerationTechnicalError) ? (
-            <details className="generated-section-details">
+          {sectionGenerationTechnicalError ? (
+            <details className="generated-section-details" open>
               <summary>Технические детали</summary>
               <pre className="generated-section-result__technical">
                 {sectionGenerationTechnicalError}

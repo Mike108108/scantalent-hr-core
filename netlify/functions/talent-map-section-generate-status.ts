@@ -4,7 +4,7 @@ import {
   TALENT_MAP_SECTION_GENERATION_CORS_HEADERS,
   WORK_MODE_SECTION_KEY,
 } from '../lib/talentMapSectionGeneration'
-import { AuthError, getSupabaseAdmin, verifyBearerUser } from '../lib/supabaseAdmin'
+import { AuthError, getSupabaseAdmin, readBearerAuthorizationHeader, verifyBearerUser } from '../lib/supabaseAdmin'
 
 export const handler: Handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -20,7 +20,7 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    const user = await verifyBearerUser(event.headers.authorization ?? event.headers.Authorization)
+    const user = await verifyBearerUser(readBearerAuthorizationHeader(event.headers))
     const query = event.queryStringParameters ?? {}
     const reportId = query.report_id?.trim()
     const chartId = query.chart_id?.trim()
@@ -94,6 +94,10 @@ export const handler: Handler = async (event) => {
         ok: false,
         error_kind: 'technical',
         error: error.message,
+        diagnostics: {
+          stage: 'auth',
+          endpoint: 'talent-map-section-generate-status',
+        },
       })
     }
 

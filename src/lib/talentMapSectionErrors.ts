@@ -8,6 +8,13 @@ const ENDPOINT_TRANSPORT_ERROR_PREFIXES = [
   'Endpoint returned invalid JSON.',
 ] as const
 
+export type SectionGenerationErrorPresentation = {
+  userMessage: string
+  technicalDetails: string
+  errorKind?: SectionGenerationErrorKind
+  status?: number
+}
+
 export function isEndpointTransportError(message: string | null | undefined): boolean {
   if (!message) {
     return false
@@ -65,6 +72,15 @@ export function formatSectionErrorUserMessage(
     return 'Раздел не прошёл проверку'
   }
 
+  if (
+    technicalMessage?.includes('Не удалось получить токен авторизации') ||
+    technicalMessage?.includes('Missing or invalid Authorization header') ||
+    technicalMessage?.includes('Missing bearer token') ||
+    technicalMessage?.includes('Invalid or expired session')
+  ) {
+    return 'Не удалось получить токен авторизации. Войдите заново.'
+  }
+
   if (!technicalMessage) {
     return 'Не удалось собрать раздел'
   }
@@ -74,6 +90,42 @@ export function formatSectionErrorUserMessage(
   }
 
   return 'Не удалось собрать раздел'
+}
+
+export function buildSectionGenerationErrorPresentation(params: {
+  technicalMessage?: string | null
+  errorKind?: SectionGenerationErrorKind
+  status?: number
+  endpoint?: string
+  diagnostics?: Record<string, unknown>
+  audit?: unknown
+  qualityFlags?: string[]
+  rawResponse?: unknown
+}): SectionGenerationErrorPresentation {
+  const technicalMessage = params.technicalMessage?.trim() || 'Unknown section generation error.'
+  const detailLines = [
+    params.endpoint ? `Endpoint: ${params.endpoint}` : null,
+    typeof params.status === 'number' ? `Status: ${params.status}` : null,
+    params.errorKind ? `Error kind: ${params.errorKind}` : null,
+    `Error: ${technicalMessage}`,
+    params.diagnostics
+      ? `Diagnostics: ${JSON.stringify(params.diagnostics, null, 2)}`
+      : null,
+    params.audit ? `Audit: ${JSON.stringify(params.audit, null, 2)}` : null,
+    params.qualityFlags?.length
+      ? `Quality flags: ${params.qualityFlags.join('; ')}`
+      : null,
+    params.rawResponse
+      ? `Raw response: ${JSON.stringify(params.rawResponse, null, 2)}`
+      : null,
+  ].filter(Boolean)
+
+  return {
+    userMessage: formatSectionErrorUserMessage(technicalMessage, params.errorKind),
+    technicalDetails: detailLines.join('\n'),
+    errorKind: params.errorKind,
+    status: params.status,
+  }
 }
 
 export function shouldShowTechnicalErrorDetails(report: {

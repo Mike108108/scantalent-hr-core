@@ -1,20 +1,50 @@
 import type { Handler } from '@netlify/functions'
 import { getTalentMapModelPreset } from '../../src/lib/talentMapModelPresets'
 import {
+  buildUsageJson,
   jsonResponse,
   prepareWorkModeSectionInput,
   resolveFunctionOrigin,
   TALENT_MAP_SECTION_GENERATION_CORS_HEADERS,
   upsertProcessingLayerReport,
   WORK_MODE_SECTION_KEY,
-  buildUsageJson,
 } from '../lib/talentMapSectionGeneration'
-import { AuthError, getSupabaseAdmin, verifyBearerUser } from '../lib/supabaseAdmin'
+import { AuthError, getSupabaseAdmin, readBearerAuthorizationHeader, verifyBearerUser } from '../lib/supabaseAdmin'
 
 type GenerateSectionPayload = {
   chart_id?: string
   section_key?: string
   model_preset_id?: string
+}
+
+const START_ENDPOINT = 'talent-map-section-generate'
+
+function startErrorResponse(
+  statusCode: number,
+  params: {
+    error: string
+    error_kind?: 'technical' | 'audit_failed'
+    stage: string
+    audit?: unknown
+    generation_error?: string
+    report?: unknown
+    extraDiagnostics?: Record<string, unknown>
+  },
+) {
+  return jsonResponse(statusCode, {
+    ok: false,
+    error_kind: params.error_kind ?? 'technical',
+    error: params.error,
+    generation_error: params.generation_error,
+    audit: params.audit,
+    report: params.report,
+    diagnostics: {
+      stage: params.stage,
+      endpoint: START_ENDPOINT,
+      section_key: WORK_MODE_SECTION_KEY,
+      ...(params.extraDiagnostics ?? {}),
+    },
+  })
 }
 
 export const handler: Handler = async (event) => {
@@ -23,14 +53,13 @@ export const handler: Handler = async (event) => {
   }
 
   if (event.httpMethod !== 'POST') {
-    return jsonResponse(405, {
-      ok: false,
-      error_kind: 'technical',
+    return startErrorResponse(405, {
+      stage: 'method',
       error: 'Method not allowed.',
     })
   }
 
-  const authorization = event.headers.authorization ?? event.headers.Authorization
+  const authorization = readBearerAuthorizationHeader(event.headers)
 
   try {
     const user = await verifyBearerUser(authorization)
@@ -42,26 +71,26 @@ export const handler: Handler = async (event) => {
     )
 
     if (!chartId) {
-      return jsonResponse(400, {
-        ok: false,
-        error_kind: 'technical',
+      return startErrorResponse(400, {
+        stage: 'payload',
         error: 'chart_id is required.',
       })
     }
 
     if (!sectionKey) {
-      return jsonResponse(400, {
-        ok: false,
-        error_kind: 'technical',
+      return startErrorResponse(400, {
+        stage: 'payload',
         error: 'section_key is required.',
       })
     }
 
     if (sectionKey !== WORK_MODE_SECTION_KEY) {
-      return jsonResponse(400, {
-        ok: false,
-        error_kind: 'technical',
+      return startErrorResponse(400, {
+        stage: 'payload',
         error: 'Only work_mode_and_entry is supported in Stage 4-F0.1.',
+        extraDiagnostics: {
+          section_key: sectionKey,
+        },
       })
     }
 
@@ -77,10 +106,10 @@ export const handler: Handler = async (event) => {
       throw new Error(chartError.message)
     }
     if (!chart) {
-      return jsonResponse(404, {
-        ok: false,
-        error_kind: 'technical',
+      return startErrorResponse(404, {
+        stage: 'chart_lookup',
         error: 'Chart not found.',
+        extraDiagnostics: { chart_id: chartId },
       })
     }
 
@@ -94,10 +123,13 @@ export const handler: Handler = async (event) => {
       throw new Error(companyError.message)
     }
     if (!company || company.owner_user_id !== user.id) {
-      return jsonResponse(403, {
-        ok: false,
-        error_kind: 'technical',
+      return startErrorResponse(403, {
+        stage: 'ownership',
         error: 'Chart does not belong to your company.',
+        extraDiagnostics: {
+          chart_id: chartId,
+          company_id: chart.company_id,
+        },
       })
     }
 
@@ -107,8 +139,8 @@ export const handler: Handler = async (event) => {
     } catch (error) {
       const auditPayload = (error as Error & { auditPayload?: unknown }).auditPayload
       if (auditPayload) {
-        return jsonResponse(422, {
-          ok: false,
+        return startErrorResponse(422, {
+          stage: 'input_audit',
           error: 'Section input audit did not pass. OpenAI was not called.',
           error_kind: 'audit_failed',
           audit: auditPayload,
@@ -189,11 +221,15 @@ export const handler: Handler = async (event) => {
         })
         .eq('id', processingReport.id)
 
-      return jsonResponse(502, {
-        ok: false,
-        error_kind: 'technical',
+      return startErrorResponse(502, {
+        stage: 'background_trigger',
         error: message,
         generation_error: message,
+        report: processingReport,
+        extraDiagnostics: {
+          report_id: processingReport.id,
+          background_url: backgroundUrl,
+        },
       })
     }
 
@@ -207,23 +243,17 @@ export const handler: Handler = async (event) => {
     })
   } catch (error) {
     if (error instanceof AuthError) {
-      return jsonResponse(error.statusCode, {
-        ok: false,
-        error_kind: 'technical',
+      return startErrorResponse(error.statusCode, {
+        stage: 'auth',
         error: error.message,
       })
     }
 
     const message =
       error instanceof Error ? error.message : 'Unexpected generation start error'
-    return jsonResponse(500, {
-      ok: false,
-      error_kind: 'technical',
+    return startErrorResponse(500, {
+      stage: 'unexpected_catch',
       error: message,
-      diagnostics: {
-        stage: 'unexpected_catch',
-        section_key: WORK_MODE_SECTION_KEY,
-      },
     })
   }
 }

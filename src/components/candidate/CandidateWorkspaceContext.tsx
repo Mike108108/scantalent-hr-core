@@ -24,6 +24,7 @@ import {
   getSectionReportMap,
   getTalentMapSectionGenerationStatus,
   getTalentMapSectionReports,
+  isSectionGenerationErrorPresentation,
   sleep,
   TALENT_MAP_SECTION_POLL_INTERVAL_MS,
   TALENT_MAP_SECTION_POLL_TIMEOUT_MS,
@@ -34,9 +35,9 @@ import {
   type TalentMapModelPresetId,
 } from '../../lib/talentMapModelPresets'
 import {
-  formatSectionErrorUserMessage,
-  isEndpointTransportError,
+  buildSectionGenerationErrorPresentation,
 } from '../../lib/talentMapSectionErrors'
+import { useAuth } from '../../lib/auth'
 import type { TalentMapSectionKey } from '../../lib/talentMapSections'
 import {
   getChartElementCounts,
@@ -227,6 +228,7 @@ type CandidateWorkspaceContextValue = {
 const CandidateWorkspaceContext = createContext<CandidateWorkspaceContextValue | null>(null)
 
 export function CandidateWorkspaceProvider({ children }: { children: ReactNode }) {
+  const { session } = useAuth()
   const [state, setState] = useState<WorkspaceState>({ status: 'loading' })
   const [values, setValues] = useState<FormValues>(emptyValues)
   const [selectedCity, setSelectedCity] = useState<SelectedCity | null>(null)
@@ -275,9 +277,12 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
 
         await sleep(TALENT_MAP_SECTION_POLL_INTERVAL_MS)
 
-        const statusResult = await getTalentMapSectionGenerationStatus({ report_id: reportId })
+        const statusResult = await getTalentMapSectionGenerationStatus(
+          { report_id: reportId },
+          { accessToken: session?.access_token },
+        )
         if (!statusResult.ok) {
-          throw new Error(statusResult.error)
+          throw statusResult.presentation
         }
 
         setSectionReports((prev) => ({
@@ -298,7 +303,7 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
         activePollingReportIdRef.current = null
       }
     }
-  }, [])
+  }, [session?.access_token])
 
   const loadChartData = useCallback(async (candidateId: string) => {
     const latestChart = await getLatestChartForCandidate(candidateId)
@@ -448,19 +453,26 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
         }
 
         if (finalReport.status === 'error') {
-          setSectionGenerationError(
-            formatSectionErrorUserMessage(finalReport.generation_error),
-          )
-          setSectionGenerationTechnicalError(finalReport.generation_error)
+          const presentation = buildSectionGenerationErrorPresentation({
+            technicalMessage: finalReport.generation_error,
+          })
+          setSectionGenerationError(presentation.userMessage)
+          setSectionGenerationTechnicalError(presentation.technicalDetails)
         }
       } catch (error) {
         if (!cancelled) {
-          const technicalMessage =
-            error instanceof Error ? error.message : 'Не удалось получить статус сборки раздела.'
-          setSectionGenerationTechnicalError(
-            isEndpointTransportError(technicalMessage) ? technicalMessage : null,
-          )
-          setSectionGenerationError(formatSectionErrorUserMessage(technicalMessage))
+          if (isSectionGenerationErrorPresentation(error)) {
+            setSectionGenerationTechnicalError(error.technicalDetails)
+            setSectionGenerationError(error.userMessage)
+          } else {
+            const technicalMessage =
+              error instanceof Error ? error.message : 'Не удалось получить статус сборки раздела.'
+            const presentation = buildSectionGenerationErrorPresentation({
+              technicalMessage,
+            })
+            setSectionGenerationTechnicalError(presentation.technicalDetails)
+            setSectionGenerationError(presentation.userMessage)
+          }
         }
       } finally {
         if (!cancelled) {
@@ -473,7 +485,7 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
       cancelled = true
       sectionPollAbortRef.current += 1
     }
-  }, [sectionReports.work_mode_and_entry?.id, sectionReports.work_mode_and_entry?.status, pollWorkModeSectionUntilComplete])
+  }, [sectionReports.work_mode_and_entry?.id, sectionReports.work_mode_and_entry?.status, pollWorkModeSectionUntilComplete, session?.access_token])
 
   const updateField = useCallback((field: keyof FormValues, value: string) => {
     setValues((prev) => ({ ...prev, [field]: value }))
@@ -642,18 +654,19 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
       setSectionGenerationTechnicalError(null)
 
       try {
-        const result = await generateTalentMapSection({
-          chart_id: chart.id,
-          section_key: 'work_mode_and_entry',
-          model_preset_id: modelPresetId,
-        })
+        const result = await generateTalentMapSection(
+          {
+            chart_id: chart.id,
+            section_key: 'work_mode_and_entry',
+            model_preset_id: modelPresetId,
+          },
+          { accessToken: session?.access_token },
+        )
 
         if (!result.ok) {
           setSectionGenerationLoading(false)
-          setSectionGenerationError(
-            formatSectionErrorUserMessage(result.error, result.error_kind),
-          )
-          setSectionGenerationTechnicalError(result.error || null)
+          setSectionGenerationError(result.presentation.userMessage)
+          setSectionGenerationTechnicalError(result.presentation.technicalDetails)
           if (result.report) {
             setSectionReports((prev) => ({
               ...prev,
@@ -671,15 +684,21 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
         }))
       } catch (error) {
         setSectionGenerationLoading(false)
-        const technicalMessage =
-          error instanceof Error ? error.message : 'Не удалось собрать раздел карты талантов.'
-        setSectionGenerationTechnicalError(
-          isEndpointTransportError(technicalMessage) ? technicalMessage : null,
-        )
-        setSectionGenerationError(formatSectionErrorUserMessage(technicalMessage))
+        if (isSectionGenerationErrorPresentation(error)) {
+          setSectionGenerationTechnicalError(error.technicalDetails)
+          setSectionGenerationError(error.userMessage)
+        } else {
+          const technicalMessage =
+            error instanceof Error ? error.message : 'Не удалось собрать раздел карты талантов.'
+          const presentation = buildSectionGenerationErrorPresentation({
+            technicalMessage,
+          })
+          setSectionGenerationTechnicalError(presentation.technicalDetails)
+          setSectionGenerationError(presentation.userMessage)
+        }
       }
     },
-    [chart?.id, refreshSectionReports],
+    [chart?.id, refreshSectionReports, session?.access_token],
   )
 
   const normalizedChart = useMemo(() => parseNormalizedChart(chart), [chart])

@@ -5,7 +5,7 @@ import {
   TALENT_MAP_SECTION_GENERATION_CORS_HEADERS,
   WORK_MODE_SECTION_KEY,
 } from '../lib/talentMapSectionGeneration'
-import { AuthError, getSupabaseAdmin, verifyBearerUser } from '../lib/supabaseAdmin'
+import { AuthError, getSupabaseAdmin, readBearerAuthorizationHeader, verifyBearerUser } from '../lib/supabaseAdmin'
 
 type BackgroundPayload = {
   report_id?: string
@@ -28,7 +28,7 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    const user = await verifyBearerUser(event.headers.authorization ?? event.headers.Authorization)
+    const user = await verifyBearerUser(readBearerAuthorizationHeader(event.headers))
     const payload = JSON.parse(event.body ?? '{}') as BackgroundPayload
     const reportId = payload.report_id?.trim()
     const chartId = payload.chart_id?.trim()

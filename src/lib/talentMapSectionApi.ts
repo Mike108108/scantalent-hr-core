@@ -1,8 +1,12 @@
-import { authGetSession } from './auth'
+import { getAccessTokenForProtectedRequest } from './auth'
 import { getSupabaseClient } from './supabaseClient'
 import type { TalentMapGeneratedSection } from './talentMapGeneratedSectionContract'
 import type { TalentMapModelPresetId } from './talentMapModelPresets'
-import type { SectionGenerationErrorKind } from './talentMapSectionErrors'
+import {
+  buildSectionGenerationErrorPresentation,
+  type SectionGenerationErrorKind,
+  type SectionGenerationErrorPresentation,
+} from './talentMapSectionErrors'
 import type { TalentMapSectionKey } from './talentMapSections'
 
 export const TALENT_MAP_SECTION_GENERATE_ENDPOINT =
@@ -36,6 +40,22 @@ export type TalentMapSectionReport = {
   updated_at: string
 }
 
+type GenerateTalentMapSectionFailure = {
+  ok: false
+  error: string
+  error_kind?: SectionGenerationErrorKind
+  report?: TalentMapSectionReport
+  audit?: {
+    overall_severity: string
+    issues: unknown[]
+    section_summary?: unknown
+  }
+  quality_flags?: string[]
+  generation_error?: string
+  diagnostics?: Record<string, unknown>
+  presentation: SectionGenerationErrorPresentation
+}
+
 export type GenerateTalentMapSectionResponse =
   | {
       ok: true
@@ -45,20 +65,7 @@ export type GenerateTalentMapSectionResponse =
       model_preset_id: TalentMapModelPresetId
       report: TalentMapSectionReport
     }
-  | {
-      ok: false
-      error: string
-      error_kind?: SectionGenerationErrorKind
-      report?: TalentMapSectionReport
-      audit?: {
-        overall_severity: string
-        issues: unknown[]
-        section_summary?: unknown
-      }
-      quality_flags?: string[]
-      generation_error?: string
-      diagnostics?: Record<string, unknown>
-    }
+  | GenerateTalentMapSectionFailure
 
 export type TalentMapSectionGenerationStatusResponse =
   | {
@@ -70,6 +77,7 @@ export type TalentMapSectionGenerationStatusResponse =
       error: string
       error_kind?: SectionGenerationErrorKind
       diagnostics?: Record<string, unknown>
+      presentation: SectionGenerationErrorPresentation
     }
 
 async function readJsonResponseSafely(
@@ -95,16 +103,18 @@ async function readJsonResponseSafely(
   if (!contentType.toLowerCase().includes('application/json')) {
     const preview = responseText.slice(0, 800)
 
-    throw new Error(
-      [
-        'Endpoint returned non-JSON response.',
-        `Endpoint: ${endpointUrl}`,
-        `Status: ${response.status}`,
-        `Content-Type: ${contentType || 'unknown'}`,
-        ...contextLines,
-        `Body preview: ${preview}`,
-      ].join('\n'),
-    )
+    throw buildSectionGenerationErrorPresentation({
+      technicalMessage: 'Endpoint returned non-JSON response.',
+      status: response.status,
+      endpoint: endpointUrl,
+      rawResponse: {
+        contentType: contentType || 'unknown',
+        bodyPreview: preview,
+        ...Object.fromEntries(
+          contextLines.map((line, index) => [`context_${index}`, line]),
+        ),
+      },
+    })
   }
 
   try {
@@ -112,75 +122,138 @@ async function readJsonResponseSafely(
   } catch {
     const preview = responseText.slice(0, 800)
 
-    throw new Error(
-      [
-        'Endpoint returned invalid JSON.',
-        `Endpoint: ${endpointUrl}`,
-        `Status: ${response.status}`,
-        `Content-Type: ${contentType || 'unknown'}`,
-        ...contextLines,
-        `Body preview: ${preview}`,
-      ].join('\n'),
-    )
+    throw buildSectionGenerationErrorPresentation({
+      technicalMessage: 'Endpoint returned invalid JSON.',
+      status: response.status,
+      endpoint: endpointUrl,
+      rawResponse: {
+        contentType: contentType || 'unknown',
+        bodyPreview: preview,
+        ...Object.fromEntries(
+          contextLines.map((line, index) => [`context_${index}`, line]),
+        ),
+      },
+    })
   }
 }
 
-export async function generateTalentMapSection(payload: {
-  chart_id: string
-  section_key: 'work_mode_and_entry'
-  model_preset_id: TalentMapModelPresetId
-}): Promise<GenerateTalentMapSectionResponse> {
-  const session = await authGetSession()
-  if (!session?.access_token) {
-    throw new Error('Пользователь не авторизован.')
+function buildFailureFromBackendResponse(params: {
+  endpoint: string
+  status: number
+  data: {
+    ok: false
+    error: string
+    error_kind?: SectionGenerationErrorKind
+    diagnostics?: Record<string, unknown>
+    audit?: unknown
+    quality_flags?: string[]
+    generation_error?: string
   }
+}): GenerateTalentMapSectionFailure {
+  const presentation = buildSectionGenerationErrorPresentation({
+    technicalMessage: params.data.error,
+    errorKind: params.data.error_kind,
+    status: params.status,
+    endpoint: params.endpoint,
+    diagnostics: params.data.diagnostics,
+    audit: params.data.audit,
+    qualityFlags: params.data.quality_flags,
+    rawResponse: params.data,
+  })
+
+  return {
+    ok: false,
+    error: params.data.error,
+    error_kind: params.data.error_kind,
+    audit: params.data.audit as GenerateTalentMapSectionFailure['audit'],
+    quality_flags: params.data.quality_flags,
+    generation_error: params.data.generation_error,
+    diagnostics: params.data.diagnostics,
+    presentation,
+  }
+}
+
+export async function generateTalentMapSection(
+  payload: {
+    chart_id: string
+    section_key: 'work_mode_and_entry'
+    model_preset_id: TalentMapModelPresetId
+  },
+  options?: {
+    accessToken?: string | null
+  },
+): Promise<GenerateTalentMapSectionResponse> {
+  const accessToken = await getAccessTokenForProtectedRequest(options?.accessToken)
 
   const response = await fetch(TALENT_MAP_SECTION_GENERATE_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
+      Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify(payload),
   })
 
-  const data = (await readJsonResponseSafely(response, TALENT_MAP_SECTION_GENERATE_ENDPOINT, {
-    section_key: payload.section_key,
-    model_preset_id: payload.model_preset_id,
-  })) as GenerateTalentMapSectionResponse
+  let data: GenerateTalentMapSectionResponse
+  try {
+    data = (await readJsonResponseSafely(response, TALENT_MAP_SECTION_GENERATE_ENDPOINT, {
+      section_key: payload.section_key,
+      model_preset_id: payload.model_preset_id,
+    })) as GenerateTalentMapSectionResponse
+  } catch (error) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'userMessage' in error &&
+      'technicalDetails' in error
+    ) {
+      const presentation = error as SectionGenerationErrorPresentation
+      return {
+        ok: false,
+        error: presentation.technicalDetails,
+        presentation,
+      }
+    }
+    throw error
+  }
 
   if (!data.ok) {
-    return {
-      ok: false,
-      error: data.error,
-      error_kind: data.error_kind,
-      report: data.report,
-      audit: data.audit,
-      quality_flags: data.quality_flags,
-      generation_error: data.generation_error,
-      diagnostics: data.diagnostics,
-    }
+    return buildFailureFromBackendResponse({
+      endpoint: TALENT_MAP_SECTION_GENERATE_ENDPOINT,
+      status: response.status,
+      data,
+    })
   }
 
   if (!response.ok) {
+    const presentation = buildSectionGenerationErrorPresentation({
+      technicalMessage: 'Не удалось запустить сборку раздела карты талантов.',
+      status: response.status,
+      endpoint: TALENT_MAP_SECTION_GENERATE_ENDPOINT,
+      rawResponse: data,
+    })
+
     return {
       ok: false,
-      error: 'Не удалось запустить сборку раздела карты талантов.',
+      error: presentation.technicalDetails,
+      presentation,
     }
   }
 
   return data
 }
 
-export async function getTalentMapSectionGenerationStatus(params: {
-  report_id?: string
-  chart_id?: string
-  section_key?: 'work_mode_and_entry'
-}): Promise<TalentMapSectionGenerationStatusResponse> {
-  const session = await authGetSession()
-  if (!session?.access_token) {
-    throw new Error('Пользователь не авторизован.')
-  }
+export async function getTalentMapSectionGenerationStatus(
+  params: {
+    report_id?: string
+    chart_id?: string
+    section_key?: 'work_mode_and_entry'
+  },
+  options?: {
+    accessToken?: string | null
+  },
+): Promise<TalentMapSectionGenerationStatusResponse> {
+  const accessToken = await getAccessTokenForProtectedRequest(options?.accessToken)
 
   const searchParams = new URLSearchParams()
   if (params.report_id) {
@@ -198,21 +271,64 @@ export async function getTalentMapSectionGenerationStatus(params: {
   const response = await fetch(endpointUrl, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${session.access_token}`,
+      Authorization: `Bearer ${accessToken}`,
     },
   })
 
-  const data = (await readJsonResponseSafely(response, endpointUrl, {
-    report_id: params.report_id,
-    section_key: params.section_key,
-  })) as TalentMapSectionGenerationStatusResponse
+  let data: TalentMapSectionGenerationStatusResponse
+  try {
+    data = (await readJsonResponseSafely(response, endpointUrl, {
+      report_id: params.report_id,
+      section_key: params.section_key,
+    })) as TalentMapSectionGenerationStatusResponse
+  } catch (error) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'userMessage' in error &&
+      'technicalDetails' in error
+    ) {
+      const presentation = error as SectionGenerationErrorPresentation
+      return {
+        ok: false,
+        error: presentation.technicalDetails,
+        presentation,
+      }
+    }
+    throw error
+  }
 
   if (!response.ok || !data.ok) {
+    if (!data.ok) {
+      const presentation = buildSectionGenerationErrorPresentation({
+        technicalMessage: data.error,
+        errorKind: data.error_kind,
+        status: response.status,
+        endpoint: endpointUrl,
+        diagnostics: data.diagnostics,
+        rawResponse: data,
+      })
+
+      return {
+        ok: false,
+        error: data.error,
+        error_kind: data.error_kind,
+        diagnostics: data.diagnostics,
+        presentation,
+      }
+    }
+
+    const presentation = buildSectionGenerationErrorPresentation({
+      technicalMessage: 'Не удалось получить статус сборки раздела.',
+      status: response.status,
+      endpoint: endpointUrl,
+      rawResponse: data,
+    })
+
     return {
       ok: false,
-      error: data.ok ? 'Не удалось получить статус сборки раздела.' : data.error,
-      error_kind: !data.ok ? data.error_kind : undefined,
-      diagnostics: !data.ok ? data.diagnostics : undefined,
+      error: presentation.technicalDetails,
+      presentation,
     }
   }
 
@@ -260,4 +376,15 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms)
   })
+}
+
+export function isSectionGenerationErrorPresentation(
+  value: unknown,
+): value is SectionGenerationErrorPresentation {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'userMessage' in value &&
+    'technicalDetails' in value
+  )
 }

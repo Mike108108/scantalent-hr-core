@@ -339,3 +339,302 @@ export function extractOpenAiUsage(payload: unknown): Record<string, unknown> | 
 
   return usage as Record<string, unknown>
 }
+
+export const OPENAI_RESPONSE_PREVIEW_LIMIT = 8000
+
+export function buildOpenAiResponsePreview(text: string): string {
+  if (text.length <= OPENAI_RESPONSE_PREVIEW_LIMIT) {
+    return text
+  }
+
+  return text.slice(0, OPENAI_RESPONSE_PREVIEW_LIMIT)
+}
+
+export function stripJsonMarkdownFence(text: string): string {
+  const trimmed = text.trim()
+
+  const fencedMatch = trimmed.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```\s*$/i)
+  if (fencedMatch) {
+    return fencedMatch[1].trim()
+  }
+
+  if (trimmed.startsWith('```')) {
+    return trimmed
+      .replace(/^```(?:json)?\s*\n?/i, '')
+      .replace(/\n?```\s*$/, '')
+      .trim()
+  }
+
+  return trimmed
+}
+
+export function extractFirstJsonObjectText(text: string): string | null {
+  const start = text.indexOf('{')
+  if (start === -1) {
+    return null
+  }
+
+  let depth = 0
+  let inString = false
+  let escaped = false
+
+  for (let index = start; index < text.length; index += 1) {
+    const char = text[index]
+
+    if (inString) {
+      if (escaped) {
+        escaped = false
+        continue
+      }
+
+      if (char === '\\') {
+        escaped = true
+        continue
+      }
+
+      if (char === '"') {
+        inString = false
+      }
+
+      continue
+    }
+
+    if (char === '"') {
+      inString = true
+      continue
+    }
+
+    if (char === '{') {
+      depth += 1
+      continue
+    }
+
+    if (char === '}') {
+      depth -= 1
+      if (depth === 0) {
+        return text.slice(start, index + 1)
+      }
+    }
+  }
+
+  return null
+}
+
+export type OpenAiJsonParseAttempt = {
+  strategy: string
+  error: string
+}
+
+export type OpenAiJsonParseSuccess = {
+  ok: true
+  parsed: unknown
+  parse_strategy: string
+}
+
+export type OpenAiJsonParseFailure = {
+  ok: false
+  error: string
+  cleaned_preview: string
+  raw_preview: string
+  parse_strategy_attempts: OpenAiJsonParseAttempt[]
+}
+
+function tryJsonParse(
+  candidate: string,
+  strategy: string,
+  attempts: OpenAiJsonParseAttempt[],
+): OpenAiJsonParseSuccess | null {
+  try {
+    return {
+      ok: true,
+      parsed: JSON.parse(candidate),
+      parse_strategy: strategy,
+    }
+  } catch (error) {
+    attempts.push({
+      strategy,
+      error: error instanceof Error ? error.message : 'JSON.parse failed',
+    })
+    return null
+  }
+}
+
+export function parseOpenAiJsonOutput(text: string): OpenAiJsonParseSuccess | OpenAiJsonParseFailure {
+  const raw = text.trim()
+  const raw_preview = buildOpenAiResponsePreview(raw)
+  const attempts: OpenAiJsonParseAttempt[] = []
+
+  const direct = tryJsonParse(raw, 'direct_json_parse', attempts)
+  if (direct) {
+    return direct
+  }
+
+  const stripped = stripJsonMarkdownFence(raw)
+  if (stripped !== raw) {
+    const strippedResult = tryJsonParse(stripped, 'stripped_markdown_fence', attempts)
+    if (strippedResult) {
+      return strippedResult
+    }
+  } else {
+    attempts.push({
+      strategy: 'stripped_markdown_fence',
+      error: 'No markdown fence detected',
+    })
+  }
+
+  const extracted = extractFirstJsonObjectText(stripped)
+  if (extracted) {
+    const extractedResult = tryJsonParse(extracted, 'extracted_first_json_object', attempts)
+    if (extractedResult) {
+      return extractedResult
+    }
+  } else {
+    attempts.push({
+      strategy: 'extracted_first_json_object',
+      error: 'No JSON object boundaries found',
+    })
+  }
+
+  return {
+    ok: false,
+    error: attempts[attempts.length - 1]?.error ?? 'JSON.parse failed',
+    cleaned_preview: buildOpenAiResponsePreview(stripped),
+    raw_preview,
+    parse_strategy_attempts: attempts,
+  }
+}
+
+export function extractOpenAiResponseDiagnostics(
+  payload: unknown,
+  outputText?: string | null,
+): Record<string, unknown> {
+  const diagnostics: Record<string, unknown> = {}
+
+  if (!payload || typeof payload !== 'object') {
+    return diagnostics
+  }
+
+  const record = payload as Record<string, unknown>
+
+  for (const key of ['id', 'status', 'model', 'created_at', 'incomplete_details', 'error'] as const) {
+    if (record[key] !== undefined) {
+      diagnostics[key] = record[key]
+    }
+  }
+
+  if (record.usage !== undefined) {
+    diagnostics.usage = record.usage
+  }
+
+  if (Array.isArray(record.output)) {
+    diagnostics.output_items = record.output.map((item, index) => {
+      if (!item || typeof item !== 'object') {
+        return { index, type: 'unknown' }
+      }
+
+      const outputItem = item as Record<string, unknown>
+      const summary: Record<string, unknown> = {
+        index,
+        type: outputItem.type ?? null,
+        status: outputItem.status ?? null,
+      }
+
+      if (outputItem.finish_reason !== undefined) {
+        summary.finish_reason = outputItem.finish_reason
+      }
+
+      if (Array.isArray(outputItem.content)) {
+        summary.content_part_types = outputItem.content.map((part) => {
+          if (!part || typeof part !== 'object') {
+            return 'unknown'
+          }
+
+          return (part as Record<string, unknown>).type ?? 'unknown'
+        })
+      }
+
+      return summary
+    })
+  }
+
+  if (outputText !== undefined) {
+    diagnostics.output_text_length = outputText?.length ?? 0
+    if (outputText) {
+      diagnostics.output_text_preview = buildOpenAiResponsePreview(outputText)
+    }
+  }
+
+  return diagnostics
+}
+
+export class OpenAiSectionParseError extends Error {
+  readonly diagnostics: Record<string, unknown>
+
+  readonly usage: Record<string, unknown> | null
+
+  readonly model: string
+
+  readonly modelPresetId: string
+
+  readonly modelPresetLabel: string
+
+  constructor(params: {
+    message: string
+    diagnostics: Record<string, unknown>
+    usage: Record<string, unknown> | null
+    model: string
+    modelPresetId: string
+    modelPresetLabel: string
+  }) {
+    super(params.message)
+    this.name = 'OpenAiSectionParseError'
+    this.diagnostics = params.diagnostics
+    this.usage = params.usage
+    this.model = params.model
+    this.modelPresetId = params.modelPresetId
+    this.modelPresetLabel = params.modelPresetLabel
+  }
+}
+
+export function isOpenAiSectionParseError(error: unknown): error is OpenAiSectionParseError {
+  return error instanceof OpenAiSectionParseError
+}
+
+export function buildOpenAiParseFailureContentJson(params: {
+  message: string
+  diagnostics: Record<string, unknown>
+}): Record<string, unknown> {
+  return {
+    status: 'error',
+    error_kind: 'openai_json_parse_failed',
+    message: params.message,
+    parse_diagnostics: params.diagnostics,
+  }
+}
+
+export type SectionParseDiagnosticsContent = {
+  stage?: string
+  parse_error_message?: string
+  raw_response_preview?: string
+  cleaned_response_preview?: string
+  openai_response_diagnostics?: Record<string, unknown>
+  parse_strategy_attempts?: OpenAiJsonParseAttempt[]
+}
+
+export function readSectionParseDiagnostics(contentJson: unknown): SectionParseDiagnosticsContent | null {
+  if (!contentJson || typeof contentJson !== 'object') {
+    return null
+  }
+
+  const record = contentJson as Record<string, unknown>
+  if (record.error_kind !== 'openai_json_parse_failed') {
+    return null
+  }
+
+  const parseDiagnostics = record.parse_diagnostics
+  if (!parseDiagnostics || typeof parseDiagnostics !== 'object') {
+    return null
+  }
+
+  return parseDiagnostics as SectionParseDiagnosticsContent
+}

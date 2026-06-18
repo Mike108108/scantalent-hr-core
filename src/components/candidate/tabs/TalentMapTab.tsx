@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useCandidateWorkspace } from '../CandidateWorkspaceContext'
 import { Button } from '../../ui/Button'
 import { Card } from '../../ui/Card'
@@ -24,6 +24,14 @@ import {
 import {
   isTalentMapGeneratedSectionContent,
 } from '../../../lib/talentMapGeneratedSectionContract'
+import {
+  downloadTalentMapSectionReport,
+  formatGenerationDurationClock,
+  formatGenerationDurationMs,
+  resolveOpenAiTokenUsage,
+  resolveReportGenerationMeta,
+  resolveReportGenerationTiming,
+} from '../../../lib/talentMapSectionReportExport'
 import type { TalentMapStatus } from '../../../lib/types'
 
 function statusBadgeVariant(
@@ -87,6 +95,154 @@ function resolveSectionUiStatus(params: {
   }
 
   return { badgeStatus: 'not_generated', label: 'Ещё не собран' }
+}
+
+function SectionReportDownloadButton({ report }: { report: TalentMapSectionReport }) {
+  return (
+    <button
+      type="button"
+      className="icon-button icon-button--ghost"
+      aria-label="Скачать отчёт раздела"
+      title="Скачать отчёт раздела"
+      onClick={() => {
+        downloadTalentMapSectionReport(report)
+      }}
+    >
+      <svg
+        className="icon-button__icon"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path
+          d="M12 3v10.55M7.05 8.55 12 13.5l4.95-4.95M5 19h14"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
+  )
+}
+
+function SectionGenerationTimer(props: {
+  report: TalentMapSectionReport | undefined
+  isProcessing: boolean
+  fallbackStartedAt: string | null
+}) {
+  const [nowMs, setNowMs] = useState(() => Date.now())
+
+  useEffect(() => {
+    if (!props.isProcessing) {
+      return
+    }
+
+    const intervalId = window.setInterval(() => {
+      setNowMs(Date.now())
+    }, 1000)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [props.isProcessing])
+
+  if (!props.report) {
+    return null
+  }
+
+  const timing = resolveReportGenerationTiming(props.report)
+  const startMs = Date.parse(timing.startedAt ?? props.fallbackStartedAt ?? '')
+
+  if (props.isProcessing && Number.isFinite(startMs)) {
+    const elapsedMs = Math.max(0, nowMs - startMs)
+    const elapsedLabel =
+      elapsedMs >= 60_000
+        ? formatGenerationDurationMs(elapsedMs)
+        : formatGenerationDurationClock(elapsedMs)
+
+    return (
+      <p className="section-generation-timer" aria-live="polite">
+        Идёт сборка: {elapsedLabel}
+      </p>
+    )
+  }
+
+  if (
+    !props.isProcessing &&
+    (props.report.status === 'ready' || props.report.status === 'error') &&
+    timing.durationHuman !== 'not_available'
+  ) {
+    return (
+      <p className="section-generation-timer section-generation-timer--final">
+        Длительность сборки: {timing.durationHuman}
+      </p>
+    )
+  }
+
+  return null
+}
+
+function SectionAssemblyDetails({ report }: { report: TalentMapSectionReport }) {
+  const meta = resolveReportGenerationMeta(report)
+  const timing = resolveReportGenerationTiming(report)
+  const tokenUsage = resolveOpenAiTokenUsage(report)
+  const content = isTalentMapGeneratedSectionContent(report.content_json)
+    ? report.content_json
+    : null
+
+  const hasAssemblyMeta =
+    content?.generation_meta ||
+    report.model ||
+    meta.internalTokenCost !== 'not_available' ||
+    meta.estimatedCostUsd !== 'not_available'
+
+  if (!hasAssemblyMeta) {
+    return report.model ? (
+      <p className="city-autocomplete__hint">Модель сборки: {report.model}</p>
+    ) : null
+  }
+
+  return (
+    <details className="generated-section-details">
+      <summary>Сборка</summary>
+      <ul className="generated-section-list">
+        {meta.presetLabel !== 'not_available' ? (
+          <li>
+            Качество: {meta.presetLabel}
+            {meta.model !== 'not_available' ? ` (${meta.model})` : ''}
+          </li>
+        ) : meta.model !== 'not_available' ? (
+          <li>Модель: {meta.model}</li>
+        ) : null}
+        {meta.reasoningEffort !== 'not_available' ? (
+          <li>Reasoning effort: {meta.reasoningEffort}</li>
+        ) : null}
+        {meta.maxOutputTokens !== 'not_available' ? (
+          <li>Max output tokens: {meta.maxOutputTokens}</li>
+        ) : null}
+        {meta.internalTokenCost !== 'not_available' ? (
+          <li>Внутренние токены: {meta.internalTokenCost}</li>
+        ) : null}
+        {meta.estimatedCostUsd !== 'not_available' ? (
+          <li>Техническая оценка API cost: {meta.estimatedCostUsd}</li>
+        ) : null}
+        {timing.durationHuman !== 'not_available' ? (
+          <li>Длительность сборки: {timing.durationHuman}</li>
+        ) : null}
+        {tokenUsage.inputTokens !== null ? (
+          <li>Input tokens: {tokenUsage.inputTokens.toLocaleString('ru-RU')}</li>
+        ) : null}
+        {tokenUsage.outputTokens !== null ? (
+          <li>Output tokens: {tokenUsage.outputTokens.toLocaleString('ru-RU')}</li>
+        ) : null}
+        {tokenUsage.totalTokens !== null ? (
+          <li>Total tokens: {tokenUsage.totalTokens.toLocaleString('ru-RU')}</li>
+        ) : null}
+      </ul>
+    </details>
+  )
 }
 
 function SectionGeneratedResult({ report }: { report: TalentMapSectionReport }) {
@@ -158,27 +314,7 @@ function SectionGeneratedResult({ report }: { report: TalentMapSectionReport }) 
         </details>
       ) : null}
 
-      {content && 'generation_meta' in content && content.generation_meta ? (
-        <details className="generated-section-details">
-          <summary>Сборка</summary>
-          <ul className="generated-section-list">
-            <li>
-              Качество: {content.generation_meta.model_preset_label} (
-              {content.generation_meta.model})
-            </li>
-            <li>Reasoning effort: {content.generation_meta.reasoning_effort}</li>
-            <li>Max output tokens: {content.generation_meta.max_output_tokens}</li>
-            <li>Внутренние токены: {content.generation_meta.internal_credit_cost}</li>
-            {content.generation_meta.estimated_cost_usd !== null ? (
-              <li>
-                Оценка стоимости: ~${content.generation_meta.estimated_cost_usd.toFixed(4)} USD
-              </li>
-            ) : null}
-          </ul>
-        </details>
-      ) : report.model ? (
-        <p className="city-autocomplete__hint">Модель сборки: {report.model}</p>
-      ) : null}
+      <SectionAssemblyDetails report={report} />
 
       {content?.qa ? (
         <details className="generated-section-details">
@@ -271,6 +407,7 @@ export function TalentMapTab() {
   const [selectedModelPresetId, setSelectedModelPresetId] = useState<TalentMapModelPresetId>(
     DEFAULT_TALENT_MAP_MODEL_PRESET_ID,
   )
+  const [localGenerationStartedAt, setLocalGenerationStartedAt] = useState<string | null>(null)
 
   const collectedCount = MVP_TALENT_MAP_SECTIONS.filter(
     (section) => sectionReports[section.key]?.status === 'ready',
@@ -371,11 +508,23 @@ export function TalentMapTab() {
               <div className="stack">
                 <div className="talent-section-card__header">
                   <h3 className="talent-section-card__title">{section.title}</h3>
-                  <StatusBadge
-                    status={statusBadgeVariant(uiStatus.badgeStatus)}
-                    label={uiStatus.label}
-                  />
+                  <div className="talent-section-card__status-row">
+                    <StatusBadge
+                      status={statusBadgeVariant(uiStatus.badgeStatus)}
+                      label={uiStatus.label}
+                    />
+                    {sectionIsReady && report ? (
+                      <SectionReportDownloadButton report={report} />
+                    ) : null}
+                  </div>
                 </div>
+                {isWorkModeSection ? (
+                  <SectionGenerationTimer
+                    report={report}
+                    isProcessing={sectionIsProcessing}
+                    fallbackStartedAt={localGenerationStartedAt}
+                  />
+                ) : null}
                 <p className="talent-section-card__description">{section.description}</p>
                 <dl className="info-list info-list--compact">
                   <div className="info-list__row">
@@ -435,6 +584,7 @@ export function TalentMapTab() {
                         type="button"
                         disabled={!canGenerateSection || sectionIsProcessing}
                         onClick={() => {
+                          setLocalGenerationStartedAt(new Date().toISOString())
                           void handleGenerateWorkModeAndEntrySection(selectedModelPresetId)
                         }}
                       >
@@ -446,7 +596,7 @@ export function TalentMapTab() {
                       </Button>
                       {sectionIsProcessing ? (
                         <p className="city-autocomplete__hint">
-                          Раздел собирается. Обычно это занимает до минуты.
+                          Собирается. Обычно это занимает до минуты.
                         </p>
                       ) : (
                         <p className="city-autocomplete__hint">

@@ -11,7 +11,7 @@ import {
 import type { TalentMapSectionReport } from '../../../lib/talentMapSectionApi'
 import {
   formatSectionErrorBadgeLabel,
-  formatSectionErrorUserMessage,
+  SECTION_LAST_ATTEMPT_FAILED_MESSAGE,
   shouldShowTechnicalErrorDetails,
 } from '../../../lib/talentMapSectionErrors'
 import type { SectionGenerationStatus } from '../../../lib/talentMapSectionTypes'
@@ -32,6 +32,7 @@ import {
   downloadTalentMapSectionReport,
   formatGenerationDurationClock,
   formatGenerationDurationMs,
+  resolveLiveProcessingStartMs,
   resolveOpenAiTokenUsage,
   resolveReportGenerationMeta,
   resolveReportGenerationTiming,
@@ -182,7 +183,7 @@ function SectionReportDownloadButton({ report }: { report: TalentMapSectionRepor
 function SectionGenerationTimer(props: {
   report: TalentMapSectionReport | undefined
   isProcessing: boolean
-  fallbackStartedAt: string | null
+  localStartedAtMs: number | null
 }) {
   const [nowMs, setNowMs] = useState(() => Date.now())
 
@@ -200,35 +201,48 @@ function SectionGenerationTimer(props: {
     }
   }, [props.isProcessing])
 
+  if (props.isProcessing) {
+    const startMs = resolveLiveProcessingStartMs({
+      report: props.report,
+      isProcessing: props.isProcessing,
+      localStartedAtMs: props.localStartedAtMs,
+    })
+
+    if (startMs !== null) {
+      const elapsedMs = Math.max(0, nowMs - startMs)
+      const elapsedLabel =
+        elapsedMs >= 60_000
+          ? formatGenerationDurationMs(elapsedMs)
+          : formatGenerationDurationClock(elapsedMs)
+
+      return (
+        <p className="section-generation-timer" aria-live="polite">
+          Идёт сборка: {elapsedLabel}
+        </p>
+      )
+    }
+
+    return null
+  }
+
   if (!props.report) {
     return null
   }
 
   const timing = resolveReportGenerationTiming(props.report)
-  const startMs = Date.parse(timing.startedAt ?? props.fallbackStartedAt ?? '')
-
-  if (props.isProcessing && Number.isFinite(startMs)) {
-    const elapsedMs = Math.max(0, nowMs - startMs)
-    const elapsedLabel =
-      elapsedMs >= 60_000
-        ? formatGenerationDurationMs(elapsedMs)
-        : formatGenerationDurationClock(elapsedMs)
-
-    return (
-      <p className="section-generation-timer" aria-live="polite">
-        Идёт сборка: {elapsedLabel}
-      </p>
-    )
-  }
 
   if (
-    !props.isProcessing &&
     (props.report.status === 'ready' || props.report.status === 'error') &&
     timing.durationHuman !== 'not_available'
   ) {
+    const durationLabel =
+      props.report.status === 'error'
+        ? `Время до ошибки: ${timing.durationHuman}`
+        : `Длительность сборки: ${timing.durationHuman}`
+
     return (
       <p className="section-generation-timer section-generation-timer--final">
-        Длительность сборки: {timing.durationHuman}
+        {durationLabel}
       </p>
     )
   }
@@ -284,7 +298,10 @@ function SectionAssemblyDetails({ report }: { report: TalentMapSectionReport }) 
           <li>Техническая оценка API cost: {meta.estimatedCostUsd}</li>
         ) : null}
         {timing.durationHuman !== 'not_available' ? (
-          <li>Длительность сборки: {timing.durationHuman}</li>
+          <li>
+            {report.status === 'error' ? 'Время до ошибки' : 'Длительность сборки'}:{' '}
+            {timing.durationHuman}
+          </li>
         ) : null}
         {tokenUsage.inputTokens !== null ? (
           <li>Input tokens: {tokenUsage.inputTokens.toLocaleString('ru-RU')}</li>
@@ -399,16 +416,15 @@ function SectionGeneratedResult({ report }: { report: TalentMapSectionReport }) 
     : []
 
   if (report.status === 'error') {
-    const userMessage = formatSectionErrorUserMessage(report.generation_error)
     const showTechnicalDetails = shouldShowTechnicalErrorDetails(report)
     const parseDiagnostics = readSectionParseDiagnostics(report.content_json)
 
     return (
       <div className="generated-section-result generated-section-result--error stack">
-        <p className="generated-section-result__message">{userMessage}</p>
+        <p className="generated-section-result__message">{SECTION_LAST_ATTEMPT_FAILED_MESSAGE}</p>
         {showTechnicalDetails ? (
           <details className="generated-section-details">
-            <summary>Технические детали</summary>
+            <summary>Показать технические детали</summary>
             <div className="stack">
               {report.generation_error ? (
                 <p className="generated-section-result__technical">{report.generation_error}</p>
@@ -579,7 +595,9 @@ export function TalentMapTab() {
   const [selectedModelPresetId, setSelectedModelPresetId] = useState<TalentMapModelPresetId>(
     DEFAULT_TALENT_MAP_MODEL_PRESET_ID,
   )
-  const [localGenerationStartedAt, setLocalGenerationStartedAt] = useState<string | null>(null)
+  const [localGenerationStartedAtBySection, setLocalGenerationStartedAtBySection] = useState<
+    Partial<Record<TalentMapSectionKey, number>>
+  >({})
   const [expandedSectionKeys, setExpandedSectionKeys] = useState<Set<TalentMapSectionKey>>(
     () => new Set(['work_mode_and_entry']),
   )
@@ -697,9 +715,11 @@ export function TalentMapTab() {
           const isWorkModeSection = section.key === 'work_mode_and_entry'
           const canGenerateSection = isWorkModeSection && canGenerateWorkMode
           const sectionIsReady = report?.status === 'ready'
+          const sectionIsError = report?.status === 'error'
           const sectionIsProcessing =
             (sectionGenerationLoading || report?.status === 'processing') && isWorkModeSection
           const isSectionExpanded = expandedSectionKeys.has(section.key)
+          const localStartedAtMs = localGenerationStartedAtBySection[section.key] ?? null
 
           return (
             <Card
@@ -736,7 +756,7 @@ export function TalentMapTab() {
                           <SectionGenerationTimer
                             report={report}
                             isProcessing={sectionIsProcessing}
-                            fallbackStartedAt={localGenerationStartedAt}
+                            localStartedAtMs={localStartedAtMs}
                           />
                         ) : null}
                       </div>
@@ -744,7 +764,7 @@ export function TalentMapTab() {
                       <SectionGenerationTimer
                         report={report}
                         isProcessing={sectionIsProcessing}
-                        fallbackStartedAt={localGenerationStartedAt}
+                        localStartedAtMs={localStartedAtMs}
                       />
                     ) : null}
                     <p className="talent-section-card__description">{section.description}</p>
@@ -787,7 +807,7 @@ export function TalentMapTab() {
                       </div>
                     </dl>
 
-                    {report && report.status !== 'processing' ? (
+                    {report && report.status !== 'processing' && !sectionIsProcessing ? (
                       <SectionGeneratedResult report={report} />
                     ) : null}
 
@@ -806,7 +826,10 @@ export function TalentMapTab() {
                             type="button"
                             disabled={!canGenerateSection || sectionIsProcessing}
                             onClick={() => {
-                              setLocalGenerationStartedAt(new Date().toISOString())
+                              setLocalGenerationStartedAtBySection((prev) => ({
+                                ...prev,
+                                [section.key]: Date.now(),
+                              }))
                               setExpandedSectionKeys((prev) => {
                                 const next = new Set(prev)
                                 next.add(section.key)
@@ -819,7 +842,9 @@ export function TalentMapTab() {
                               ? 'Собирается…'
                               : sectionIsReady
                                 ? 'Пересобрать раздел'
-                                : 'Собрать раздел'}
+                                : sectionIsError
+                                  ? 'Повторить генерацию'
+                                  : 'Собрать раздел'}
                           </Button>
                           {sectionIsProcessing ? (
                             <p className="city-autocomplete__hint">

@@ -2,6 +2,7 @@ import type { Handler } from '@netlify/functions'
 import { getTalentMapModelPreset } from '../../src/lib/talentMapModelPresets'
 import {
   buildErrorSummaryForSynthesis,
+  buildProcessingAttemptUsageJson,
   buildUsageJson,
   enrichWorkModeSectionInputForGeneration,
   jsonResponse,
@@ -166,11 +167,9 @@ export const handler: Handler = async (event) => {
       started_at: startedAt,
     }
 
-    const usageJson = buildUsageJson({
-      openAiUsage: null,
+    const usageJson = buildProcessingAttemptUsageJson({
       modelPreset,
       modelPresetFallbackUsed,
-      asyncGeneration: true,
       startedAt,
     })
 

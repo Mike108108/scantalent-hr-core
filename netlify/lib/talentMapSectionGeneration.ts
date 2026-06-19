@@ -116,6 +116,20 @@ export function buildUsageJson(params: {
   }
 }
 
+export function buildProcessingAttemptUsageJson(params: {
+  modelPreset: TalentMapModelPreset
+  modelPresetFallbackUsed: boolean
+  startedAt: string
+}) {
+  return buildUsageJson({
+    openAiUsage: null,
+    modelPreset: params.modelPreset,
+    modelPresetFallbackUsed: params.modelPresetFallbackUsed,
+    asyncGeneration: true,
+    startedAt: params.startedAt,
+  })
+}
+
 export function buildEvidenceJson(sectionInput: {
   source_chips: unknown
   source_digests: Array<{

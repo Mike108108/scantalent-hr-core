@@ -75,7 +75,8 @@ export type ReportGenerationTiming = {
 export function resolveReportGenerationTiming(report: TalentMapSectionReport): ReportGenerationTiming {
   const usage = asRecord(report.usage_json)
   const startedAt =
-    readIsoTimestamp(usage?.started_at) ?? readIsoTimestamp(report.created_at)
+    readIsoTimestamp(usage?.started_at) ??
+    (report.status !== 'processing' ? readIsoTimestamp(report.created_at) : null)
   const finishedAt =
     readIsoTimestamp(usage?.finished_at) ??
     (report.status === 'ready' || report.status === 'error'
@@ -101,6 +102,27 @@ export function resolveReportGenerationTiming(report: TalentMapSectionReport): R
     durationMs: null,
     durationHuman: NOT_AVAILABLE,
   }
+}
+
+export function resolveLiveProcessingStartMs(params: {
+  report: TalentMapSectionReport | undefined
+  isProcessing: boolean
+  localStartedAtMs: number | null
+}): number | null {
+  if (!params.isProcessing) {
+    return null
+  }
+
+  if (params.localStartedAtMs !== null && Number.isFinite(params.localStartedAtMs)) {
+    return params.localStartedAtMs
+  }
+
+  if (params.report?.status === 'processing') {
+    const usage = asRecord(params.report.usage_json)
+    return parseTimestampMs(readIsoTimestamp(usage?.started_at))
+  }
+
+  return null
 }
 
 export type ReportGenerationMeta = {

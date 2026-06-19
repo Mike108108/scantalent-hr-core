@@ -178,6 +178,24 @@ export async function upsertSingleCandidateForCompany(
   return data as Candidate
 }
 
+export async function deleteCandidateForCompany(
+  companyId: string,
+  candidateId: string,
+): Promise<void> {
+  const client = getClientOrThrow()
+
+  const { error } = await client
+    .from('hr_candidates')
+    .delete()
+    .eq('id', candidateId)
+    .eq('company_id', companyId)
+    .select('id')
+
+  if (error) {
+    throw new Error(error.message)
+  }
+}
+
 export async function getLatestChartForCandidate(
   candidateId: string,
 ): Promise<CandidateChart | null> {

@@ -1,3 +1,6 @@
+import type { TalentMapDepthProfile } from './talentMapDepthProfiles'
+import type { SourceChip } from './talentMapSynthesisContract'
+
 const BASE_BLOCK_SCHEMA = {
   type: 'object',
   additionalProperties: false,
@@ -144,7 +147,7 @@ export const TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA = {
   },
 } as const
 
-export const TALENT_MAP_SECTION_SYSTEM_PROMPT = `Ты собираешь один раздел HR-карты талантов: "Рабочий формат и вход в задачи".
+export const TALENT_MAP_SECTION_SYSTEM_PROMPT_BASE = `Ты собираешь один раздел HR-карты талантов: "Рабочий формат и вход в задачи".
 
 Твоя задача — не описать карту и не пересказать элементы.
 Твоя задача — дать HR/руководителю практическую инструкцию:
@@ -238,6 +241,100 @@ source → смысл механики → HR-перевод → огранич�
 Не придумывай значения элементов, которых нет во входе.
 Не генерируй generation_meta — это добавит backend после валидации.`
 
+/** @deprecated Use buildTalentMapSectionSystemPrompt */
+export const TALENT_MAP_SECTION_SYSTEM_PROMPT = TALENT_MAP_SECTION_SYSTEM_PROMPT_BASE
+
+const VISIBLE_JSON_TARGET_BY_DEPTH: Record<TalentMapDepthProfile['id'], string> = {
+  compact: '8 000–10 000',
+  full: '12 000–15 000',
+  expert: '18 000–22 000',
+}
+
+function buildDepthVolumeGuidance(depthProfile: TalentMapDepthProfile): string[] {
+  switch (depthProfile.id) {
+    case 'compact':
+      return [
+        '- Base blocks: up to 2 пункта в каждом блоке',
+        '- source_chips: up to 5 (только из входа)',
+        '- pro.source_logic: up to 4 источников',
+        '- interpretation_limits: up to 2',
+        '- reality_checks: up to 2',
+        '- summary key_conditions: up to 3',
+        '- summary potential_risks: up to 3',
+      ]
+    case 'full':
+      return [
+        '- Base blocks: up to 2 пункта в каждом блоке',
+        '- source_chips: up to 6 (только из входа)',
+        '- pro.source_logic: up to 5 источников',
+        '- interpretation_limits: up to 3',
+        '- reality_checks: up to 3',
+        '- summary key_conditions: up to 3',
+        '- summary potential_risks: up to 3',
+      ]
+    case 'expert':
+      return [
+        '- Base blocks: up to 4 пункта в каждом блоке',
+        '- source_chips: up to 12 (только из входа, если столько есть)',
+        '- pro.source_logic: up to 12 источников',
+        '- interpretation_limits: up to 6',
+        '- reality_checks: up to 6',
+        '- summary key_conditions: up to 6',
+        '- summary potential_risks: up to 6',
+      ]
+  }
+}
+
+export function buildTalentMapSectionSystemPrompt(params: {
+  depthProfile: TalentMapDepthProfile
+}): string {
+  const { depthProfile } = params
+  const visibleJsonTarget = VISIBLE_JSON_TARGET_BY_DEPTH[depthProfile.id]
+
+  const depthBlock = [
+    `Профиль глубины: ${depthProfile.prompt_label}`,
+    '',
+    depthProfile.style_instruction,
+    '',
+    'Целевые объёмы для этого профиля (up to, не minimum):',
+    ...buildDepthVolumeGuidance(depthProfile),
+    '',
+    'Принцип depth:',
+    '- Compact = меньше охват, но чистый и полезный вывод. Не ухудшай качество.',
+    '- Full = основной клиентский уровень.',
+    '- Expert = больше синтеза, нюансов, сценариев и evidence logic.',
+    '- Не добирай пункты ради количества. Меньше сильных пунктов лучше слабых.',
+    '',
+    'Hard completion rule:',
+    '- Return exactly one complete valid JSON object.',
+    '- Valid closed JSON is more important than extra nuance.',
+    '- Never sacrifice JSON completion for more detail.',
+    '- If you need to shorten, shorten explanations and use fewer items.',
+    '- Do not add filler items to satisfy a count.',
+    '- Do not repeat the same idea across Base and Pro.',
+    '- One point = one clear working idea.',
+    '- No long examples inside JSON fields.',
+    '',
+    'Source/key rule:',
+    '- Use only full source keys exactly as provided in allowed_source_chip_keys.',
+    '- Never output raw element_key values like "projector", "splenic", "1/3", "18.1".',
+    '- Always output "type:projector", "authority:splenic", "profile:1/3", etc.',
+    '- Все source_chips, pro.source_logic.source_element_key и summary_for_synthesis.source_element_keys должны быть только из allowed_source_chip_keys / source_chips, которые пришли во входе.',
+    '- Нельзя придумывать новые источники.',
+    '- Нельзя добавлять gate/channel/center/etc., которых нет в allowed_source_chip_keys.',
+    '- Если хочется сослаться на элемент, которого нет во входе, не используй его.',
+    '',
+    'Visible JSON budget:',
+    `- Aim to keep the visible JSON around ${visibleJsonTarget} characters.`,
+    '- This is a soft target, not a strict validation rule.',
+    '- If the report needs less, use less.',
+    '- Do not expand the report to reach the target.',
+    '- If the report needs more, prioritize complete valid JSON and concise wording.',
+  ].join('\n')
+
+  return `${TALENT_MAP_SECTION_SYSTEM_PROMPT_BASE}\n\n${depthBlock}`
+}
+
 export function buildSanitizedSectionInputForAi(params: {
   section: {
     section_key: string
@@ -261,6 +358,34 @@ export function buildSanitizedSectionInputForAi(params: {
     selected_fields_for_ai: params.section.selected_fields_for_ai,
     budget_summary: params.section.budget_summary,
     global_guardrails: params.global_guardrails,
+  }
+}
+
+export function enrichSectionInputForOpenAi(params: {
+  sectionInput: ReturnType<typeof buildSanitizedSectionInputForAi>
+  depthProfile: TalentMapDepthProfile
+  sourceChips: SourceChip[]
+}) {
+  return {
+    ...params.sectionInput,
+    allowed_source_chip_keys: params.sourceChips.map(
+      (chip) => `${chip.element_kind}:${chip.element_key}`,
+    ),
+    generation_depth_profile: {
+      id: params.depthProfile.id,
+      label: params.depthProfile.ui_label,
+      prompt_label: params.depthProfile.prompt_label,
+      rules: {
+        base_points_per_block: params.depthProfile.base_points_per_block,
+        source_chips_target: params.depthProfile.source_chips_target,
+        source_logic_target: params.depthProfile.source_logic_target,
+        interpretation_limits_target: params.depthProfile.interpretation_limits_target,
+        reality_checks_target: params.depthProfile.reality_checks_target,
+        summary_key_conditions_target: params.depthProfile.summary_key_conditions_target,
+        summary_risks_target: params.depthProfile.summary_risks_target,
+        style_instruction: params.depthProfile.style_instruction,
+      },
+    },
   }
 }
 
@@ -504,6 +629,40 @@ export function parseOpenAiJsonOutput(text: string): OpenAiJsonParseSuccess | Op
   }
 }
 
+export function isOpenAiIncompleteMaxOutputTokens(
+  openAiDiagnostics: Record<string, unknown> | null | undefined,
+): boolean {
+  if (!openAiDiagnostics || openAiDiagnostics.status !== 'incomplete') {
+    return false
+  }
+
+  const incompleteDetails = openAiDiagnostics.incomplete_details
+  if (!incompleteDetails || typeof incompleteDetails !== 'object') {
+    return false
+  }
+
+  return (incompleteDetails as Record<string, unknown>).reason === 'max_output_tokens'
+}
+
+export const OPENAI_INCOMPLETE_MAX_OUTPUT_TOKENS_MESSAGE =
+  'OpenAI response was incomplete because max_output_tokens was reached.'
+
+export function buildOpenAiIncompleteMaxOutputTokensDiagnostics(params: {
+  openAiDiagnostics: Record<string, unknown>
+  modelPresetId: string
+  modelPresetLabel: string
+  parseExtras?: Record<string, unknown>
+}): Record<string, unknown> {
+  return {
+    stage: 'openai_response_incomplete',
+    error_kind: 'openai_response_incomplete_max_output_tokens',
+    openai_response_diagnostics: params.openAiDiagnostics,
+    model_preset_id: params.modelPresetId,
+    model_preset_label: params.modelPresetLabel,
+    ...(params.parseExtras ?? {}),
+  }
+}
+
 export function extractOpenAiResponseDiagnostics(
   payload: unknown,
   outputText?: string | null,
@@ -604,9 +763,14 @@ export function buildOpenAiParseFailureContentJson(params: {
   message: string
   diagnostics: Record<string, unknown>
 }): Record<string, unknown> {
+  const errorKind =
+    typeof params.diagnostics.error_kind === 'string'
+      ? params.diagnostics.error_kind
+      : 'openai_json_parse_failed'
+
   return {
     status: 'error',
-    error_kind: 'openai_json_parse_failed',
+    error_kind: errorKind,
     message: params.message,
     parse_diagnostics: params.diagnostics,
   }
@@ -614,6 +778,7 @@ export function buildOpenAiParseFailureContentJson(params: {
 
 export type SectionParseDiagnosticsContent = {
   stage?: string
+  error_kind?: string
   parse_error_message?: string
   raw_response_preview?: string
   cleaned_response_preview?: string
@@ -621,13 +786,19 @@ export type SectionParseDiagnosticsContent = {
   parse_strategy_attempts?: OpenAiJsonParseAttempt[]
 }
 
+const PARSE_FAILURE_ERROR_KINDS = new Set([
+  'openai_json_parse_failed',
+  'openai_response_incomplete_max_output_tokens',
+])
+
 export function readSectionParseDiagnostics(contentJson: unknown): SectionParseDiagnosticsContent | null {
   if (!contentJson || typeof contentJson !== 'object') {
     return null
   }
 
   const record = contentJson as Record<string, unknown>
-  if (record.error_kind !== 'openai_json_parse_failed') {
+  const errorKind = typeof record.error_kind === 'string' ? record.error_kind : null
+  if (!errorKind || !PARSE_FAILURE_ERROR_KINDS.has(errorKind)) {
     return null
   }
 

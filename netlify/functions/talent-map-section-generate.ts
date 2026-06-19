@@ -2,7 +2,9 @@ import type { Handler } from '@netlify/functions'
 import { getTalentMapModelPreset } from '../../src/lib/talentMapModelPresets'
 import {
   buildErrorSummaryForSynthesis,
+  buildProcessingAttemptUsageJson,
   buildUsageJson,
+  enrichWorkModeSectionInputForGeneration,
   jsonResponse,
   prepareWorkModeSectionInput,
   resolveFunctionOrigin,
@@ -151,19 +153,23 @@ export const handler: Handler = async (event) => {
     }
 
     const startedAt = new Date().toISOString()
+    const enrichedSectionInput = enrichWorkModeSectionInputForGeneration({
+      sanitizedInput: preparedInput.inputBundleJson.section_input,
+      sourceChips: preparedInput.sectionInput.source_chips,
+      modelPreset,
+    })
     const inputBundleJson = {
       ...preparedInput.inputBundleJson,
+      section_input: enrichedSectionInput,
       model_preset_id: modelPreset.id,
       model_preset_fallback_used: modelPresetFallbackUsed,
       async_generation: true,
       started_at: startedAt,
     }
 
-    const usageJson = buildUsageJson({
-      openAiUsage: null,
+    const usageJson = buildProcessingAttemptUsageJson({
       modelPreset,
       modelPresetFallbackUsed,
-      asyncGeneration: true,
       startedAt,
     })
 

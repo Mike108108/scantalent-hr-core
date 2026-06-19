@@ -1,3 +1,9 @@
+export const SECTION_LAST_ATTEMPT_FAILED_MESSAGE =
+  'Последняя попытка генерации завершилась ошибкой' as const
+
+export const SECTION_LAST_ATTEMPT_FAILED_BADGE =
+  'Последняя сборка не завершилась' as const
+
 export const QA_FAILURE_GENERATION_ERROR =
   'Раздел не прошёл проверку качества после сборки.' as const
 
@@ -52,7 +58,10 @@ export function formatSectionErrorBadgeLabel(report: {
   }
 
   if (report.status === 'error') {
-    return 'Не удалось собрать раздел'
+    if (isPostGenerationQaFailure(report)) {
+      return 'Раздел не прошёл проверку качества'
+    }
+    return SECTION_LAST_ATTEMPT_FAILED_BADGE
   }
 
   return 'Ещё не собран'
@@ -71,7 +80,7 @@ export function formatSectionErrorUserMessage(
   }
 
   if (errorKind === 'qa_failed' || technicalMessage === QA_FAILURE_GENERATION_ERROR) {
-    return 'Не удалось собрать раздел'
+    return 'Раздел не прошёл проверку качества после сборки.'
   }
 
   if (
@@ -84,14 +93,14 @@ export function formatSectionErrorUserMessage(
   }
 
   if (!technicalMessage) {
-    return 'Не удалось собрать раздел'
+    return SECTION_LAST_ATTEMPT_FAILED_MESSAGE
   }
 
   if (technicalMessage.includes('OPENAI_API_KEY is not configured')) {
     return 'Не настроен ключ OpenAI для сборки раздела.'
   }
 
-  return 'Не удалось собрать раздел'
+  return SECTION_LAST_ATTEMPT_FAILED_MESSAGE
 }
 
 export function buildSectionGenerationErrorPresentation(params: {

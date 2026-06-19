@@ -6,7 +6,9 @@ import {
   validateTalentMapGeneratedSection,
   type TalentMapGeneratedSection,
 } from '../../src/lib/talentMapGeneratedSectionContract'
+import { enforceGeneratedSectionSourceIntegrity } from '../../src/lib/talentMapGeneratedSectionSourceIntegrity'
 import { runTalentMapGeneratedSectionQa } from '../../src/lib/talentMapGeneratedSectionQa'
+import { getTalentMapDepthProfile } from '../../src/lib/talentMapDepthProfiles'
 import {
   estimateOpenAiCostUsd,
   getTalentMapModelPreset,
@@ -16,14 +18,19 @@ import { buildTalentMapSectionInputAudit } from '../../src/lib/talentMapSectionI
 import {
   buildOpenAiParseFailureContentJson,
   buildSanitizedSectionInputForAi,
+  buildOpenAiIncompleteMaxOutputTokensDiagnostics,
+  buildOpenAiResponsePreview,
+  buildTalentMapSectionSystemPrompt,
+  enrichSectionInputForOpenAi,
   extractOpenAiResponseDiagnostics,
   extractOpenAiResponseText,
   extractOpenAiUsage,
+  isOpenAiIncompleteMaxOutputTokens,
   isOpenAiSectionParseError,
+  OPENAI_INCOMPLETE_MAX_OUTPUT_TOKENS_MESSAGE,
   OpenAiSectionParseError,
   parseOpenAiJsonOutput,
   TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA,
-  TALENT_MAP_SECTION_SYSTEM_PROMPT,
 } from '../../src/lib/talentMapSectionOpenAiSchema'
 import { getTalentMapSectionDefinition } from '../../src/lib/talentMapSynthesisContract'
 import type { SourceChip } from '../../src/lib/talentMapSynthesisContract'
@@ -99,12 +106,28 @@ export function buildUsageJson(params: {
     model_preset_label: params.modelPreset.ui_label,
     model_preset_fallback_used: params.modelPresetFallbackUsed,
     reasoning_effort: params.modelPreset.reasoning_effort,
-    max_output_tokens: params.modelPreset.max_output_tokens,
+    ...(params.modelPreset.max_output_tokens !== undefined
+      ? { max_output_tokens: params.modelPreset.max_output_tokens }
+      : {}),
     internal_credit_cost: params.modelPreset.internal_credit_cost,
     ...(params.asyncGeneration ? { async_generation: true } : {}),
     ...(params.startedAt ? { started_at: params.startedAt } : {}),
     ...(params.finishedAt ? { finished_at: params.finishedAt } : {}),
   }
+}
+
+export function buildProcessingAttemptUsageJson(params: {
+  modelPreset: TalentMapModelPreset
+  modelPresetFallbackUsed: boolean
+  startedAt: string
+}) {
+  return buildUsageJson({
+    openAiUsage: null,
+    modelPreset: params.modelPreset,
+    modelPresetFallbackUsed: params.modelPresetFallbackUsed,
+    asyncGeneration: true,
+    startedAt: params.startedAt,
+  })
 }
 
 export function buildEvidenceJson(sectionInput: {
@@ -153,7 +176,13 @@ function resolveOpenAiCallErrorContext(
         message: error.message,
         diagnostics: error.diagnostics,
       }),
-      qualityFlags: [error.message, `stage: ${stage}`],
+      qualityFlags: [
+        error.message,
+        `stage: ${stage}`,
+        ...(typeof error.diagnostics.error_kind === 'string'
+          ? [`error_kind: ${error.diagnostics.error_kind}`]
+          : []),
+      ],
     }
   }
 
@@ -169,7 +198,7 @@ function resolveOpenAiCallErrorContext(
 }
 
 export async function callOpenAiForSection(
-  sanitizedInput: unknown,
+  enrichedInput: unknown,
   modelPreset: TalentMapModelPreset,
 ): Promise<{
   parsed: unknown
@@ -183,21 +212,25 @@ export async function callOpenAiForSection(
     throw new Error('OPENAI_API_KEY is not configured.')
   }
 
-  const userPayloadText = JSON.stringify(sanitizedInput)
+  const depthProfile = getTalentMapDepthProfile(modelPreset.depth_profile_id)
+  const systemPrompt = buildTalentMapSectionSystemPrompt({ depthProfile })
+  const userPayloadText = JSON.stringify(enrichedInput)
 
   const requestBody: Record<string, unknown> = {
     model: modelPreset.model,
     reasoning: {
       effort: modelPreset.reasoning_effort,
     },
-    max_output_tokens: modelPreset.max_output_tokens,
+    ...(modelPreset.max_output_tokens !== undefined
+      ? { max_output_tokens: modelPreset.max_output_tokens }
+      : {}),
     input: [
       {
         role: 'developer',
         content: [
           {
             type: 'input_text',
-            text: TALENT_MAP_SECTION_SYSTEM_PROMPT,
+            text: systemPrompt,
           },
         ],
       },
@@ -247,6 +280,27 @@ export async function callOpenAiForSection(
   const outputText = extractOpenAiResponseText(payload)
   const openAiDiagnostics = extractOpenAiResponseDiagnostics(payload, outputText)
 
+  if (isOpenAiIncompleteMaxOutputTokens(openAiDiagnostics)) {
+    throw new OpenAiSectionParseError({
+      message: OPENAI_INCOMPLETE_MAX_OUTPUT_TOKENS_MESSAGE,
+      diagnostics: buildOpenAiIncompleteMaxOutputTokensDiagnostics({
+        openAiDiagnostics,
+        modelPresetId: modelPreset.id,
+        modelPresetLabel: modelPreset.ui_label,
+        parseExtras: outputText
+          ? {
+              raw_response_preview: buildOpenAiResponsePreview(outputText),
+              cleaned_response_preview: buildOpenAiResponsePreview(outputText),
+            }
+          : undefined,
+      }),
+      usage,
+      model: modelPreset.model,
+      modelPresetId: modelPreset.id,
+      modelPresetLabel: modelPreset.ui_label,
+    })
+  }
+
   if (!outputText) {
     throw new OpenAiSectionParseError({
       message: 'OpenAI response did not contain JSON output.',
@@ -265,6 +319,27 @@ export async function callOpenAiForSection(
 
   const parseResult = parseOpenAiJsonOutput(outputText)
   if (!parseResult.ok) {
+    if (isOpenAiIncompleteMaxOutputTokens(openAiDiagnostics)) {
+      throw new OpenAiSectionParseError({
+        message: OPENAI_INCOMPLETE_MAX_OUTPUT_TOKENS_MESSAGE,
+        diagnostics: buildOpenAiIncompleteMaxOutputTokensDiagnostics({
+          openAiDiagnostics,
+          modelPresetId: modelPreset.id,
+          modelPresetLabel: modelPreset.ui_label,
+          parseExtras: {
+            parse_error_message: parseResult.error,
+            raw_response_preview: parseResult.raw_preview,
+            cleaned_response_preview: parseResult.cleaned_preview,
+            parse_strategy_attempts: parseResult.parse_strategy_attempts,
+          },
+        }),
+        usage,
+        model: modelPreset.model,
+        modelPresetId: modelPreset.id,
+        modelPresetLabel: modelPreset.ui_label,
+      })
+    }
+
     throw new OpenAiSectionParseError({
       message: 'OpenAI response JSON could not be parsed.',
       diagnostics: {
@@ -429,6 +504,19 @@ export function readInputBundleSectionInput(inputBundleJson: unknown): {
   }
 }
 
+export function enrichWorkModeSectionInputForGeneration(params: {
+  sanitizedInput: ReturnType<typeof buildSanitizedSectionInputForAi>
+  sourceChips: SourceChip[]
+  modelPreset: TalentMapModelPreset
+}) {
+  const depthProfile = getTalentMapDepthProfile(params.modelPreset.depth_profile_id)
+  return enrichSectionInputForOpenAi({
+    sectionInput: params.sanitizedInput,
+    depthProfile,
+    sourceChips: params.sourceChips,
+  })
+}
+
 export async function prepareWorkModeSectionInput(chartId: string) {
   const admin = getSupabaseAdmin()
 
@@ -568,13 +656,7 @@ export async function runBackgroundSectionGeneration(params: {
     params.modelPresetId || inputBundleRecord.model_preset_id,
   )
 
-  const inputBundleJson = {
-    ...inputBundleRecord,
-    model_preset_id: modelPreset.id,
-    model_preset_fallback_used: modelPresetFallbackUsed,
-  }
-
-  const sectionInputBundle = readInputBundleSectionInput(inputBundleJson)
+  const sectionInputBundle = readInputBundleSectionInput(inputBundleRecord)
   const sanitizedInput = sectionInputBundle?.section_input
   if (!sanitizedInput) {
     throw new Error('Section input bundle is missing section_input.')
@@ -584,11 +666,24 @@ export async function runBackgroundSectionGeneration(params: {
     ? sanitizedInput.source_chips
     : []
 
+  const enrichedInput = enrichWorkModeSectionInputForGeneration({
+    sanitizedInput: sanitizedInput as ReturnType<typeof buildSanitizedSectionInputForAi>,
+    sourceChips,
+    modelPreset,
+  })
+
+  const inputBundleJson = {
+    ...inputBundleRecord,
+    model_preset_id: modelPreset.id,
+    model_preset_fallback_used: modelPresetFallbackUsed,
+    section_input: enrichedInput,
+  }
+
   const evidenceJson = report.evidence_json ?? {}
 
   let openAiResult: Awaited<ReturnType<typeof callOpenAiForSection>>
   try {
-    openAiResult = await callOpenAiForSection(sanitizedInput, modelPreset)
+    openAiResult = await callOpenAiForSection(enrichedInput, modelPreset)
   } catch (error) {
     const errorContext = resolveOpenAiCallErrorContext(error, modelPreset)
     const usageJson = buildUsageJson({
@@ -657,21 +752,33 @@ export async function runBackgroundSectionGeneration(params: {
 
   const cleanedSection = cleanGeneratedSectionText(schemaValidation.data)
 
-  const qaResult = runTalentMapGeneratedSectionQa({
-    generated: cleanedSection,
+  const sourceIntegrityResult = enforceGeneratedSectionSourceIntegrity({
+    section: cleanedSection,
     inputSourceChips: sourceChips,
   })
 
+  const qaResult = runTalentMapGeneratedSectionQa({
+    generated: sourceIntegrityResult.section,
+    inputSourceChips: sourceChips,
+  })
+
+  const depthProfile = getTalentMapDepthProfile(modelPreset.depth_profile_id)
+
   const generatedSection: TalentMapGeneratedSection = {
-    ...cleanedSection,
+    ...sourceIntegrityResult.section,
     generation_meta: {
       model_preset_id: modelPreset.id,
       model_preset_label: modelPreset.ui_label,
       model: modelPreset.model,
       reasoning_effort: modelPreset.reasoning_effort,
-      max_output_tokens: modelPreset.max_output_tokens,
+      ...(modelPreset.max_output_tokens !== undefined
+        ? { max_output_tokens: modelPreset.max_output_tokens }
+        : {}),
       internal_credit_cost: modelPreset.internal_credit_cost,
       estimated_cost_usd: estimatedCostUsd,
+      depth_profile_id: depthProfile.id,
+      depth_profile_label: depthProfile.ui_label,
+      source_integrity: sourceIntegrityResult.stats,
     },
   }
 
@@ -686,7 +793,7 @@ export async function runBackgroundSectionGeneration(params: {
     pro_markdown: proMarkdown,
     summary_for_synthesis: generatedSection.summary_for_synthesis,
     evidence_json: evidenceJson,
-    quality_flags: qaResult.warnings,
+    quality_flags: [...sourceIntegrityResult.warnings, ...qaResult.warnings],
     model: openAiResult.model,
     usage_json: usageJson,
     estimated_cost_usd: estimatedCostUsd,

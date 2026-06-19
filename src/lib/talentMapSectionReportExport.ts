@@ -108,8 +108,11 @@ export type ReportGenerationMeta = {
   model: string
   reasoningEffort: string
   maxOutputTokens: string
-  internalTokenCost: string
+  internalCreditCost: string
   estimatedCostUsd: string
+  depthProfileId: string
+  depthProfileLabel: string
+  sourceIntegritySummary: string
 }
 
 export function resolveReportGenerationMeta(report: TalentMapSectionReport): ReportGenerationMeta {
@@ -123,6 +126,19 @@ export function resolveReportGenerationMeta(report: TalentMapSectionReport): Rep
     readNumber(report.estimated_cost_usd) ??
     readNumber(generationMeta?.estimated_cost_usd) ??
     readNumber(usage?.estimated_cost_usd)
+
+  const sourceIntegrity = generationMeta?.source_integrity
+  const sourceIntegritySummary =
+    sourceIntegrity &&
+    typeof sourceIntegrity === 'object' &&
+    'input_source_chip_count' in sourceIntegrity
+      ? [
+          `input=${String(sourceIntegrity.input_source_chip_count)}`,
+          `output=${String(sourceIntegrity.output_source_chip_count)}`,
+          `removed=${String(sourceIntegrity.removed_unknown_source_count)}`,
+          `normalized=${String(sourceIntegrity.normalized_source_key_count)}`,
+        ].join(', ')
+      : NOT_AVAILABLE
 
   return {
     presetId:
@@ -144,7 +160,7 @@ export function resolveReportGenerationMeta(report: TalentMapSectionReport): Rep
         : usage?.max_output_tokens !== undefined
           ? String(usage.max_output_tokens)
           : NOT_AVAILABLE,
-    internalTokenCost:
+    internalCreditCost:
       generationMeta?.internal_credit_cost !== undefined
         ? String(generationMeta.internal_credit_cost)
         : usage?.internal_credit_cost !== undefined
@@ -152,6 +168,15 @@ export function resolveReportGenerationMeta(report: TalentMapSectionReport): Rep
           : NOT_AVAILABLE,
     estimatedCostUsd:
       estimatedCost !== null ? `~$${estimatedCost.toFixed(4)}` : NOT_AVAILABLE,
+    depthProfileId:
+      typeof generationMeta?.depth_profile_id === 'string'
+        ? generationMeta.depth_profile_id
+        : NOT_AVAILABLE,
+    depthProfileLabel:
+      typeof generationMeta?.depth_profile_label === 'string'
+        ? generationMeta.depth_profile_label
+        : NOT_AVAILABLE,
+    sourceIntegritySummary,
   }
 }
 
@@ -290,8 +315,17 @@ export function buildTalentMapSectionReportMarkdown(report: TalentMapSectionRepo
     formatMarkdownListField('model', meta.model),
     formatMarkdownListField('reasoning_effort', meta.reasoningEffort),
     formatMarkdownListField('max_output_tokens', meta.maxOutputTokens),
-    formatMarkdownListField('internal_token_cost', meta.internalTokenCost),
+    formatMarkdownListField('internal_credits', meta.internalCreditCost),
     formatMarkdownListField('estimated_cost_usd', meta.estimatedCostUsd),
+    ...(meta.depthProfileId !== NOT_AVAILABLE
+      ? [formatMarkdownListField('depth_profile_id', meta.depthProfileId)]
+      : []),
+    ...(meta.depthProfileLabel !== NOT_AVAILABLE
+      ? [formatMarkdownListField('depth_profile_label', meta.depthProfileLabel)]
+      : []),
+    ...(meta.sourceIntegritySummary !== NOT_AVAILABLE
+      ? [formatMarkdownListField('source_integrity', meta.sourceIntegritySummary)]
+      : []),
     formatMarkdownListField(
       'generation_started_at',
       timing.startedAt ?? NOT_AVAILABLE,

@@ -1,9 +1,12 @@
+import type { TalentMapDepthProfileId } from './talentMapDepthProfiles'
+
 export type TalentMapModelPresetId = 'standard' | 'quality' | 'premium'
 
 export type TalentMapReasoningEffort = 'low' | 'medium' | 'high'
 
 export type TalentMapModelPreset = {
   id: TalentMapModelPresetId
+  depth_profile_id: TalentMapDepthProfileId
   ui_label: string
   ui_description: string
   model: string
@@ -19,9 +22,9 @@ export type TalentMapModelPreset = {
 export const TALENT_MAP_MODEL_PRESETS: Record<TalentMapModelPresetId, TalentMapModelPreset> = {
   standard: {
     id: 'standard',
+    depth_profile_id: 'compact',
     ui_label: 'Стандартная сборка',
-    ui_description:
-      'Базовый клиентский уровень. Подходит для обычной HR-карты и первичной оценки рабочего формата.',
+    ui_description: 'Короткий рабочий вывод — быстро понять, как вводить человека в задачи.',
     model: 'gpt-5-mini',
     reasoning_effort: 'medium',
     max_output_tokens: 7000,
@@ -33,9 +36,9 @@ export const TALENT_MAP_MODEL_PRESETS: Record<TalentMapModelPresetId, TalentMapM
   },
   quality: {
     id: 'quality',
+    depth_profile_id: 'full',
     ui_label: 'Качественная сборка',
-    ui_description:
-      'Более глубокий и практичный HR-разбор. Лучше подходит для финальной карты кандидата.',
+    ui_description: 'Полный HR-разбор — основной клиентский уровень карты.',
     model: 'gpt-5.4-mini',
     reasoning_effort: 'medium',
     max_output_tokens: 9000,
@@ -47,9 +50,9 @@ export const TALENT_MAP_MODEL_PRESETS: Record<TalentMapModelPresetId, TalentMapM
   },
   premium: {
     id: 'premium',
+    depth_profile_id: 'expert',
     ui_label: 'Максимальная сборка',
-    ui_description:
-      'Максимальное качество для важных кандидатов и проверки потолка результата.',
+    ui_description: 'Экспертная сборка — синтез с нюансами для важного кандидата.',
     model: 'gpt-5.4',
     reasoning_effort: 'medium',
     max_output_tokens: 12000,

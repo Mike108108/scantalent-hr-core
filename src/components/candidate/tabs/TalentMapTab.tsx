@@ -247,7 +247,7 @@ function SectionAssemblyDetails({ report }: { report: TalentMapSectionReport }) 
   const hasAssemblyMeta =
     content?.generation_meta ||
     report.model ||
-    meta.internalTokenCost !== 'not_available' ||
+    meta.internalCreditCost !== 'not_available' ||
     meta.estimatedCostUsd !== 'not_available'
 
   if (!hasAssemblyMeta) {
@@ -274,8 +274,8 @@ function SectionAssemblyDetails({ report }: { report: TalentMapSectionReport }) 
         {meta.maxOutputTokens !== 'not_available' ? (
           <li>Max output tokens: {meta.maxOutputTokens}</li>
         ) : null}
-        {meta.internalTokenCost !== 'not_available' ? (
-          <li>Внутренние токены: {meta.internalTokenCost}</li>
+        {meta.internalCreditCost !== 'not_available' ? (
+          <li>Внутренние кредиты: {meta.internalCreditCost}</li>
         ) : null}
         {meta.estimatedCostUsd !== 'not_available' ? (
           <li>Техническая оценка API cost: {meta.estimatedCostUsd}</li>
@@ -498,10 +498,9 @@ function ModelPresetSelector(props: {
   return (
     <div className="model-preset-selector stack">
       <div>
-        <p className="model-preset-selector__title">Качество сборки</p>
+        <p className="model-preset-selector__title">Глубина сборки</p>
         <p className="city-autocomplete__hint">
-          Выберите, какой моделью собрать раздел. Чем выше качество, тем дороже сборка во внутренних
-          токенах.
+          Выберите глубину HR-разбора. Чем глубже сборка, тем больше внутренних кредитов.
         </p>
       </div>
       <div className="model-preset-selector__options stack">
@@ -524,7 +523,7 @@ function ModelPresetSelector(props: {
               />
               <span className="model-preset-option__content">
                 <span className="model-preset-option__label">
-                  {preset.ui_label} — {preset.internal_credit_cost} токенов
+                  {preset.ui_label} — {preset.internal_credit_cost} кредитов
                 </span>
                 <span className="model-preset-option__description">{preset.ui_description}</span>
               </span>
@@ -820,7 +819,7 @@ export function TalentMapTab() {
                             </p>
                           ) : (
                             <p className="city-autocomplete__hint">
-                              Будет списано: {selectedPreset.internal_credit_cost} токенов
+                              Будет списано: {selectedPreset.internal_credit_cost} кредитов
                             </p>
                           )}
                         </>

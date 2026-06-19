@@ -1,4 +1,5 @@
 import type { SourceChip } from './talentMapSynthesisContract'
+import { sourceChipFullKey } from './talentMapGeneratedSectionSourceIntegrity'
 import {
   renderGeneratedSectionBaseMarkdown,
   validateTalentMapGeneratedSection,
@@ -87,20 +88,8 @@ const FORBIDDEN_PRODUCT_PATTERNS: ReadonlyArray<{ pattern: RegExp; label: string
   { pattern: /\bне\s+рекомендуем\s+нанимать\b/i, label: 'hire_recommendation' },
 ]
 
-function sourceChipKey(chip: { element_kind: string; element_key: string }): string {
-  return `${chip.element_kind}:${chip.element_key}`
-}
-
-function isSourceKeyAllowed(
-  key: string,
-  allowedSourceKeys: Set<string>,
-  inputSourceChips: SourceChip[],
-): boolean {
-  if (allowedSourceKeys.has(key)) {
-    return true
-  }
-
-  return inputSourceChips.some((chip) => chip.element_key === key)
+function isSourceKeyAllowed(key: string, allowedSourceKeys: Set<string>): boolean {
+  return allowedSourceKeys.has(key)
 }
 
 function collectBaseScanText(section: TalentMapGeneratedSection): string {
@@ -211,16 +200,17 @@ function collectContentQaWarnings(
     }
   }
 
-  const inputChipKeys = new Set(inputSourceChips.map(sourceChipKey))
+  const allowedSourceKeys = new Set(inputSourceChips.map(sourceChipFullKey))
+
   const unknownChips = section.source_chips.filter(
-    (chip) => !inputChipKeys.has(sourceChipKey(chip)),
+    (chip) => !allowedSourceKeys.has(sourceChipFullKey(chip)),
   )
   if (unknownChips.length > 0) {
     warnings.push(
       qaWarning(
         'base.source_chips',
         `source_chips contain elements not present in input: ${unknownChips
-          .map((chip) => sourceChipKey(chip))
+          .map((chip) => sourceChipFullKey(chip))
           .join(', ')}`,
       ),
     )
@@ -234,12 +224,8 @@ function collectContentQaWarnings(
     warnings.push(qaWarning('pro.reality_checks', 'reality_checks is empty.'))
   }
 
-  const allowedSourceKeys = new Set(
-    inputSourceChips.map((chip) => `${chip.element_kind}:${chip.element_key}`),
-  )
-
   const invalidSourceLogicKeys = section.pro.source_logic.filter(
-    (entry) => !isSourceKeyAllowed(entry.source_element_key, allowedSourceKeys, inputSourceChips),
+    (entry) => !isSourceKeyAllowed(entry.source_element_key, allowedSourceKeys),
   )
   if (invalidSourceLogicKeys.length > 0) {
     warnings.push(
@@ -253,7 +239,7 @@ function collectContentQaWarnings(
   }
 
   const invalidSummaryKeys = section.summary_for_synthesis.source_element_keys.filter(
-    (key) => !isSourceKeyAllowed(key, allowedSourceKeys, inputSourceChips),
+    (key) => !isSourceKeyAllowed(key, allowedSourceKeys),
   )
   if (invalidSummaryKeys.length > 0) {
     warnings.push(

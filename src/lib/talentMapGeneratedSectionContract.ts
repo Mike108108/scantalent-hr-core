@@ -2,6 +2,13 @@ import type { TalentMapSectionKey } from './talentMapSections'
 
 export const TALENT_MAP_GENERATED_SECTION_SCHEMA_VERSION = 'talent_map_section_v1_1' as const
 
+export type TalentMapGeneratedSectionSourceIntegrityMeta = {
+  input_source_chip_count: number
+  output_source_chip_count: number
+  removed_unknown_source_count: number
+  normalized_source_key_count: number
+}
+
 export type TalentMapGeneratedSectionGenerationMeta = {
   model_preset_id: string
   model_preset_label: string
@@ -10,6 +17,9 @@ export type TalentMapGeneratedSectionGenerationMeta = {
   max_output_tokens: number
   internal_credit_cost: number
   estimated_cost_usd: number | null
+  depth_profile_id: string
+  depth_profile_label: string
+  source_integrity?: TalentMapGeneratedSectionSourceIntegrityMeta
 }
 
 export type TalentMapGeneratedSectionBaseBlock = {

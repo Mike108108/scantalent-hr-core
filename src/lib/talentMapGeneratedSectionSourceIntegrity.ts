@@ -199,8 +199,13 @@ export function enforceGeneratedSectionSourceIntegrity(params: {
   }
 
   if (normalizedCount > 0) {
-    const details = [...normalized.pro_source_logic, ...normalized.summary_source_element_keys]
-    warnings.push(integrityWarning('source_integrity.normalized_source_keys', details.join(', ')))
+    const uniqueNormalizedPairs = dedupePreserveOrder([
+      ...normalized.pro_source_logic,
+      ...normalized.summary_source_element_keys,
+    ])
+    warnings.push(
+      integrityWarning('source_integrity.normalized_source_keys', uniqueNormalizedPairs.join(', ')),
+    )
   }
 
   if (section.source_chips.length === 0 || section.pro.source_logic.length === 0) {

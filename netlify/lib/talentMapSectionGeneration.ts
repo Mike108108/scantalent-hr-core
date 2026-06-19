@@ -18,12 +18,16 @@ import { buildTalentMapSectionInputAudit } from '../../src/lib/talentMapSectionI
 import {
   buildOpenAiParseFailureContentJson,
   buildSanitizedSectionInputForAi,
+  buildOpenAiIncompleteMaxOutputTokensDiagnostics,
+  buildOpenAiResponsePreview,
   buildTalentMapSectionSystemPrompt,
   enrichSectionInputForOpenAi,
   extractOpenAiResponseDiagnostics,
   extractOpenAiResponseText,
   extractOpenAiUsage,
+  isOpenAiIncompleteMaxOutputTokens,
   isOpenAiSectionParseError,
+  OPENAI_INCOMPLETE_MAX_OUTPUT_TOKENS_MESSAGE,
   OpenAiSectionParseError,
   parseOpenAiJsonOutput,
   TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA,
@@ -102,7 +106,9 @@ export function buildUsageJson(params: {
     model_preset_label: params.modelPreset.ui_label,
     model_preset_fallback_used: params.modelPresetFallbackUsed,
     reasoning_effort: params.modelPreset.reasoning_effort,
-    max_output_tokens: params.modelPreset.max_output_tokens,
+    ...(params.modelPreset.max_output_tokens !== undefined
+      ? { max_output_tokens: params.modelPreset.max_output_tokens }
+      : {}),
     internal_credit_cost: params.modelPreset.internal_credit_cost,
     ...(params.asyncGeneration ? { async_generation: true } : {}),
     ...(params.startedAt ? { started_at: params.startedAt } : {}),
@@ -156,7 +162,13 @@ function resolveOpenAiCallErrorContext(
         message: error.message,
         diagnostics: error.diagnostics,
       }),
-      qualityFlags: [error.message, `stage: ${stage}`],
+      qualityFlags: [
+        error.message,
+        `stage: ${stage}`,
+        ...(typeof error.diagnostics.error_kind === 'string'
+          ? [`error_kind: ${error.diagnostics.error_kind}`]
+          : []),
+      ],
     }
   }
 
@@ -195,7 +207,9 @@ export async function callOpenAiForSection(
     reasoning: {
       effort: modelPreset.reasoning_effort,
     },
-    max_output_tokens: modelPreset.max_output_tokens,
+    ...(modelPreset.max_output_tokens !== undefined
+      ? { max_output_tokens: modelPreset.max_output_tokens }
+      : {}),
     input: [
       {
         role: 'developer',
@@ -252,6 +266,27 @@ export async function callOpenAiForSection(
   const outputText = extractOpenAiResponseText(payload)
   const openAiDiagnostics = extractOpenAiResponseDiagnostics(payload, outputText)
 
+  if (isOpenAiIncompleteMaxOutputTokens(openAiDiagnostics)) {
+    throw new OpenAiSectionParseError({
+      message: OPENAI_INCOMPLETE_MAX_OUTPUT_TOKENS_MESSAGE,
+      diagnostics: buildOpenAiIncompleteMaxOutputTokensDiagnostics({
+        openAiDiagnostics,
+        modelPresetId: modelPreset.id,
+        modelPresetLabel: modelPreset.ui_label,
+        parseExtras: outputText
+          ? {
+              raw_response_preview: buildOpenAiResponsePreview(outputText),
+              cleaned_response_preview: buildOpenAiResponsePreview(outputText),
+            }
+          : undefined,
+      }),
+      usage,
+      model: modelPreset.model,
+      modelPresetId: modelPreset.id,
+      modelPresetLabel: modelPreset.ui_label,
+    })
+  }
+
   if (!outputText) {
     throw new OpenAiSectionParseError({
       message: 'OpenAI response did not contain JSON output.',
@@ -270,6 +305,27 @@ export async function callOpenAiForSection(
 
   const parseResult = parseOpenAiJsonOutput(outputText)
   if (!parseResult.ok) {
+    if (isOpenAiIncompleteMaxOutputTokens(openAiDiagnostics)) {
+      throw new OpenAiSectionParseError({
+        message: OPENAI_INCOMPLETE_MAX_OUTPUT_TOKENS_MESSAGE,
+        diagnostics: buildOpenAiIncompleteMaxOutputTokensDiagnostics({
+          openAiDiagnostics,
+          modelPresetId: modelPreset.id,
+          modelPresetLabel: modelPreset.ui_label,
+          parseExtras: {
+            parse_error_message: parseResult.error,
+            raw_response_preview: parseResult.raw_preview,
+            cleaned_response_preview: parseResult.cleaned_preview,
+            parse_strategy_attempts: parseResult.parse_strategy_attempts,
+          },
+        }),
+        usage,
+        model: modelPreset.model,
+        modelPresetId: modelPreset.id,
+        modelPresetLabel: modelPreset.ui_label,
+      })
+    }
+
     throw new OpenAiSectionParseError({
       message: 'OpenAI response JSON could not be parsed.',
       diagnostics: {
@@ -701,7 +757,9 @@ export async function runBackgroundSectionGeneration(params: {
       model_preset_label: modelPreset.ui_label,
       model: modelPreset.model,
       reasoning_effort: modelPreset.reasoning_effort,
-      max_output_tokens: modelPreset.max_output_tokens,
+      ...(modelPreset.max_output_tokens !== undefined
+        ? { max_output_tokens: modelPreset.max_output_tokens }
+        : {}),
       internal_credit_cost: modelPreset.internal_credit_cost,
       estimated_cost_usd: estimatedCostUsd,
       depth_profile_id: depthProfile.id,

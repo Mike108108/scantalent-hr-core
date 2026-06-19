@@ -5,6 +5,7 @@ import {
 } from './talentMapGeneratedSectionContract'
 
 const NOT_AVAILABLE = 'not_available'
+const MAX_OUTPUT_TOKENS_NOT_SET = 'not set'
 
 type UsageJsonRecord = Record<string, unknown>
 
@@ -159,7 +160,7 @@ export function resolveReportGenerationMeta(report: TalentMapSectionReport): Rep
         ? String(generationMeta.max_output_tokens)
         : usage?.max_output_tokens !== undefined
           ? String(usage.max_output_tokens)
-          : NOT_AVAILABLE,
+          : MAX_OUTPUT_TOKENS_NOT_SET,
     internalCreditCost:
       generationMeta?.internal_credit_cost !== undefined
         ? String(generationMeta.internal_credit_cost)

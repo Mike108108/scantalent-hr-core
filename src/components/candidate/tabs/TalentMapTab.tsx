@@ -272,7 +272,10 @@ function SectionAssemblyDetails({ report }: { report: TalentMapSectionReport }) 
           <li>Reasoning effort: {meta.reasoningEffort}</li>
         ) : null}
         {meta.maxOutputTokens !== 'not_available' ? (
-          <li>Max output tokens: {meta.maxOutputTokens}</li>
+          <li>
+            Max output tokens:{' '}
+            {meta.maxOutputTokens === 'not set' ? 'не задан' : meta.maxOutputTokens}
+          </li>
         ) : null}
         {meta.internalCreditCost !== 'not_available' ? (
           <li>Внутренние кредиты: {meta.internalCreditCost}</li>
@@ -308,6 +311,11 @@ function SectionParseFailureDetails(props: {
 
   return (
     <div className="generated-section-parse-diagnostics stack">
+      {parseDiagnostics.error_kind ? (
+        <p className="generated-section-result__technical">
+          <strong>error_kind:</strong> {parseDiagnostics.error_kind}
+        </p>
+      ) : null}
       {parseDiagnostics.stage ? (
         <p className="generated-section-result__technical">
           <strong>stage:</strong> {parseDiagnostics.stage}

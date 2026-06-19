@@ -117,9 +117,95 @@ function collectAllText(section: TalentMapGeneratedSection): string {
   ].join('\n')
 }
 
+function containsPhrase(text: string, phrase: string): boolean {
+  return text.toLowerCase().includes(phrase.toLowerCase())
+}
+
+const BASE_FORBIDDEN_PHRASES = [
+  'human design',
+  'дизайн человека',
+  'бодиграф',
+  'wait for the invitation',
+  'split definition',
+  'g center',
+  'g-центр',
+  'personality sun',
+  'design sun',
+  'personality earth',
+  'design earth',
+] as const
+
+const BASE_FORBIDDEN_WORD_PATTERNS: ReadonlyArray<{ label: string; pattern: RegExp }> = [
+  { label: 'projector', pattern: /\bprojector\b/i },
+  { label: 'проектор', pattern: /(^|[^а-яёa-z])проектор(а|у|ом|ы)?([^а-яёa-z]|$)/iu },
+  { label: 'manifestor', pattern: /\bmanifestor\b/i },
+  { label: 'манифестор', pattern: /(^|[^а-яёa-z])манифестор(а|у|ом|ы)?([^а-яёa-z]|$)/iu },
+  { label: 'generator', pattern: /\bgenerator\b/i },
+  { label: 'генератор', pattern: /(^|[^а-яёa-z])генератор(а|у|ом|ы)?([^а-яёa-z]|$)/iu },
+  { label: 'reflector', pattern: /\breflector\b/i },
+  { label: 'рефлектор', pattern: /(^|[^а-яёa-z])рефлектор(а|у|ом|ы)?([^а-яёa-z]|$)/iu },
+  { label: 'splenic', pattern: /\bsplenic\b/i },
+  { label: 'spleen', pattern: /\bspleen\b/i },
+  { label: 'селезёночный', pattern: /(^|[^а-яёa-z])селез[её]ночн(ый|ая|ое|ые|ого|ой|ому|ым|ыми|ом|ах|ами)?([^а-яёa-z]|$)/iu },
+  { label: 'селезеночный', pattern: /(^|[^а-яёa-z])селезеночн(ый|ая|ое|ые|ого|ой|ому|ым|ыми|ом|ах|ами)?([^а-яёa-z]|$)/iu },
+  { label: 'селезёнка', pattern: /(^|[^а-яёa-z])селез[её]нк(а|е|и|у|ой|ою|ами|ах)?([^а-яёa-z]|$)/iu },
+  { label: 'селезенка', pattern: /(^|[^а-яёa-z])селезенк(а|е|и|у|ой|ою|ами|ах)?([^а-яёa-z]|$)/iu },
+  { label: 'sacral', pattern: /\bsacral\b/i },
+  { label: 'сакрал', pattern: /(^|[^а-яёa-z])сакрал(а|е|у|ом|ы)?([^а-яёa-z]|$)/iu },
+  { label: 'authority', pattern: /\bauthority\b/i },
+  { label: 'авторитет', pattern: /(^|[^а-яёa-z])авторитет(а|е|у|ом|ы)?([^а-яёa-z]|$)/iu },
+  { label: 'strategy', pattern: /\bstrategy\b/i },
+  { label: 'стратегия', pattern: /(^|[^а-яёa-z])стратег(ия|ии|ию|ией|ий)?([^а-яёa-z]|$)/iu },
+  { label: 'profile', pattern: /\bprofile\b/i },
+  { label: 'профиль', pattern: /(^|[^а-яёa-z])профил(ь|я|е|ю|ем|и|ей)?([^а-яёa-z]|$)/iu },
+  { label: 'gate', pattern: /\bgate\b/i },
+  { label: 'ворота', pattern: /(^|[^а-яёa-z])ворот(а|ами)?([^а-яёa-z]|$)/iu },
+  { label: 'channel', pattern: /\bchannel\b/i },
+  { label: 'канал', pattern: /(^|[^а-яёa-z])канал(а|е|у|ом|ов|ами)?([^а-яёa-z]|$)/iu },
+  { label: 'center', pattern: /\b(g[\s-]?center|center)\b/i },
+  { label: 'центр', pattern: /(^|[^а-яёa-z])центр(ы|а|е|ом|у)?([^а-яёa-z]|$)/iu },
+  { label: 'ajna', pattern: /\bajna\b/i },
+  { label: 'аджна', pattern: /(^|[^а-яёa-z])аджн(а|е|у|ой|ы)?([^а-яёa-z]|$)/iu },
+  { label: 'throat', pattern: /\bthroat\b/i },
+  { label: 'горло', pattern: /(^|[^а-яёa-z])горл(о|а|е|у|ом)?([^а-яёa-z]|$)/iu },
+  { label: 'root', pattern: /\broot\b/i },
+  { label: 'корень', pattern: /(^|[^а-яёa-z])корн(я|е|ю|ем|и|ей)?([^а-яёa-z]|$)/iu },
+  { label: 'ego', pattern: /\bego\b/i },
+  { label: 'эго', pattern: /(^|[^а-яёa-z])эго([^а-яёa-z]|$)/iu },
+  { label: 'definition', pattern: /\bdefinition\b/i },
+  { label: 'curiosity', pattern: /\bcuriosity\b/i },
+  { label: 'activation', pattern: /\bactivation\b/i },
+  { label: 'активация', pattern: /(^|[^а-яёa-z])активац(ия|ии|ию|ией|ий)?([^а-яёa-z]|$)/iu },
+]
+
 function findForbiddenTerms(text: string, terms: readonly string[]): string[] {
-  const lower = text.toLowerCase()
-  return terms.filter((term) => lower.includes(term.toLowerCase()))
+  const hits = new Set<string>()
+
+  for (const phrase of BASE_FORBIDDEN_PHRASES) {
+    if (containsPhrase(text, phrase)) {
+      hits.add(phrase)
+    }
+  }
+
+  for (const { label, pattern } of BASE_FORBIDDEN_WORD_PATTERNS) {
+    if (pattern.test(text)) {
+      hits.add(label)
+    }
+  }
+
+  for (const term of terms) {
+    if (BASE_FORBIDDEN_PHRASES.some((phrase) => phrase === term)) {
+      continue
+    }
+    if (BASE_FORBIDDEN_WORD_PATTERNS.some(({ label }) => label === term)) {
+      continue
+    }
+    if (containsPhrase(text, term)) {
+      hits.add(term)
+    }
+  }
+
+  return [...hits]
 }
 
 function findForbiddenProductHits(text: string): string[] {

@@ -3,6 +3,7 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { StatusBadge } from '../components/ui/StatusBadge'
 import {
+  deleteCandidateForCompany,
   getFirstCandidateForCompany,
   getLatestChartForCandidate,
   getOrCreateCompanyForCurrentUser,
@@ -16,6 +17,9 @@ type LoadState =
 
 export function CandidatesPage() {
   const [state, setState] = useState<LoadState>({ status: 'loading' })
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -50,6 +54,37 @@ export function CandidatesPage() {
       cancelled = true
     }
   }, [])
+
+  async function handleConfirmDelete() {
+    if (state.status !== 'ready' || !state.candidate) {
+      return
+    }
+
+    const { company, candidate } = state
+
+    setDeleting(true)
+    setDeleteError(null)
+
+    try {
+      await deleteCandidateForCompany(company.id, candidate.id)
+      setConfirmDelete(false)
+      setState({ status: 'ready', company, candidate: null, hasChart: false })
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error ? error.message : 'Не удалось удалить кандидата.',
+      )
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  function handleCancelDelete() {
+    if (deleting) {
+      return
+    }
+    setConfirmDelete(false)
+    setDeleteError(null)
+  }
 
   if (state.status === 'loading') {
     return (
@@ -96,17 +131,51 @@ export function CandidatesPage() {
         <Card>
           <ul className="candidate-list">
             <li className="candidate-list__item">
-              <div className="candidate-list__info">
-                <span className="candidate-list__name">{candidate.name}</span>
-                <span className="candidate-list__meta">
-                  {hasChart ? (
-                    <StatusBadge status="ready" label="техническая карта готова" />
-                  ) : (
-                    <StatusBadge status="draft" label="карта не рассчитана" />
-                  )}
-                </span>
+              <div className="candidate-list__row">
+                <div className="candidate-list__info">
+                  <span className="candidate-list__name">{candidate.name}</span>
+                  <span className="candidate-list__meta">
+                    {hasChart ? (
+                      <StatusBadge status="ready" label="техническая карта готова" />
+                    ) : (
+                      <StatusBadge status="draft" label="карта не рассчитана" />
+                    )}
+                  </span>
+                </div>
+                <div className="candidate-list__actions">
+                  <Button to="/app/candidate" variant="secondary">
+                    Открыть
+                  </Button>
+                  {!confirmDelete ? (
+                    <Button variant="danger" onClick={() => setConfirmDelete(true)}>
+                      Удалить
+                    </Button>
+                  ) : null}
+                </div>
               </div>
-              <Button to="/app/candidate">Открыть</Button>
+
+              {confirmDelete ? (
+                <div className="candidate-delete-confirm" role="alert">
+                  <p className="candidate-delete-confirm__title">Удалить кандидата?</p>
+                  <p className="candidate-delete-confirm__text">
+                    Будут удалены данные кандидата, техническая карта, элементы карты и собранные
+                    разделы карты талантов. Это действие нельзя отменить.
+                  </p>
+                  {deleteError ? (
+                    <div className="alert alert--error" role="alert">
+                      {deleteError}
+                    </div>
+                  ) : null}
+                  <div className="candidate-delete-confirm__actions">
+                    <Button variant="danger" disabled={deleting} onClick={() => void handleConfirmDelete()}>
+                      {deleting ? 'Удаление…' : 'Да, удалить'}
+                    </Button>
+                    <Button variant="secondary" disabled={deleting} onClick={handleCancelDelete}>
+                      Отмена
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </li>
           </ul>
         </Card>

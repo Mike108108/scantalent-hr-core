@@ -96,24 +96,22 @@ function collectBaseScanText(section: TalentMapGeneratedSection): string {
   return [JSON.stringify(section.base), renderGeneratedSectionBaseMarkdown(section)].join('\n')
 }
 
-function collectAllText(section: TalentMapGeneratedSection): string {
-  const { pro, summary_for_synthesis } = section
+function collectBaseClientText(section: TalentMapGeneratedSection): string {
+  const { base } = section
+  const blocks = [
+    base.how_to_start_work,
+    base.best_task_format,
+    base.manager_instructions,
+    base.useful_in_roles,
+    base.risks_if_wrong_entry,
+    base.interview_or_trial_checks,
+    base.first_working_experiments,
+  ]
+
   return [
-    collectBaseScanText(section),
-    pro.technical_summary,
-    ...pro.source_logic.flatMap((entry) => [
-      entry.source_element_key,
-      entry.source_label,
-      entry.mechanic_meaning,
-      entry.hr_translation,
-      entry.interpretation_limit,
-      entry.reality_check,
-    ]),
-    ...pro.interpretation_limits,
-    ...pro.reality_checks,
-    summary_for_synthesis.one_sentence,
-    ...summary_for_synthesis.key_conditions,
-    ...summary_for_synthesis.potential_risks,
+    base.headline,
+    base.hr_summary,
+    ...blocks.flatMap((block) => [block.title, ...block.points]),
   ].join('\n')
 }
 
@@ -178,7 +176,7 @@ const BASE_FORBIDDEN_WORD_PATTERNS: ReadonlyArray<{ label: string; pattern: RegE
   { label: 'активация', pattern: /(^|[^а-яёa-z])активац(ия|ии|ию|ией|ий)?([^а-яёa-z]|$)/iu },
 ]
 
-function findForbiddenTerms(text: string, terms: readonly string[]): string[] {
+function findBaseForbiddenHdTerms(text: string, extraTerms: readonly string[]): string[] {
   const hits = new Set<string>()
 
   for (const phrase of BASE_FORBIDDEN_PHRASES) {
@@ -193,13 +191,25 @@ function findForbiddenTerms(text: string, terms: readonly string[]): string[] {
     }
   }
 
-  for (const term of terms) {
+  for (const term of extraTerms) {
     if (BASE_FORBIDDEN_PHRASES.some((phrase) => phrase === term)) {
       continue
     }
     if (BASE_FORBIDDEN_WORD_PATTERNS.some(({ label }) => label === term)) {
       continue
     }
+    if (containsPhrase(text, term)) {
+      hits.add(term)
+    }
+  }
+
+  return [...hits]
+}
+
+function findGarbageTerms(text: string, terms: readonly string[]): string[] {
+  const hits = new Set<string>()
+
+  for (const term of terms) {
     if (containsPhrase(text, term)) {
       hits.add(term)
     }
@@ -266,18 +276,18 @@ function collectContentQaWarnings(
   }
 
   const baseScanText = collectBaseScanText(section)
-  const baseForbiddenTerms = findForbiddenTerms(baseScanText, GENERATED_BASE_FORBIDDEN_TERMS)
+  const baseClientText = collectBaseClientText(section)
+  const baseForbiddenTerms = findBaseForbiddenHdTerms(baseScanText, GENERATED_BASE_FORBIDDEN_TERMS)
   for (const term of baseForbiddenTerms) {
     warnings.push(qaWarning('base.technical_language', term))
   }
 
-  const allText = collectAllText(section)
-  const garbageTerms = findForbiddenTerms(allText, GENERATED_GARBAGE_TERMS)
+  const garbageTerms = findGarbageTerms(baseClientText, GENERATED_GARBAGE_TERMS)
   for (const term of garbageTerms) {
     warnings.push(qaWarning('text_quality.garbage_term', term))
   }
 
-  const productHits = findForbiddenProductHits(allText)
+  const productHits = findForbiddenProductHits(baseClientText)
   for (const hit of [...new Set(productHits)]) {
     if (hit.includes('hire') || hit === 'hire_decision' || hit === 'hire_recommendation') {
       warnings.push(qaWarning('forbidden_hiring_phrase', hit))
@@ -336,7 +346,7 @@ function collectContentQaWarnings(
     )
   }
 
-  if (/\t+/.test(allText) || /[ ]{2,}/.test(allText) || /\n{3,}/.test(allText)) {
+  if (/\t+/.test(baseClientText) || /[ ]{2,}/.test(baseClientText) || /\n{3,}/.test(baseClientText)) {
     warnings.push(qaWarning('text_quality.excessive_whitespace', 'excessive whitespace detected'))
   }
 

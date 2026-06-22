@@ -300,6 +300,10 @@ function formatMarkdownListField(label: string, value: string): string {
   return `- ${label}: ${value}`
 }
 
+function isStandardLayerSnapshotReport(meta: ReportGenerationMeta): boolean {
+  return meta.presetId === 'standard' || meta.depthProfileId === 'compact'
+}
+
 export function buildTalentMapSectionReportMarkdown(report: TalentMapSectionReport): string {
   const timing = resolveReportGenerationTiming(report)
   const meta = resolveReportGenerationMeta(report)
@@ -329,6 +333,27 @@ export function buildTalentMapSectionReportMarkdown(report: TalentMapSectionRepo
           formatMarkdownListField('generation_duration_ms', String(timing.durationMs)),
           formatMarkdownListField('generation_duration', timing.durationHuman),
         ].join('\n')
+
+  const isStandardSnapshot = isStandardLayerSnapshotReport(meta)
+
+  const contentSections = isStandardSnapshot
+    ? [
+        '## Base / Слой-портрет',
+        report.base_markdown?.trim() || NOT_AVAILABLE,
+      ]
+    : [
+        '## Base',
+        report.base_markdown?.trim() || NOT_AVAILABLE,
+        '',
+        '## Pro / technical foundation',
+        report.pro_markdown?.trim() || NOT_AVAILABLE,
+        '',
+        '## Source chips',
+        formatSourceChipsMarkdown(report),
+        '',
+        '## Summary for synthesis',
+        formatSummaryForSynthesisMarkdown(report),
+      ]
 
   return [
     '# ScanTalent — отчёт по разделу',
@@ -376,17 +401,7 @@ export function buildTalentMapSectionReportMarkdown(report: TalentMapSectionRepo
       qualityFlags.length > 0 ? qualityFlags.join('; ') : '—',
     ),
     '',
-    '## Base',
-    report.base_markdown?.trim() || NOT_AVAILABLE,
-    '',
-    '## Pro / technical foundation',
-    report.pro_markdown?.trim() || NOT_AVAILABLE,
-    '',
-    '## Source chips',
-    formatSourceChipsMarkdown(report),
-    '',
-    '## Summary for synthesis',
-    formatSummaryForSynthesisMarkdown(report),
+    ...contentSections,
     '',
     '## Technical metadata',
     '```json',

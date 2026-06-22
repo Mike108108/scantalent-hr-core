@@ -28,9 +28,9 @@ export const TALENT_MAP_MODEL_PRESETS: Record<TalentMapModelPresetId, TalentMapM
     id: 'standard',
     depth_profile_id: 'compact',
     ui_label: 'Стандартная сборка',
-    ui_description: 'Короткий рабочий вывод — быстро понять, как вводить человека в задачи.',
+    ui_description: 'Быстрый слой-портрет — нейтральное описание текущего слоя карты кандидата.',
     model: 'gpt-5-mini',
-    reasoning_effort: 'medium',
+    reasoning_effort: 'low',
     internal_credit_cost: 3,
     pricing: {
       input_usd_per_1m: 0.25,

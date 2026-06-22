@@ -3,6 +3,7 @@ import {
   cleanGeneratedSectionText,
   renderGeneratedSectionBaseMarkdown,
   renderGeneratedSectionProMarkdown,
+  renderGeneratedSectionStandardSnapshotMarkdown,
   validateTalentMapGeneratedSection,
   type TalentMapGeneratedSection,
 } from '../../src/lib/talentMapGeneratedSectionContract'
@@ -786,8 +787,13 @@ export async function runBackgroundSectionGeneration(params: {
     },
   }
 
-  const baseMarkdown = renderGeneratedSectionBaseMarkdown(generatedSection)
-  const proMarkdown = renderGeneratedSectionProMarkdown(generatedSection)
+  const baseMarkdown =
+    modelPreset.id === 'standard'
+      ? renderGeneratedSectionStandardSnapshotMarkdown(generatedSection)
+      : renderGeneratedSectionBaseMarkdown(generatedSection)
+
+  const proMarkdown =
+    modelPreset.id === 'standard' ? null : renderGeneratedSectionProMarkdown(generatedSection)
 
   await updateLayerReportById(params.reportId, {
     status: 'ready',

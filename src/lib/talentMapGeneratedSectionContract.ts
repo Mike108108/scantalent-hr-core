@@ -378,6 +378,14 @@ function renderBaseBlock(block: TalentMapGeneratedSectionBaseBlock): string {
   return renderMarkdownList(block.title, block.points)
 }
 
+/** Visible standard output: one neutral layer snapshot (headline + summary only). */
+export function renderGeneratedSectionStandardSnapshotMarkdown(
+  section: TalentMapGeneratedSection,
+): string {
+  const { base } = section
+  return [`# ${base.headline}`, '', base.hr_summary].join('\n')
+}
+
 export function renderGeneratedSectionBaseMarkdown(section: TalentMapGeneratedSection): string {
   const { base } = section
   return [

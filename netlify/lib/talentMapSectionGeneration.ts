@@ -3,6 +3,9 @@ import {
   cleanGeneratedSectionText,
   renderGeneratedSectionBaseMarkdown,
   renderGeneratedSectionProMarkdown,
+  renderGeneratedSectionStandardSnapshotMarkdown,
+  resolveStandardSnapshotParagraph,
+  MIN_STANDARD_SNAPSHOT_CHARS,
   validateTalentMapGeneratedSection,
   type TalentMapGeneratedSection,
 } from '../../src/lib/talentMapGeneratedSectionContract'
@@ -106,6 +109,8 @@ export function buildUsageJson(params: {
     model_preset_label: params.modelPreset.ui_label,
     model_preset_fallback_used: params.modelPresetFallbackUsed,
     reasoning_effort: params.modelPreset.reasoning_effort,
+    max_output_tokens_policy:
+      params.modelPreset.max_output_tokens === undefined ? 'omitted' : 'set',
     ...(params.modelPreset.max_output_tokens !== undefined
       ? { max_output_tokens: params.modelPreset.max_output_tokens }
       : {}),
@@ -771,6 +776,8 @@ export async function runBackgroundSectionGeneration(params: {
       model_preset_label: modelPreset.ui_label,
       model: modelPreset.model,
       reasoning_effort: modelPreset.reasoning_effort,
+      max_output_tokens_policy:
+        modelPreset.max_output_tokens === undefined ? 'omitted' : 'set',
       ...(modelPreset.max_output_tokens !== undefined
         ? { max_output_tokens: modelPreset.max_output_tokens }
         : {}),
@@ -782,8 +789,21 @@ export async function runBackgroundSectionGeneration(params: {
     },
   }
 
-  const baseMarkdown = renderGeneratedSectionBaseMarkdown(generatedSection)
-  const proMarkdown = renderGeneratedSectionProMarkdown(generatedSection)
+  const baseMarkdown =
+    modelPreset.id === 'standard'
+      ? renderGeneratedSectionStandardSnapshotMarkdown(generatedSection)
+      : renderGeneratedSectionBaseMarkdown(generatedSection)
+
+  const proMarkdown =
+    modelPreset.id === 'standard' ? null : renderGeneratedSectionProMarkdown(generatedSection)
+
+  const qualityFlags = [...sourceIntegrityResult.warnings, ...qaResult.warnings]
+  if (
+    modelPreset.id === 'standard' &&
+    resolveStandardSnapshotParagraph(generatedSection).length < MIN_STANDARD_SNAPSHOT_CHARS
+  ) {
+    qualityFlags.push('standard_snapshot_too_short')
+  }
 
   await updateLayerReportById(params.reportId, {
     status: 'ready',
@@ -793,7 +813,7 @@ export async function runBackgroundSectionGeneration(params: {
     pro_markdown: proMarkdown,
     summary_for_synthesis: generatedSection.summary_for_synthesis,
     evidence_json: evidenceJson,
-    quality_flags: [...sourceIntegrityResult.warnings, ...qaResult.warnings],
+    quality_flags: qualityFlags,
     model: openAiResult.model,
     usage_json: usageJson,
     estimated_cost_usd: estimatedCostUsd,

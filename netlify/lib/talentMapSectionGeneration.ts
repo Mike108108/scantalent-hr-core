@@ -4,6 +4,8 @@ import {
   renderGeneratedSectionBaseMarkdown,
   renderGeneratedSectionProMarkdown,
   renderGeneratedSectionStandardSnapshotMarkdown,
+  resolveStandardSnapshotParagraph,
+  MIN_STANDARD_SNAPSHOT_CHARS,
   validateTalentMapGeneratedSection,
   type TalentMapGeneratedSection,
 } from '../../src/lib/talentMapGeneratedSectionContract'
@@ -795,6 +797,14 @@ export async function runBackgroundSectionGeneration(params: {
   const proMarkdown =
     modelPreset.id === 'standard' ? null : renderGeneratedSectionProMarkdown(generatedSection)
 
+  const qualityFlags = [...sourceIntegrityResult.warnings, ...qaResult.warnings]
+  if (
+    modelPreset.id === 'standard' &&
+    resolveStandardSnapshotParagraph(generatedSection).length < MIN_STANDARD_SNAPSHOT_CHARS
+  ) {
+    qualityFlags.push('standard_snapshot_too_short')
+  }
+
   await updateLayerReportById(params.reportId, {
     status: 'ready',
     input_bundle_json: inputBundleJson,
@@ -803,7 +813,7 @@ export async function runBackgroundSectionGeneration(params: {
     pro_markdown: proMarkdown,
     summary_for_synthesis: generatedSection.summary_for_synthesis,
     evidence_json: evidenceJson,
-    quality_flags: [...sourceIntegrityResult.warnings, ...qaResult.warnings],
+    quality_flags: qualityFlags,
     model: openAiResult.model,
     usage_json: usageJson,
     estimated_cost_usd: estimatedCostUsd,

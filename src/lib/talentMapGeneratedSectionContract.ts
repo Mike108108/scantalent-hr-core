@@ -378,12 +378,90 @@ function renderBaseBlock(block: TalentMapGeneratedSectionBaseBlock): string {
   return renderMarkdownList(block.title, block.points)
 }
 
-/** Visible standard output: one neutral layer snapshot (headline + summary only). */
+export const MIN_STANDARD_SNAPSHOT_CHARS = 450
+export const MAX_STANDARD_SNAPSHOT_CHARS = 1100
+
+function normalizeSnapshotText(value: unknown): string {
+  if (typeof value !== 'string') {
+    return ''
+  }
+
+  return value.replace(/\s+/g, ' ').trim()
+}
+
+function firstBaseBlockPoint(block: TalentMapGeneratedSectionBaseBlock): string {
+  return block.points[0] ?? ''
+}
+
+function dedupeSnapshotParts(parts: string[]): string[] {
+  const seen = new Set<string>()
+  const result: string[] = []
+
+  for (const part of parts) {
+    const normalized = normalizeSnapshotText(part)
+    if (!normalized) {
+      continue
+    }
+
+    const key = normalized.toLowerCase()
+    if (seen.has(key)) {
+      continue
+    }
+
+    seen.add(key)
+    result.push(normalized)
+  }
+
+  return result
+}
+
+function collectStandardSnapshotFallbackParts(section: TalentMapGeneratedSection): string[] {
+  const { base, summary_for_synthesis } = section
+
+  return [
+    base.hr_summary,
+    summary_for_synthesis.one_sentence,
+    ...summary_for_synthesis.key_conditions.slice(0, 2),
+    firstBaseBlockPoint(base.how_to_start_work),
+    firstBaseBlockPoint(base.best_task_format),
+    firstBaseBlockPoint(base.manager_instructions),
+    firstBaseBlockPoint(base.risks_if_wrong_entry),
+  ]
+}
+
+function trimSnapshotParagraph(paragraph: string): string {
+  if (paragraph.length <= MAX_STANDARD_SNAPSHOT_CHARS) {
+    return paragraph
+  }
+
+  let trimmed = paragraph.slice(0, MAX_STANDARD_SNAPSHOT_CHARS)
+  const lastSentenceEnd = Math.max(trimmed.lastIndexOf('.'), trimmed.lastIndexOf('!'), trimmed.lastIndexOf('?'))
+
+  if (lastSentenceEnd >= MIN_STANDARD_SNAPSHOT_CHARS) {
+    trimmed = trimmed.slice(0, lastSentenceEnd + 1)
+  }
+
+  return trimmed.trim()
+}
+
+/** Resolves the visible standard snapshot paragraph, with fallback enrichment if too short. */
+export function resolveStandardSnapshotParagraph(section: TalentMapGeneratedSection): string {
+  const hrSummary = normalizeSnapshotText(section.base.hr_summary)
+
+  if (hrSummary.length >= MIN_STANDARD_SNAPSHOT_CHARS) {
+    return trimSnapshotParagraph(hrSummary)
+  }
+
+  const enriched = dedupeSnapshotParts(collectStandardSnapshotFallbackParts(section)).join(' ')
+  return trimSnapshotParagraph(enriched || hrSummary)
+}
+
+/** Visible standard output: one neutral layer snapshot (headline + substantial paragraph). */
 export function renderGeneratedSectionStandardSnapshotMarkdown(
   section: TalentMapGeneratedSection,
 ): string {
-  const { base } = section
-  return [`# ${base.headline}`, '', base.hr_summary].join('\n')
+  const paragraph = resolveStandardSnapshotParagraph(section)
+  return [`# ${section.base.headline}`, '', paragraph].join('\n')
 }
 
 export function renderGeneratedSectionBaseMarkdown(section: TalentMapGeneratedSection): string {

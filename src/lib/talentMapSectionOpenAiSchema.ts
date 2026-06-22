@@ -316,7 +316,13 @@ export function buildTalentMapSectionSystemPrompt(params: {
           '  what to compare with a role later; what to compare with a vacancy later;',
           '  «на что смотреть при сравнении с ролью»; «на что смотреть при сравнении с вакансией».',
           '- Describe only what is visible in this layer of the candidate map.',
-          '- Visible user output = headline + hr_summary (snapshot). Остальные Base blocks и Pro — минимально для valid JSON.',
+          '- Visible user output = headline + one substantial hr_summary paragraph (600–1 000 chars, 5–7 sentences).',
+          '- For standard/compact, base.hr_summary is the main visible client output. Write one paragraph, not one sentence.',
+          '- Target: 600–1 000 Russian characters (~90–150 words). Explain: main layer pattern; work manifestation;',
+          '  helpful conditions; risks if managed poorly; what HR/manager should keep in mind (no vacancy comparison).',
+          '- Do not mention source keys, HD terms, vacancy, role fit, match score, hire/no-hire, or what to compare later.',
+          '- Для standard основной видимый текст — один содержательный абзац, не одна фраза.',
+          '- Остальные Base blocks и Pro — минимально для valid JSON; смысл слоя должен быть в hr_summary.',
         ]
       : [
           '- Compact / standard = fast neutral layer snapshot (no vacancy/role comparison).',

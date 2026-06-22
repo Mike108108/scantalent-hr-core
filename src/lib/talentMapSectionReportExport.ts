@@ -6,6 +6,7 @@ import {
 
 const NOT_AVAILABLE = 'not_available'
 const MAX_OUTPUT_TOKENS_NOT_SET = 'not set'
+const MAX_OUTPUT_TOKENS_POLICY_NOT_AVAILABLE = 'not_available'
 
 type UsageJsonRecord = Record<string, unknown>
 
@@ -131,6 +132,7 @@ export type ReportGenerationMeta = {
   model: string
   reasoningEffort: string
   maxOutputTokens: string
+  maxOutputTokensPolicy: string
   internalCreditCost: string
   estimatedCostUsd: string
   depthProfileId: string
@@ -183,6 +185,11 @@ export function resolveReportGenerationMeta(report: TalentMapSectionReport): Rep
         : usage?.max_output_tokens !== undefined
           ? String(usage.max_output_tokens)
           : MAX_OUTPUT_TOKENS_NOT_SET,
+    maxOutputTokensPolicy:
+      generationMeta?.max_output_tokens_policy ??
+      (typeof usage?.max_output_tokens_policy === 'string'
+        ? usage.max_output_tokens_policy
+        : MAX_OUTPUT_TOKENS_POLICY_NOT_AVAILABLE),
     internalCreditCost:
       generationMeta?.internal_credit_cost !== undefined
         ? String(generationMeta.internal_credit_cost)
@@ -337,6 +344,7 @@ export function buildTalentMapSectionReportMarkdown(report: TalentMapSectionRepo
     formatMarkdownListField('preset_label', meta.presetLabel),
     formatMarkdownListField('model', meta.model),
     formatMarkdownListField('reasoning_effort', meta.reasoningEffort),
+    formatMarkdownListField('max_output_tokens_policy', meta.maxOutputTokensPolicy),
     formatMarkdownListField('max_output_tokens', meta.maxOutputTokens),
     formatMarkdownListField('internal_credits', meta.internalCreditCost),
     formatMarkdownListField('estimated_cost_usd', meta.estimatedCostUsd),

@@ -11,7 +11,10 @@ export type TalentMapModelPreset = {
   ui_description: string
   model: string
   reasoning_effort: TalentMapReasoningEffort
-  /** Omitted from OpenAI request when undefined (quality/premium). */
+  /**
+   * Optional hard output cap.
+   * Current presets should omit this by default; depth is controlled by depth profiles.
+   */
   max_output_tokens?: number
   internal_credit_cost: number
   pricing: {
@@ -28,7 +31,6 @@ export const TALENT_MAP_MODEL_PRESETS: Record<TalentMapModelPresetId, TalentMapM
     ui_description: 'Короткий рабочий вывод — быстро понять, как вводить человека в задачи.',
     model: 'gpt-5-mini',
     reasoning_effort: 'medium',
-    max_output_tokens: 7000,
     internal_credit_cost: 3,
     pricing: {
       input_usd_per_1m: 0.25,

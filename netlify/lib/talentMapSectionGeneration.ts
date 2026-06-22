@@ -106,6 +106,8 @@ export function buildUsageJson(params: {
     model_preset_label: params.modelPreset.ui_label,
     model_preset_fallback_used: params.modelPresetFallbackUsed,
     reasoning_effort: params.modelPreset.reasoning_effort,
+    max_output_tokens_policy:
+      params.modelPreset.max_output_tokens === undefined ? 'omitted' : 'set',
     ...(params.modelPreset.max_output_tokens !== undefined
       ? { max_output_tokens: params.modelPreset.max_output_tokens }
       : {}),
@@ -771,6 +773,8 @@ export async function runBackgroundSectionGeneration(params: {
       model_preset_label: modelPreset.ui_label,
       model: modelPreset.model,
       reasoning_effort: modelPreset.reasoning_effort,
+      max_output_tokens_policy:
+        modelPreset.max_output_tokens === undefined ? 'omitted' : 'set',
       ...(modelPreset.max_output_tokens !== undefined
         ? { max_output_tokens: modelPreset.max_output_tokens }
         : {}),

@@ -15,6 +15,7 @@ export type TalentMapGeneratedSectionGenerationMeta = {
   model: string
   reasoning_effort: string
   max_output_tokens?: number
+  max_output_tokens_policy?: 'omitted' | 'set'
   internal_credit_cost: number
   estimated_cost_usd: number | null
   depth_profile_id: string

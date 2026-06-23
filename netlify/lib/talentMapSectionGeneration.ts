@@ -27,8 +27,8 @@ import {
   type TalentMapOpenAiSchemaName,
 } from '../../src/lib/talentMapStandardSnapshotContract'
 import {
+  buildTalentMapStandardSnapshotOpenAiJsonSchema,
   buildTalentMapStandardSnapshotSystemPrompt,
-  TALENT_MAP_STANDARD_SNAPSHOT_OPENAI_JSON_SCHEMA,
 } from '../../src/lib/talentMapStandardSnapshotOpenAiSchema'
 import { resolveSectionGenerationInputForPreset } from '../../src/lib/talentMapStandardSnapshotInput'
 import { buildTalentMapSectionInputAudit } from '../../src/lib/talentMapSectionInputAudit'
@@ -37,6 +37,7 @@ import {
   buildSanitizedSectionInputForAi,
   buildOpenAiIncompleteMaxOutputTokensDiagnostics,
   buildOpenAiResponsePreview,
+  buildTalentMapSectionOpenAiJsonSchema,
   buildTalentMapSectionSystemPrompt,
   extractOpenAiResponseDiagnostics,
   extractOpenAiResponseText,
@@ -46,8 +47,12 @@ import {
   OPENAI_INCOMPLETE_MAX_OUTPUT_TOKENS_MESSAGE,
   OpenAiSectionParseError,
   parseOpenAiJsonOutput,
-  TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA,
 } from '../../src/lib/talentMapSectionOpenAiSchema'
+import {
+  getSupportedGeneratedSectionTitle,
+  isSupportedGeneratedSectionKey,
+  type SupportedGeneratedSectionKey,
+} from '../../src/lib/talentMapGeneratedSections'
 import { getTalentMapSectionDefinition } from '../../src/lib/talentMapSynthesisContract'
 import type { SourceChip } from '../../src/lib/talentMapSynthesisContract'
 import {
@@ -406,6 +411,11 @@ async function callOpenAiWithJsonSchema(
 export async function callOpenAiForSection(
   enrichedInput: unknown,
   modelPreset: TalentMapModelPreset,
+  sectionDefinition: {
+    section_key: SupportedGeneratedSectionKey
+    title: string
+    section_goal: string
+  },
 ): Promise<{
   parsed: unknown
   model: string
@@ -414,18 +424,30 @@ export async function callOpenAiForSection(
   parse_strategy: string
 }> {
   const depthProfile = getTalentMapDepthProfile(modelPreset.depth_profile_id)
-  const systemPrompt = buildTalentMapSectionSystemPrompt({ depthProfile })
+  const systemPrompt = buildTalentMapSectionSystemPrompt({
+    sectionKey: sectionDefinition.section_key,
+    sectionTitle: sectionDefinition.title,
+    sectionGoal: sectionDefinition.section_goal,
+    depthProfile,
+  })
 
   return callOpenAiWithJsonSchema(enrichedInput, modelPreset, {
     systemPrompt,
     schemaName: 'talent_map_generated_section_v1_1',
-    schema: TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA as unknown as Record<string, unknown>,
+    schema: buildTalentMapSectionOpenAiJsonSchema({
+      sectionKey: sectionDefinition.section_key,
+      sectionTitle: sectionDefinition.title,
+    }) as unknown as Record<string, unknown>,
   })
 }
 
 export async function callOpenAiForStandardSnapshot(
   enrichedInput: unknown,
   modelPreset: TalentMapModelPreset,
+  sectionDefinition: {
+    section_key: SupportedGeneratedSectionKey
+    title: string
+  },
 ): Promise<{
   parsed: unknown
   model: string
@@ -434,9 +456,15 @@ export async function callOpenAiForStandardSnapshot(
   parse_strategy: string
 }> {
   return callOpenAiWithJsonSchema(enrichedInput, modelPreset, {
-    systemPrompt: buildTalentMapStandardSnapshotSystemPrompt(),
+    systemPrompt: buildTalentMapStandardSnapshotSystemPrompt({
+      sectionKey: sectionDefinition.section_key,
+      sectionTitle: sectionDefinition.title,
+    }),
     schemaName: 'talent_map_standard_snapshot_v1_0',
-    schema: TALENT_MAP_STANDARD_SNAPSHOT_OPENAI_JSON_SCHEMA as unknown as Record<string, unknown>,
+    schema: buildTalentMapStandardSnapshotOpenAiJsonSchema({
+      sectionKey: sectionDefinition.section_key,
+      sectionTitle: sectionDefinition.title,
+    }) as unknown as Record<string, unknown>,
   })
 }
 
@@ -444,6 +472,8 @@ export async function upsertProcessingLayerReport(params: {
   companyId: string
   candidateId: string
   chartId: string
+  sectionKey: SupportedGeneratedSectionKey
+  sectionTitle: string
   inputBundleJson: unknown
   evidenceJson: unknown
   model: string
@@ -456,7 +486,7 @@ export async function upsertProcessingLayerReport(params: {
     .select('id')
     .eq('candidate_id', params.candidateId)
     .eq('chart_id', params.chartId)
-    .eq('layer_key', WORK_MODE_SECTION_KEY)
+    .eq('layer_key', params.sectionKey)
     .order('updated_at', { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -469,8 +499,8 @@ export async function upsertProcessingLayerReport(params: {
     company_id: params.companyId,
     candidate_id: params.candidateId,
     chart_id: params.chartId,
-    layer_key: WORK_MODE_SECTION_KEY,
-    layer_title: WORK_MODE_SECTION_TITLE,
+    layer_key: params.sectionKey,
+    layer_title: params.sectionTitle,
     status: 'processing',
     input_bundle_json: params.inputBundleJson,
     content_json: {},
@@ -590,7 +620,10 @@ export function enrichWorkModeSectionInputForGeneration(params: {
   })
 }
 
-export async function prepareWorkModeSectionInput(chartId: string) {
+export async function prepareTalentMapSectionInput(
+  chartId: string,
+  sectionKey: SupportedGeneratedSectionKey,
+) {
   const admin = getSupabaseAdmin()
 
   const { data: chart, error: chartError } = await admin
@@ -643,15 +676,15 @@ export async function prepareWorkModeSectionInput(chartId: string) {
 
   const auditReport = buildTalentMapSectionInputAudit(synthesisPreview)
   const sectionInput = synthesisPreview.sections.find(
-    (section) => section.section_key === WORK_MODE_SECTION_KEY,
+    (section) => section.section_key === sectionKey,
   )
 
   if (!sectionInput) {
-    throw new Error('Section input for work_mode_and_entry was not found.')
+    throw new Error(`Section input for ${sectionKey} was not found.`)
   }
 
   const sectionAuditSummary = auditReport.section_summaries.find(
-    (summary) => summary.section_key === WORK_MODE_SECTION_KEY,
+    (summary) => summary.section_key === sectionKey,
   )
 
   if (auditReport.overall_severity !== 'ok' || sectionInput.generation_status !== 'input_ready') {
@@ -661,13 +694,13 @@ export async function prepareWorkModeSectionInput(chartId: string) {
       section_generation_status: sectionInput.generation_status,
       section_summary: sectionAuditSummary ?? null,
       issues: auditReport.issues.filter(
-        (issue) => !issue.section_key || issue.section_key === WORK_MODE_SECTION_KEY,
+        (issue) => !issue.section_key || issue.section_key === sectionKey,
       ),
     }
     throw auditError
   }
 
-  const sectionDefinition = getTalentMapSectionDefinition(WORK_MODE_SECTION_KEY)
+  const sectionDefinition = getTalentMapSectionDefinition(sectionKey)
   const sanitizedInput = buildSanitizedSectionInputForAi({
     section: sectionInput,
     section_goal: sectionDefinition.section_goal,
@@ -686,6 +719,8 @@ export async function prepareWorkModeSectionInput(chartId: string) {
   return {
     chart,
     sectionInput,
+    sectionKey,
+    sectionTitle: getSupportedGeneratedSectionTitle(sectionKey),
     inputBundleJson,
     evidenceJson: buildEvidenceJson(sectionInput),
     auditReport,
@@ -693,9 +728,14 @@ export async function prepareWorkModeSectionInput(chartId: string) {
   }
 }
 
+export async function prepareWorkModeSectionInput(chartId: string) {
+  return prepareTalentMapSectionInput(chartId, WORK_MODE_SECTION_KEY)
+}
+
 export async function runBackgroundSectionGeneration(params: {
   reportId: string
   chartId: string
+  sectionKey?: SupportedGeneratedSectionKey
   modelPresetId: string
 }) {
   const admin = getSupabaseAdmin()
@@ -716,9 +756,16 @@ export async function runBackgroundSectionGeneration(params: {
   if (report.chart_id !== params.chartId) {
     throw new Error('Report chart_id mismatch.')
   }
-  if (report.layer_key !== WORK_MODE_SECTION_KEY) {
+
+  const reportSectionKey = report.layer_key
+  if (!isSupportedGeneratedSectionKey(reportSectionKey)) {
     throw new Error('Unsupported section key for background generation.')
   }
+  if (params.sectionKey && params.sectionKey !== reportSectionKey) {
+    throw new Error('Report section_key mismatch.')
+  }
+
+  const sectionKey = params.sectionKey ?? reportSectionKey
 
   const inputBundleRecord =
     report.input_bundle_json && typeof report.input_bundle_json === 'object'
@@ -735,11 +782,23 @@ export async function runBackgroundSectionGeneration(params: {
     throw new Error('Section input bundle is missing section_input.')
   }
 
+  const bundledSectionKey =
+    sanitizedInput &&
+    typeof sanitizedInput === 'object' &&
+    'section_key' in sanitizedInput &&
+    typeof (sanitizedInput as { section_key?: unknown }).section_key === 'string'
+      ? (sanitizedInput as { section_key: string }).section_key
+      : null
+
+  if (bundledSectionKey !== reportSectionKey) {
+    throw new Error('Section input bundle section_key mismatch.')
+  }
+
   const sourceChips = Array.isArray(sanitizedInput.source_chips)
     ? sanitizedInput.source_chips
     : []
 
-  const sectionDefinition = getTalentMapSectionDefinition(WORK_MODE_SECTION_KEY)
+  const sectionDefinition = getTalentMapSectionDefinition(sectionKey)
   const resolvedInput = resolveSectionGenerationInputForPreset({
     sanitizedInput: sanitizedInput as ReturnType<typeof buildSanitizedSectionInputForAi>,
     sourceChips,
@@ -765,8 +824,15 @@ export async function runBackgroundSectionGeneration(params: {
   try {
     openAiResult =
       resolvedInput.generationMode === 'standard_snapshot'
-        ? await callOpenAiForStandardSnapshot(resolvedInput.inputForOpenAi, modelPreset)
-        : await callOpenAiForSection(resolvedInput.inputForOpenAi, modelPreset)
+        ? await callOpenAiForStandardSnapshot(resolvedInput.inputForOpenAi, modelPreset, {
+            section_key: sectionKey,
+            title: sectionDefinition.title,
+          })
+        : await callOpenAiForSection(resolvedInput.inputForOpenAi, modelPreset, {
+            section_key: sectionKey,
+            title: sectionDefinition.title,
+            section_goal: sectionDefinition.section_goal,
+          })
   } catch (error) {
     const errorContext = resolveOpenAiCallErrorContext(error, modelPreset, {
       generationMode: resolvedInput.generationMode,

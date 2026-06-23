@@ -8,6 +8,10 @@ import {
   type TalentMapSectionKey,
   type TalentMapSectionStatus,
 } from '../../../lib/talentMapSections'
+import {
+  isSupportedGeneratedSectionKey,
+  SUPPORTED_GENERATED_SECTION_KEYS,
+} from '../../../lib/talentMapGeneratedSections'
 import type { TalentMapSectionReport } from '../../../lib/talentMapSectionApi'
 import {
   formatSectionErrorBadgeLabel,
@@ -69,7 +73,7 @@ function resolveSectionUiStatus(params: {
 }): { badgeStatus: SectionGenerationStatus | TalentMapSectionStatus; label: string } {
   if (
     (params.isGenerating || params.report?.status === 'processing') &&
-    params.sectionKey === 'work_mode_and_entry'
+    isSupportedGeneratedSectionKey(params.sectionKey)
   ) {
     return { badgeStatus: 'generating', label: 'Собирается' }
   }
@@ -569,7 +573,7 @@ function buildInitialExpandedSectionKeys(
     const isReadyOrProcessing =
       report?.status === 'ready' || report?.status === 'processing'
 
-    if (section.key === 'work_mode_and_entry' || isReadyOrProcessing) {
+    if (isSupportedGeneratedSectionKey(section.key) || isReadyOrProcessing) {
       keys.add(section.key)
     }
   }
@@ -586,10 +590,10 @@ export function TalentMapTab() {
     sectionReports,
     sectionReportsLoading,
     sectionReportsError,
-    sectionGenerationLoading,
     sectionGenerationError,
     sectionGenerationTechnicalError,
-    handleGenerateWorkModeAndEntrySection,
+    activeGeneratingSectionKey,
+    handleGenerateTalentMapSection,
   } = useCandidateWorkspace()
 
   const [selectedModelPresetId, setSelectedModelPresetId] = useState<TalentMapModelPresetId>(
@@ -599,7 +603,7 @@ export function TalentMapTab() {
     Partial<Record<TalentMapSectionKey, number>>
   >({})
   const [expandedSectionKeys, setExpandedSectionKeys] = useState<Set<TalentMapSectionKey>>(
-    () => new Set(['work_mode_and_entry']),
+    () => new Set(SUPPORTED_GENERATED_SECTION_KEYS),
   )
   const accordionInitializedRef = useRef(false)
 
@@ -629,20 +633,30 @@ export function TalentMapTab() {
   ).length
   const totalSections = MVP_TALENT_MAP_SECTIONS.length
 
-  const workModePreview = synthesisPreview?.sections.find(
-    (section) => section.section_key === 'work_mode_and_entry',
-  )
-
   const selectedPreset = TALENT_MAP_MODEL_PRESETS[selectedModelPresetId]
 
-  const canGenerateWorkMode =
+  const canGenerateBase =
     chartUiStatus === 'calculated' &&
     Boolean(bundleResult?.ok && bundleResult.bundle) &&
     Boolean(synthesisPreview) &&
     sectionInputAudit?.overall_severity === 'ok' &&
-    workModePreview?.generation_status === 'input_ready' &&
-    !sectionGenerationLoading &&
-    sectionReports.work_mode_and_entry?.status !== 'processing'
+    !activeGeneratingSectionKey
+
+  const canGenerateSectionFor = (sectionKey: TalentMapSectionKey) => {
+    if (!isSupportedGeneratedSectionKey(sectionKey)) {
+      return false
+    }
+
+    const sectionPreview = synthesisPreview?.sections.find(
+      (item) => item.section_key === sectionKey,
+    )
+
+    return (
+      canGenerateBase &&
+      sectionPreview?.generation_status === 'input_ready' &&
+      sectionReports[sectionKey]?.status !== 'processing'
+    )
+  }
 
   return (
     <div className="stack workspace-sections">
@@ -707,17 +721,18 @@ export function TalentMapTab() {
             sectionKey: section.key,
             sectionPreviewStatus: generationStatus,
             report,
-            isGenerating: sectionGenerationLoading && section.key === 'work_mode_and_entry',
+            isGenerating: activeGeneratingSectionKey === section.key,
           })
 
           const budget = sectionPreview?.budget_summary
           const sourcesReady = budget?.total_selected ?? bundleResult?.coverage?.matched_elements ?? 0
-          const isWorkModeSection = section.key === 'work_mode_and_entry'
-          const canGenerateSection = isWorkModeSection && canGenerateWorkMode
+          const isSupportedSection = isSupportedGeneratedSectionKey(section.key)
+          const canGenerateSection = canGenerateSectionFor(section.key)
           const sectionIsReady = report?.status === 'ready'
           const sectionIsError = report?.status === 'error'
           const sectionIsProcessing =
-            (sectionGenerationLoading || report?.status === 'processing') && isWorkModeSection
+            (activeGeneratingSectionKey === section.key || report?.status === 'processing') &&
+            isSupportedSection
           const isSectionExpanded = expandedSectionKeys.has(section.key)
           const localStartedAtMs = localGenerationStartedAtBySection[section.key] ?? null
 
@@ -752,7 +767,7 @@ export function TalentMapTab() {
                     {sectionIsProcessing ? (
                       <div className="section-generation-status stack">
                         <SectionGenerationProgress />
-                        {isWorkModeSection ? (
+                        {isSupportedSection ? (
                           <SectionGenerationTimer
                             report={report}
                             isProcessing={sectionIsProcessing}
@@ -760,7 +775,7 @@ export function TalentMapTab() {
                           />
                         ) : null}
                       </div>
-                    ) : isWorkModeSection ? (
+                    ) : isSupportedSection ? (
                       <SectionGenerationTimer
                         report={report}
                         isProcessing={sectionIsProcessing}
@@ -811,7 +826,7 @@ export function TalentMapTab() {
                       <SectionGeneratedResult report={report} />
                     ) : null}
 
-                    {isWorkModeSection ? (
+                    {isSupportedSection ? (
                       <ModelPresetSelector
                         selectedPresetId={selectedModelPresetId}
                         onChange={setSelectedModelPresetId}
@@ -820,7 +835,7 @@ export function TalentMapTab() {
                     ) : null}
 
                     <div className="form-actions">
-                      {isWorkModeSection ? (
+                      {isSupportedSection ? (
                         <>
                           <Button
                             type="button"
@@ -835,7 +850,10 @@ export function TalentMapTab() {
                                 next.add(section.key)
                                 return next
                               })
-                              void handleGenerateWorkModeAndEntrySection(selectedModelPresetId)
+                              void handleGenerateTalentMapSection(
+                                section.key,
+                                selectedModelPresetId,
+                              )
                             }}
                           >
                             {sectionIsProcessing
@@ -862,7 +880,7 @@ export function TalentMapTab() {
                             Собрать раздел
                           </Button>
                           <p className="city-autocomplete__hint">
-                            Будет подключено после проверки первого раздела
+                            Будет подключено после проверки первых разделов
                           </p>
                         </>
                       )}

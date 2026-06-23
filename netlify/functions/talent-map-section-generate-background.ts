@@ -1,10 +1,13 @@
 import type { Handler } from '@netlify/functions'
 import {
+  SUPPORTED_GENERATED_SECTION_KEYS,
+  isSupportedGeneratedSectionKey,
+} from '../../src/lib/talentMapGeneratedSections'
+import {
   buildErrorSummaryForSynthesis,
   jsonResponse,
   runBackgroundSectionGeneration,
   TALENT_MAP_SECTION_GENERATION_CORS_HEADERS,
-  WORK_MODE_SECTION_KEY,
 } from '../lib/talentMapSectionGeneration'
 import { AuthError, getSupabaseAdmin, readBearerAuthorizationHeader, verifyBearerUser } from '../lib/supabaseAdmin'
 
@@ -33,7 +36,7 @@ export const handler: Handler = async (event) => {
     const payload = JSON.parse(event.body ?? '{}') as BackgroundPayload
     const reportId = payload.report_id?.trim()
     const chartId = payload.chart_id?.trim()
-    const sectionKey = payload.section_key?.trim()
+    const sectionKeyRaw = payload.section_key?.trim()
     const modelPresetId = payload.model_preset_id?.trim()
 
     if (!reportId) {
@@ -52,13 +55,19 @@ export const handler: Handler = async (event) => {
       })
     }
 
-    if (sectionKey !== WORK_MODE_SECTION_KEY) {
+    if (!sectionKeyRaw || !isSupportedGeneratedSectionKey(sectionKeyRaw)) {
       return jsonResponse(400, {
         ok: false,
         error_kind: 'technical',
-        error: 'Only work_mode_and_entry is supported in Stage 4-F0.1.',
+        error: 'Unsupported section_key for Stage 4-F0.2.',
+        diagnostics: {
+          requested_section_key: sectionKeyRaw ?? null,
+          supported_section_keys: SUPPORTED_GENERATED_SECTION_KEYS,
+        },
       })
     }
+
+    const sectionKey = sectionKeyRaw
 
     const admin = getSupabaseAdmin()
 
@@ -106,6 +115,7 @@ export const handler: Handler = async (event) => {
     await runBackgroundSectionGeneration({
       reportId,
       chartId,
+      sectionKey,
       modelPresetId: modelPresetId ?? 'standard',
     })
 
@@ -113,6 +123,7 @@ export const handler: Handler = async (event) => {
       ok: true,
       status: 'completed',
       report_id: reportId,
+      section_key: sectionKey,
     })
   } catch (error) {
     if (error instanceof AuthError) {
@@ -147,13 +158,16 @@ export const handler: Handler = async (event) => {
       }
     }
 
+    const sectionKeyRaw = payloadSectionKey(event.body)
+
     return jsonResponse(500, {
       ok: false,
       error_kind: 'technical',
       error: message,
       diagnostics: {
         stage: 'background_unexpected_catch',
-        section_key: WORK_MODE_SECTION_KEY,
+        section_key: sectionKeyRaw,
+        supported_section_keys: SUPPORTED_GENERATED_SECTION_KEYS,
       },
     })
   }
@@ -163,6 +177,15 @@ function payloadReportId(body: string | null | undefined): string | null {
   try {
     const payload = JSON.parse(body ?? '{}') as BackgroundPayload
     return payload.report_id?.trim() ?? null
+  } catch {
+    return null
+  }
+}
+
+function payloadSectionKey(body: string | null | undefined): string | null {
+  try {
+    const payload = JSON.parse(body ?? '{}') as BackgroundPayload
+    return payload.section_key?.trim() ?? null
   } catch {
     return null
   }

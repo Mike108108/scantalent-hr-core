@@ -5,6 +5,12 @@ import {
   type TalentMapGeneratedSectionBaseBlock,
 } from './talentMapGeneratedSectionContract'
 import {
+  getSupportedGeneratedSectionTitle,
+  isSupportedGeneratedSectionKey,
+  SUPPORTED_GENERATED_SECTION_KEYS,
+  type SupportedGeneratedSectionKey,
+} from './talentMapGeneratedSections'
+import {
   resolveCanonicalSourceKey,
   sourceChipFullKey,
 } from './talentMapGeneratedSectionSourceIntegrity'
@@ -15,8 +21,8 @@ export const TALENT_MAP_STANDARD_SNAPSHOT_SCHEMA_VERSION =
 
 export type TalentMapStandardSnapshot = {
   schema_version: typeof TALENT_MAP_STANDARD_SNAPSHOT_SCHEMA_VERSION
-  section_key: 'work_mode_and_entry'
-  section_title: 'Рабочий формат и вход в задачи'
+  section_key: SupportedGeneratedSectionKey
+  section_title: string
 
   headline: string
   snapshot_paragraph: string
@@ -118,12 +124,12 @@ export function validateTalentMapStandardSnapshot(value: unknown): {
     issues.push(`schema_version must be "${TALENT_MAP_STANDARD_SNAPSHOT_SCHEMA_VERSION}".`)
   }
 
-  if (record.section_key !== 'work_mode_and_entry') {
-    issues.push('section_key must be "work_mode_and_entry".')
-  }
-
-  if (record.section_title !== 'Рабочий формат и вход в задачи') {
-    issues.push('section_title must be "Рабочий формат и вход в задачи".')
+  if (!isSupportedGeneratedSectionKey(record.section_key)) {
+    issues.push(`section_key must be one of: ${SUPPORTED_GENERATED_SECTION_KEYS.join(', ')}.`)
+  } else if (record.section_title !== getSupportedGeneratedSectionTitle(record.section_key)) {
+    issues.push(
+      `section_title must be "${getSupportedGeneratedSectionTitle(record.section_key)}".`,
+    )
   }
 
   if (!isNonEmptyString(record.headline)) {
@@ -252,8 +258,8 @@ export function adaptStandardSnapshotToGeneratedSection(params: {
 
   return {
     schema_version: TALENT_MAP_GENERATED_SECTION_SCHEMA_VERSION,
-    section_key: 'work_mode_and_entry',
-    section_title: 'Рабочий формат и вход в задачи',
+    section_key: snapshot.section_key,
+    section_title: snapshot.section_title,
     base: {
       headline: snapshot.headline,
       hr_summary: snapshot.snapshot_paragraph,

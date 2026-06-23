@@ -1,14 +1,18 @@
 import type { Handler } from '@netlify/functions'
 import { getTalentMapModelPreset } from '../../src/lib/talentMapModelPresets'
 import {
+  SUPPORTED_GENERATED_SECTION_KEYS,
+  getSupportedGeneratedSectionTitle,
+  isSupportedGeneratedSectionKey,
+} from '../../src/lib/talentMapGeneratedSections'
+import {
   buildErrorSummaryForSynthesis,
   buildProcessingAttemptUsageJson,
   jsonResponse,
-  prepareWorkModeSectionInput,
+  prepareTalentMapSectionInput,
   resolveFunctionOrigin,
   TALENT_MAP_SECTION_GENERATION_CORS_HEADERS,
   upsertProcessingLayerReport,
-  WORK_MODE_SECTION_KEY,
 } from '../lib/talentMapSectionGeneration'
 import { resolveSectionGenerationInputForPreset } from '../../src/lib/talentMapStandardSnapshotInput'
 import { getTalentMapSectionDefinition } from '../../src/lib/talentMapSynthesisContract'
@@ -44,7 +48,7 @@ function startErrorResponse(
     diagnostics: {
       stage: params.stage,
       endpoint: START_ENDPOINT,
-      section_key: WORK_MODE_SECTION_KEY,
+      supported_section_keys: SUPPORTED_GENERATED_SECTION_KEYS,
       ...(params.extraDiagnostics ?? {}),
     },
   })
@@ -68,7 +72,7 @@ export const handler: Handler = async (event) => {
     const user = await verifyBearerUser(authorization)
     const payload = JSON.parse(event.body ?? '{}') as GenerateSectionPayload
     const chartId = payload.chart_id?.trim()
-    const sectionKey = payload.section_key?.trim()
+    const sectionKeyRaw = payload.section_key?.trim()
     const { preset: modelPreset, fallback_used: modelPresetFallbackUsed } = getTalentMapModelPreset(
       payload.model_preset_id,
     )
@@ -80,22 +84,26 @@ export const handler: Handler = async (event) => {
       })
     }
 
-    if (!sectionKey) {
+    if (!sectionKeyRaw) {
       return startErrorResponse(400, {
         stage: 'payload',
         error: 'section_key is required.',
       })
     }
 
-    if (sectionKey !== WORK_MODE_SECTION_KEY) {
+    if (!isSupportedGeneratedSectionKey(sectionKeyRaw)) {
       return startErrorResponse(400, {
         stage: 'payload',
-        error: 'Only work_mode_and_entry is supported in Stage 4-F0.1.',
+        error: 'Unsupported section_key for Stage 4-F0.2.',
         extraDiagnostics: {
-          section_key: sectionKey,
+          requested_section_key: sectionKeyRaw,
+          supported_section_keys: SUPPORTED_GENERATED_SECTION_KEYS,
         },
       })
     }
+
+    const sectionKey = sectionKeyRaw
+    const sectionTitle = getSupportedGeneratedSectionTitle(sectionKey)
 
     const admin = getSupabaseAdmin()
 
@@ -136,9 +144,9 @@ export const handler: Handler = async (event) => {
       })
     }
 
-    let preparedInput: Awaited<ReturnType<typeof prepareWorkModeSectionInput>>
+    let preparedInput: Awaited<ReturnType<typeof prepareTalentMapSectionInput>>
     try {
-      preparedInput = await prepareWorkModeSectionInput(chartId)
+      preparedInput = await prepareTalentMapSectionInput(chartId, sectionKey)
     } catch (error) {
       const auditPayload = (error as Error & { auditPayload?: unknown }).auditPayload
       if (auditPayload) {
@@ -147,13 +155,16 @@ export const handler: Handler = async (event) => {
           error: 'Section input audit did not pass. OpenAI was not called.',
           error_kind: 'audit_failed',
           audit: auditPayload,
+          extraDiagnostics: {
+            section_key: sectionKey,
+          },
         })
       }
       throw error
     }
 
     const startedAt = new Date().toISOString()
-    const sectionDefinition = getTalentMapSectionDefinition(WORK_MODE_SECTION_KEY)
+    const sectionDefinition = getTalentMapSectionDefinition(sectionKey)
     const resolvedInput = resolveSectionGenerationInputForPreset({
       sanitizedInput: preparedInput.inputBundleJson.section_input,
       sourceChips: preparedInput.sectionInput.source_chips,
@@ -182,6 +193,8 @@ export const handler: Handler = async (event) => {
         companyId: chart.company_id,
         candidateId: chart.candidate_id,
         chartId: chart.id,
+        sectionKey,
+        sectionTitle,
         inputBundleJson,
         evidenceJson: preparedInput.evidenceJson,
         model: modelPreset.model,
@@ -195,6 +208,7 @@ export const handler: Handler = async (event) => {
         error: message,
         extraDiagnostics: {
           chart_id: chartId,
+          section_key: sectionKey,
         },
       })
     }
@@ -216,7 +230,7 @@ export const handler: Handler = async (event) => {
         body: JSON.stringify({
           report_id: processingReport.id,
           chart_id: chart.id,
-          section_key: WORK_MODE_SECTION_KEY,
+          section_key: sectionKey,
           model_preset_id: modelPreset.id,
         }),
       })
@@ -252,6 +266,7 @@ export const handler: Handler = async (event) => {
         report: processingReport,
         extraDiagnostics: {
           report_id: processingReport.id,
+          section_key: sectionKey,
           background_url: backgroundUrl,
         },
       })
@@ -261,7 +276,7 @@ export const handler: Handler = async (event) => {
       ok: true,
       status: 'processing',
       report_id: processingReport.id,
-      section_key: WORK_MODE_SECTION_KEY,
+      section_key: sectionKey,
       model_preset_id: modelPreset.id,
       report: processingReport,
     })

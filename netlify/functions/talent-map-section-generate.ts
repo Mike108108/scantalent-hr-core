@@ -94,7 +94,7 @@ export const handler: Handler = async (event) => {
     if (!isSupportedGeneratedSectionKey(sectionKeyRaw)) {
       return startErrorResponse(400, {
         stage: 'payload',
-        error: 'Unsupported section_key for Stage 4-F0.2.',
+        error: 'Unsupported runtime-generated section_key.',
         extraDiagnostics: {
           requested_section_key: sectionKeyRaw,
           supported_section_keys: SUPPORTED_GENERATED_SECTION_KEYS,

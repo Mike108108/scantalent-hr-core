@@ -40,7 +40,7 @@ export const handler: Handler = async (event) => {
         return jsonResponse(400, {
           ok: false,
           error_kind: 'technical',
-          error: 'Unsupported section_key for Stage 4-F0.2.',
+          error: 'Unsupported runtime-generated section_key.',
           diagnostics: {
             requested_section_key: sectionKeyRaw,
             supported_section_keys: SUPPORTED_GENERATED_SECTION_KEYS,

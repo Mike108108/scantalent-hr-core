@@ -1,9 +1,18 @@
-import { getTalentMapSectionDefinition as getUiSectionDefinition } from './talentMapSections'
+import {
+  getTalentMapSectionDefinition as getUiSectionDefinition,
+  type TalentMapSectionKey,
+} from './talentMapSections'
 
 export const SUPPORTED_GENERATED_SECTION_KEYS = [
   'work_mode_and_entry',
   'decision_style',
-] as const
+  'main_talents',
+  'work_environment',
+  'communication',
+  'risks',
+  'management',
+  'development_potential',
+] as const satisfies readonly TalentMapSectionKey[]
 
 export type SupportedGeneratedSectionKey =
   (typeof SUPPORTED_GENERATED_SECTION_KEYS)[number]

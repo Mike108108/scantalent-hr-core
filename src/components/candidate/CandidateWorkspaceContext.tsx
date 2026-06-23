@@ -39,6 +39,7 @@ import {
 } from '../../lib/talentMapSectionErrors'
 import { useAuth } from '../../lib/auth'
 import {
+  isSupportedGeneratedSectionKey,
   SUPPORTED_GENERATED_SECTION_KEYS,
   type SupportedGeneratedSectionKey,
 } from '../../lib/talentMapGeneratedSections'
@@ -462,7 +463,9 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
 
     let cancelled = false
     setSectionGenerationLoading(true)
-    setActiveGeneratingSectionKey(processingSectionReport.layer_key as SupportedGeneratedSectionKey)
+    if (isSupportedGeneratedSectionKey(processingSectionReport.layer_key)) {
+      setActiveGeneratingSectionKey(processingSectionReport.layer_key)
+    }
     setSectionGenerationError(null)
     setSectionGenerationTechnicalError(null)
 

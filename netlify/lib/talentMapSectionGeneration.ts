@@ -15,6 +15,7 @@ import { getTalentMapDepthProfile } from '../../src/lib/talentMapDepthProfiles'
 import {
   estimateOpenAiCostUsd,
   getTalentMapModelPreset,
+  TALENT_MAP_PRESET_WORKFLOW_ROLE,
   type TalentMapModelPreset,
 } from '../../src/lib/talentMapModelPresets'
 import {
@@ -914,6 +915,7 @@ export async function runBackgroundSectionGeneration(params: {
       generation_mode: resolvedInput.generationMode,
       openai_schema_name: openaiSchemaName,
       input_bundle_mode: resolvedInput.inputBundleMode,
+      preset_workflow_role: TALENT_MAP_PRESET_WORKFLOW_ROLE[modelPreset.id],
       source_integrity: sourceIntegrityResult.stats,
     },
   }

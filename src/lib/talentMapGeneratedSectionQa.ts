@@ -122,20 +122,6 @@ function containsPhrase(text: string, phrase: string): boolean {
   return text.toLowerCase().includes(phrase.toLowerCase())
 }
 
-const BASE_FORBIDDEN_PHRASES = [
-  'human design',
-  'дизайн человека',
-  'бодиграф',
-  'wait for the invitation',
-  'split definition',
-  'g center',
-  'g-центр',
-  'personality sun',
-  'design sun',
-  'personality earth',
-  'design earth',
-] as const
-
 const BASE_FORBIDDEN_WORD_PATTERNS: ReadonlyArray<{ label: string; pattern: RegExp }> = [
   { label: 'projector', pattern: /\bprojector\b/i },
   { label: 'проектор', pattern: /(^|[^а-яёa-z])проектор(а|у|ом|ы)?([^а-яёa-z]|$)/iu },
@@ -178,6 +164,43 @@ const BASE_FORBIDDEN_WORD_PATTERNS: ReadonlyArray<{ label: string; pattern: RegE
   { label: 'activation', pattern: /\bactivation\b/i },
   { label: 'активация', pattern: /(^|[^а-яёa-z])активац(ия|ии|ию|ией|ий)?([^а-яёa-z]|$)/iu },
 ]
+
+const BASE_FORBIDDEN_PHRASES = [
+  'human design',
+  'дизайн человека',
+  'бодиграф',
+  'wait for the invitation',
+  'split definition',
+  'g center',
+  'g-центр',
+  'personality sun',
+  'design sun',
+  'personality earth',
+  'design earth',
+] as const
+
+/** Non-blocking: semi-technical HR calques that prompts should avoid in Base/client text. */
+const BASE_SEMI_TECHNICAL_HR_TERMS: ReadonlyArray<{ label: string; pattern: RegExp }> = [
+  { label: 'отклик', pattern: /(^|[^а-яёa-z])отклик(а|у|ом|и|ов|ами|ах|е)?([^а-яёa-z]|$)/iu },
+  { label: 'приглашение', pattern: /(^|[^а-яёa-z])приглашен(ие|ия|ию|ием|ии|ий)?([^а-яёa-z]|$)/iu },
+  { label: 'интуитивный', pattern: /(^|[^а-яёa-z])интуитивн(ый|ая|ое|ые|ого|ой|ому|ым|ыми|о|а|ы)?([^а-яёa-z]|$)/iu },
+  { label: 'внутренний авторитет', pattern: /внутренн(ий|его|ем|им)\s+авторитет/iu },
+  { label: 'энергетический', pattern: /(^|[^а-яёa-z])энергетическ(ий|ая|ое|ие|ого|ой|ому|им|ими|ом|их|ими)?([^а-яёa-z]|$)/iu },
+  { label: 'аура', pattern: /(^|[^а-яёa-z])аур(а|ы|е|у|ой|ою|ами|ах)?([^а-яёa-z]|$)/iu },
+  { label: 'определение', pattern: /(^|[^а-яёa-z])определени(е|я|ю|ем|и|ями|ях)?([^а-яёa-z]|$)/iu },
+]
+
+function findSemiTechnicalHrTerms(text: string): string[] {
+  const hits = new Set<string>()
+
+  for (const { label, pattern } of BASE_SEMI_TECHNICAL_HR_TERMS) {
+    if (pattern.test(text)) {
+      hits.add(label)
+    }
+  }
+
+  return [...hits]
+}
 
 function findBaseForbiddenHdTerms(text: string, extraTerms: readonly string[]): string[] {
   const hits = new Set<string>()
@@ -293,6 +316,11 @@ function collectContentQaWarnings(
   const baseForbiddenTerms = findBaseForbiddenHdTerms(baseScanText, GENERATED_BASE_FORBIDDEN_TERMS)
   for (const term of baseForbiddenTerms) {
     warnings.push(qaWarning('base.technical_language', term))
+  }
+
+  const semiTechnicalTerms = findSemiTechnicalHrTerms(baseClientText)
+  for (const term of semiTechnicalTerms) {
+    warnings.push(qaWarning('base.semi_technical_hr_language', term))
   }
 
   const garbageTerms = findGarbageTerms(baseClientText, GENERATED_GARBAGE_TERMS)

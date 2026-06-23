@@ -3,6 +3,11 @@ import {
   isTalentMapGeneratedSectionContent,
   TALENT_MAP_GENERATED_SECTION_SCHEMA_VERSION,
 } from './talentMapGeneratedSectionContract'
+import {
+  TALENT_MAP_PRESET_WORKFLOW_ROLE,
+  type TalentMapModelPresetId,
+  type TalentMapPresetWorkflowRole,
+} from './talentMapModelPresets'
 
 const NOT_AVAILABLE = 'not_available'
 const MAX_OUTPUT_TOKENS_NOT_SET = 'not set'
@@ -140,7 +145,19 @@ export type ReportGenerationMeta = {
   generationMode: string
   openaiSchemaName: string
   inputBundleMode: string
+  presetWorkflowRole: string
   sourceIntegritySummary: string
+}
+
+function resolvePresetWorkflowRole(presetId: string): TalentMapPresetWorkflowRole | null {
+  if (
+    typeof presetId === 'string' &&
+    Object.prototype.hasOwnProperty.call(TALENT_MAP_PRESET_WORKFLOW_ROLE, presetId)
+  ) {
+    return TALENT_MAP_PRESET_WORKFLOW_ROLE[presetId as TalentMapModelPresetId]
+  }
+
+  return null
 }
 
 export function resolveReportGenerationMeta(report: TalentMapSectionReport): ReportGenerationMeta {
@@ -168,10 +185,17 @@ export function resolveReportGenerationMeta(report: TalentMapSectionReport): Rep
         ].join(', ')
       : NOT_AVAILABLE
 
+  const presetId =
+    generationMeta?.model_preset_id ??
+    (typeof usage?.model_preset_id === 'string' ? usage.model_preset_id : NOT_AVAILABLE)
+
+  const presetWorkflowRole =
+    generationMeta?.preset_workflow_role ??
+    resolvePresetWorkflowRole(presetId) ??
+    NOT_AVAILABLE
+
   return {
-    presetId:
-      generationMeta?.model_preset_id ??
-      (typeof usage?.model_preset_id === 'string' ? usage.model_preset_id : NOT_AVAILABLE),
+    presetId,
     presetLabel:
       generationMeta?.model_preset_label ??
       (typeof usage?.model_preset_label === 'string' ? usage.model_preset_label : NOT_AVAILABLE),
@@ -218,6 +242,7 @@ export function resolveReportGenerationMeta(report: TalentMapSectionReport): Rep
     inputBundleMode:
       generationMeta?.input_bundle_mode ??
       (typeof usage?.input_bundle_mode === 'string' ? usage.input_bundle_mode : NOT_AVAILABLE),
+    presetWorkflowRole,
     sourceIntegritySummary,
   }
 }
@@ -399,6 +424,9 @@ export function buildTalentMapSectionReportMarkdown(report: TalentMapSectionRepo
       : []),
     ...(meta.inputBundleMode !== NOT_AVAILABLE
       ? [formatMarkdownListField('input_bundle_mode', meta.inputBundleMode)]
+      : []),
+    ...(meta.presetWorkflowRole !== NOT_AVAILABLE
+      ? [formatMarkdownListField('preset_workflow_role', meta.presetWorkflowRole)]
       : []),
     ...(meta.sourceIntegritySummary !== NOT_AVAILABLE
       ? [formatMarkdownListField('source_integrity', meta.sourceIntegritySummary)]

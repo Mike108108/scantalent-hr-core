@@ -321,17 +321,6 @@ export function enforceGeneratedSectionSourceIntegrity(params: {
     warnings.push(integrityWarning('source_integrity.removed_unknown_sources', details.join(', ')))
   }
 
-  if (normalizedCount > 0) {
-    const uniqueNormalizedPairs = dedupePreserveOrder([
-      ...normalized.source_chips,
-      ...normalized.pro_source_logic,
-      ...normalized.summary_source_element_keys,
-    ])
-    warnings.push(
-      integrityWarning('source_integrity.normalized_source_keys', uniqueNormalizedPairs.join(', ')),
-    )
-  }
-
   if (rebuiltSourceChips) {
     warnings.push(
       integrityWarning(

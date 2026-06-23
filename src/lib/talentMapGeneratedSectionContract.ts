@@ -1,4 +1,5 @@
 import type { TalentMapSectionKey } from './talentMapSections'
+import type { TalentMapPresetWorkflowRole } from './talentMapModelPresets'
 
 export const TALENT_MAP_GENERATED_SECTION_SCHEMA_VERSION = 'talent_map_section_v1_1' as const
 
@@ -25,6 +26,7 @@ export type TalentMapGeneratedSectionGenerationMeta = {
     | 'talent_map_standard_snapshot_v1_0'
     | 'talent_map_generated_section_v1_1'
   input_bundle_mode?: 'standard_snapshot_input_v1' | 'full_section_input_v1'
+  preset_workflow_role?: TalentMapPresetWorkflowRole
   source_integrity?: TalentMapGeneratedSectionSourceIntegrityMeta
 }
 

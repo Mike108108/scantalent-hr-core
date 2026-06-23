@@ -200,6 +200,21 @@ Split Definition →
 Curiosity →
 умеет связывать факты, задавать вопросы и объяснять смысл так, чтобы другие включались
 
+отклик →
+первичная реакция на задачу / рабочая включённость / готовность включиться
+
+приглашение →
+явный рабочий запрос / признанная зона ответственности / понятная роль
+
+интуитивный →
+быстрая первичная оценка уместности / раннее замечание риска
+
+селезёночный сигнал →
+ранний сигнал риска / быстрое замечание небезопасного или нежизнеспособного хода
+
+энергетический →
+рабочий / поведенческий / ресурсный / нагрузочный
+
 Каждый Base-пункт должен быть прикладным.
 
 Плохо:
@@ -310,11 +325,12 @@ export function buildTalentMapSectionSystemPrompt(params: {
     'Принцип depth:',
     ...(depthProfile.id === 'compact'
       ? [
-          '- Compact / standard = fast neutral layer snapshot. Описывает только текущий слой карты кандидата.',
+          '- Compact / standard = mass screening snapshot. Описывает только текущий слой карты кандидата.',
           '- На этом этапе нет контекста вакансии. Не сравнивай кандидата с вакансией или ролью.',
           '- Do not write: why to move forward; why to reject; good/bad candidate; fit for role; fit for vacancy;',
           '  what to compare with a role later; what to compare with a vacancy later;',
           '  «на что смотреть при сравнении с ролью»; «на что смотреть при сравнении с вакансией».',
+          '- No onboarding/management playbook. No long interview/testing expansion.',
           '- Describe only what is visible in this layer of the candidate map.',
           '- Visible user output = headline + one substantial hr_summary paragraph (600–1 000 chars, 5–7 sentences).',
           '- For standard/compact, base.hr_summary is the main visible client output. Write one paragraph, not one sentence.',
@@ -324,18 +340,53 @@ export function buildTalentMapSectionSystemPrompt(params: {
           '- Для standard основной видимый текст — один содержательный абзац, не одна фраза.',
           '- Остальные Base blocks и Pro — минимально для valid JSON; смысл слоя должен быть в hr_summary.',
         ]
-      : [
-          '- Compact / standard = fast neutral layer snapshot (no vacancy/role comparison).',
-        ]),
-    '- Full = основной клиентский уровень. Больше связей и объяснений, чем compact.',
-    '- Expert = больше синтеза, нюансов, сценариев и evidence logic.',
+      : depthProfile.id === 'full'
+        ? [
+            '- Compact / standard = mass screening snapshot (no vacancy/role comparison, no onboarding playbook).',
+            '- Full / quality = candidate assessment. Helps evaluate the candidate and decide what to check before decision.',
+            '- Full helps HR understand strengths, risks, conditions, and practical checks before a hiring decision.',
+            '- Full may include: what to check in interview/trial; first working experiments; behavior risks to verify.',
+            '- Full must NOT become a full post-decision onboarding/management playbook.',
+            '- Do not write detailed guidance on: onboarding after hire; team/process integration;',
+            '  long-term management playbook; how not to break the person after acceptance.',
+          ]
+        : [
+            '- Compact / standard = mass screening snapshot (no vacancy/role comparison).',
+            '- Full / quality = candidate assessment (what to verify before decision, not post-decision playbook).',
+            '- Expert / premium = management and onboarding playbook for important candidates.',
+            '- Premium explains how to introduce, adapt, manage, integrate into team/processes, and avoid breaking strengths.',
+            '- Premium must NOT be only a longer version of Quality.',
+            '- Premium must add management/adaptation/onboarding value that Quality does not provide.',
+            '- Do not merely add more generic bullets. Translate the layer into actions for a manager.',
+            '- Premium does not decide hire/no-hire. It explains how to work with the person if management attention is warranted.',
+          ]),
     ...(depthProfile.id === 'compact'
       ? []
-      : [
+      : depthProfile.id === 'full'
+        ? ['- Expert = onboarding/management playbook — not used in this profile.']
+        : []),
+    ...(depthProfile.id !== 'compact'
+      ? [
           '- Standard/compact must still be production-quality. Do not produce shallow generic HR advice.',
           '- Do not write vague points like «важно поддерживать», «нужно учитывать особенности», «подходит для разных задач» unless the point explains exactly what to do/check.',
-          '- Each compact point should answer one of: how to start work; what task format to give; what manager should do; what risk to watch; what to check in interview/trial/first week.',
-        ]),
+        ]
+      : []),
+    ...(depthProfile.id === 'full'
+      ? [
+          '- Each full/quality point should answer: what to verify about the candidate; what to test;',
+          '  what risks to watch; how to run first working experiments; how to read behavior before decision.',
+        ]
+      : depthProfile.id === 'expert'
+        ? [
+            '- Each expert/premium point should answer: how to introduce/adapt/manage; how to integrate into team/processes;',
+            '  what management mistakes to avoid; what early signals show talent vs distortion.',
+          ]
+        : depthProfile.id === 'compact'
+          ? [
+              '- Each compact point should answer one of: main layer pattern; work manifestation;',
+              '  helpful conditions; risk if managed poorly — without interview/trial/onboarding expansion.',
+            ]
+          : []),
     '- Base must remain client-facing and without Human Design/source terms.',
     '- Pro can use source logic but only from allowed source chips.',
     '- Не добирай пункты ради количества. Меньше сильных пунктов лучше слабых.',

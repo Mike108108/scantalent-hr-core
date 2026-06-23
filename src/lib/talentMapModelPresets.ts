@@ -2,6 +2,20 @@ import type { TalentMapDepthProfileId } from './talentMapDepthProfiles'
 
 export type TalentMapModelPresetId = 'standard' | 'quality' | 'premium'
 
+export type TalentMapPresetWorkflowRole =
+  | 'mass_screening_snapshot'
+  | 'candidate_assessment'
+  | 'onboarding_management_playbook'
+
+export const TALENT_MAP_PRESET_WORKFLOW_ROLE: Record<
+  TalentMapModelPresetId,
+  TalentMapPresetWorkflowRole
+> = {
+  standard: 'mass_screening_snapshot',
+  quality: 'candidate_assessment',
+  premium: 'onboarding_management_playbook',
+}
+
 export type TalentMapReasoningEffort = 'low' | 'medium' | 'high'
 
 export type TalentMapModelPreset = {
@@ -28,7 +42,8 @@ export const TALENT_MAP_MODEL_PRESETS: Record<TalentMapModelPresetId, TalentMapM
     id: 'standard',
     depth_profile_id: 'compact',
     ui_label: 'Стандартная сборка',
-    ui_description: 'Быстрый слой-портрет — нейтральное описание текущего слоя карты кандидата.',
+    ui_description:
+      'Быстрый слой-портрет для массового первичного скрининга кандидатов.',
     model: 'gpt-5-mini',
     reasoning_effort: 'low',
     internal_credit_cost: 3,
@@ -41,7 +56,8 @@ export const TALENT_MAP_MODEL_PRESETS: Record<TalentMapModelPresetId, TalentMapM
     id: 'quality',
     depth_profile_id: 'full',
     ui_label: 'Качественная сборка',
-    ui_description: 'Полный HR-разбор — основной клиентский уровень карты.',
+    ui_description:
+      'Полный HR-разбор кандидата для глубокой оценки, проверки рисков и подготовки решения.',
     model: 'gpt-5.4-mini',
     reasoning_effort: 'low',
     internal_credit_cost: 8,
@@ -54,7 +70,8 @@ export const TALENT_MAP_MODEL_PRESETS: Record<TalentMapModelPresetId, TalentMapM
     id: 'premium',
     depth_profile_id: 'expert',
     ui_label: 'Максимальная сборка',
-    ui_description: 'Экспертная сборка — синтез с нюансами для важного кандидата.',
+    ui_description:
+      'Экспертный управленческий разбор для важных кандидатов: адаптация, ввод в роль, команда, процессы, риски управления и условия раскрытия.',
     model: 'gpt-5.4',
     reasoning_effort: 'medium',
     internal_credit_cost: 25,

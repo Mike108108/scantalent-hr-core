@@ -145,17 +145,23 @@ export function buildStandardSnapshotInputForAi(params: {
     })),
     source_digests_compact: selectCompactSourceDigests(sourceDigests),
     guardrails: {
+      workflow_role: 'mass_screening_snapshot',
       no_hd_terms_in_visible_text: true,
       no_role_fit: true,
       no_vacancy_fit: true,
       no_scores: true,
       no_hire_decision: true,
+      no_onboarding_playbook: true,
+      no_management_playbook: true,
+      readable_in_seconds: '30-60',
+      clean_hr_language: true,
     },
     output_rules: {
       visible_format: 'headline_plus_one_paragraph',
       paragraph_target_chars: '600-1000',
       paragraph_min_chars: 450,
       paragraph_max_chars: 1100,
+      not_a_mini_premium: true,
     },
   }
 }

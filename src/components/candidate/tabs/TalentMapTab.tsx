@@ -10,7 +10,6 @@ import {
 } from '../../../lib/talentMapSections'
 import {
   isSupportedGeneratedSectionKey,
-  SUPPORTED_GENERATED_SECTION_KEYS,
   type SupportedGeneratedSectionKey,
 } from '../../../lib/talentMapGeneratedSections'
 import type { TalentMapSectionReport } from '../../../lib/talentMapSectionApi'
@@ -564,17 +563,22 @@ function ModelPresetSelector(props: {
   )
 }
 
+const DEFAULT_EXPANDED_TALENT_MAP_SECTION_KEYS = [
+  'work_mode_and_entry',
+  'decision_style',
+] as const satisfies readonly TalentMapSectionKey[]
+
 function buildInitialExpandedSectionKeys(
   sectionReports: Partial<Record<TalentMapSectionKey, TalentMapSectionReport>>,
 ): Set<TalentMapSectionKey> {
-  const keys = new Set<TalentMapSectionKey>()
+  const keys = new Set<TalentMapSectionKey>(DEFAULT_EXPANDED_TALENT_MAP_SECTION_KEYS)
 
   for (const section of MVP_TALENT_MAP_SECTIONS) {
     const report = sectionReports[section.key]
     const isReadyOrProcessing =
       report?.status === 'ready' || report?.status === 'processing'
 
-    if (isSupportedGeneratedSectionKey(section.key) || isReadyOrProcessing) {
+    if (isReadyOrProcessing) {
       keys.add(section.key)
     }
   }
@@ -604,7 +608,7 @@ export function TalentMapTab() {
     Partial<Record<TalentMapSectionKey, number>>
   >({})
   const [expandedSectionKeys, setExpandedSectionKeys] = useState<Set<TalentMapSectionKey>>(
-    () => new Set(SUPPORTED_GENERATED_SECTION_KEYS),
+    () => buildInitialExpandedSectionKeys({}),
   )
   const accordionInitializedRef = useRef(false)
 

@@ -11,6 +11,7 @@ import {
 import {
   isSupportedGeneratedSectionKey,
   SUPPORTED_GENERATED_SECTION_KEYS,
+  type SupportedGeneratedSectionKey,
 } from '../../../lib/talentMapGeneratedSections'
 import type { TalentMapSectionReport } from '../../../lib/talentMapSectionApi'
 import {
@@ -642,11 +643,7 @@ export function TalentMapTab() {
     sectionInputAudit?.overall_severity === 'ok' &&
     !activeGeneratingSectionKey
 
-  const canGenerateSectionFor = (sectionKey: TalentMapSectionKey) => {
-    if (!isSupportedGeneratedSectionKey(sectionKey)) {
-      return false
-    }
-
+  const canGenerateSectionFor = (sectionKey: SupportedGeneratedSectionKey) => {
     const sectionPreview = synthesisPreview?.sections.find(
       (item) => item.section_key === sectionKey,
     )
@@ -716,25 +713,36 @@ export function TalentMapTab() {
           const generationStatus: SectionGenerationStatus =
             sectionPreview?.generation_status ?? 'not_generated'
 
+          const supportedGeneratedSectionKey = isSupportedGeneratedSectionKey(section.key)
+            ? section.key
+            : null
+
           const report = sectionReports[section.key]
           const uiStatus = resolveSectionUiStatus({
             sectionKey: section.key,
             sectionPreviewStatus: generationStatus,
             report,
-            isGenerating: activeGeneratingSectionKey === section.key,
+            isGenerating:
+              supportedGeneratedSectionKey !== null &&
+              activeGeneratingSectionKey === supportedGeneratedSectionKey,
           })
 
           const budget = sectionPreview?.budget_summary
           const sourcesReady = budget?.total_selected ?? bundleResult?.coverage?.matched_elements ?? 0
-          const isSupportedSection = isSupportedGeneratedSectionKey(section.key)
-          const canGenerateSection = canGenerateSectionFor(section.key)
+          const isSupportedSection = supportedGeneratedSectionKey !== null
+          const canGenerateSection = supportedGeneratedSectionKey
+            ? canGenerateSectionFor(supportedGeneratedSectionKey)
+            : false
           const sectionIsReady = report?.status === 'ready'
           const sectionIsError = report?.status === 'error'
           const sectionIsProcessing =
-            (activeGeneratingSectionKey === section.key || report?.status === 'processing') &&
-            isSupportedSection
+            isSupportedSection &&
+            (activeGeneratingSectionKey === supportedGeneratedSectionKey ||
+              report?.status === 'processing')
           const isSectionExpanded = expandedSectionKeys.has(section.key)
-          const localStartedAtMs = localGenerationStartedAtBySection[section.key] ?? null
+          const localStartedAtMs = supportedGeneratedSectionKey
+            ? (localGenerationStartedAtBySection[supportedGeneratedSectionKey] ?? null)
+            : null
 
           return (
             <Card
@@ -841,9 +849,13 @@ export function TalentMapTab() {
                             type="button"
                             disabled={!canGenerateSection || sectionIsProcessing}
                             onClick={() => {
+                              if (!supportedGeneratedSectionKey) {
+                                return
+                              }
+
                               setLocalGenerationStartedAtBySection((prev) => ({
                                 ...prev,
-                                [section.key]: Date.now(),
+                                [supportedGeneratedSectionKey]: Date.now(),
                               }))
                               setExpandedSectionKeys((prev) => {
                                 const next = new Set(prev)
@@ -851,7 +863,7 @@ export function TalentMapTab() {
                                 return next
                               })
                               void handleGenerateTalentMapSection(
-                                section.key,
+                                supportedGeneratedSectionKey,
                                 selectedModelPresetId,
                               )
                             }}

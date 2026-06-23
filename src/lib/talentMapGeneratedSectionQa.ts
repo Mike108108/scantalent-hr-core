@@ -1,10 +1,13 @@
 import type { SourceChip } from './talentMapSynthesisContract'
 import { sourceChipFullKey } from './talentMapGeneratedSectionSourceIntegrity'
 import {
+  MIN_STANDARD_SNAPSHOT_CHARS,
   renderGeneratedSectionBaseMarkdown,
+  renderGeneratedSectionStandardSnapshotMarkdown,
   validateTalentMapGeneratedSection,
   type TalentMapGeneratedSection,
 } from './talentMapGeneratedSectionContract'
+import type { TalentMapGenerationMode } from './talentMapStandardSnapshotContract'
 
 export type GeneratedSectionQaResult = {
   /** False only when schema/JSON validation fails (technical blocker). */
@@ -261,22 +264,32 @@ function qaWarning(category: string, detail: string): string {
   return `warning: ${category}: ${detail}`
 }
 
+function collectStandardSnapshotVisibleText(section: TalentMapGeneratedSection): string {
+  return renderGeneratedSectionStandardSnapshotMarkdown(section)
+}
+
 function collectContentQaWarnings(
   section: TalentMapGeneratedSection,
   inputSourceChips: SourceChip[],
+  mode: TalentMapGenerationMode,
 ): string[] {
   const warnings: string[] = []
+  const isStandardSnapshot = mode === 'standard_snapshot'
 
-  if (isBaseEmpty(section)) {
+  if (!isStandardSnapshot && isBaseEmpty(section)) {
     warnings.push(qaWarning('text_quality.empty_base', 'Base section content is empty.'))
   }
 
-  if (isProEmpty(section)) {
+  if (!isStandardSnapshot && isProEmpty(section)) {
     warnings.push(qaWarning('text_quality.empty_pro', 'Pro section content is empty.'))
   }
 
-  const baseScanText = collectBaseScanText(section)
-  const baseClientText = collectBaseClientText(section)
+  const baseScanText = isStandardSnapshot
+    ? collectStandardSnapshotVisibleText(section)
+    : collectBaseScanText(section)
+  const baseClientText = isStandardSnapshot
+    ? collectStandardSnapshotVisibleText(section)
+    : collectBaseClientText(section)
   const baseForbiddenTerms = findBaseForbiddenHdTerms(baseScanText, GENERATED_BASE_FORBIDDEN_TERMS)
   for (const term of baseForbiddenTerms) {
     warnings.push(qaWarning('base.technical_language', term))
@@ -312,26 +325,28 @@ function collectContentQaWarnings(
     )
   }
 
-  if (section.pro.interpretation_limits.length === 0) {
+  if (!isStandardSnapshot && section.pro.interpretation_limits.length === 0) {
     warnings.push(qaWarning('pro.interpretation_limits', 'interpretation_limits is empty.'))
   }
 
-  if (section.pro.reality_checks.length === 0) {
+  if (!isStandardSnapshot && section.pro.reality_checks.length === 0) {
     warnings.push(qaWarning('pro.reality_checks', 'reality_checks is empty.'))
   }
 
-  const invalidSourceLogicKeys = section.pro.source_logic.filter(
-    (entry) => !isSourceKeyAllowed(entry.source_element_key, allowedSourceKeys),
-  )
-  if (invalidSourceLogicKeys.length > 0) {
-    warnings.push(
-      qaWarning(
-        'pro.source_logic',
-        `unknown source_element_key values: ${invalidSourceLogicKeys
-          .map((entry) => entry.source_element_key)
-          .join(', ')}`,
-      ),
+  if (!isStandardSnapshot) {
+    const invalidSourceLogicKeys = section.pro.source_logic.filter(
+      (entry) => !isSourceKeyAllowed(entry.source_element_key, allowedSourceKeys),
     )
+    if (invalidSourceLogicKeys.length > 0) {
+      warnings.push(
+        qaWarning(
+          'pro.source_logic',
+          `unknown source_element_key values: ${invalidSourceLogicKeys
+            .map((entry) => entry.source_element_key)
+            .join(', ')}`,
+        ),
+      )
+    }
   }
 
   const invalidSummaryKeys = section.summary_for_synthesis.source_element_keys.filter(
@@ -346,6 +361,24 @@ function collectContentQaWarnings(
     )
   }
 
+  if (isStandardSnapshot) {
+    if (!section.base.headline.trim()) {
+      warnings.push(qaWarning('standard_snapshot.empty_headline', 'headline is empty.'))
+    }
+
+    const paragraph = section.base.hr_summary.trim()
+    if (!paragraph) {
+      warnings.push(qaWarning('standard_snapshot.empty_paragraph', 'snapshot paragraph is empty.'))
+    } else if (paragraph.length < MIN_STANDARD_SNAPSHOT_CHARS) {
+      warnings.push(
+        qaWarning(
+          'standard_snapshot.too_short',
+          `snapshot paragraph is shorter than ${MIN_STANDARD_SNAPSHOT_CHARS} chars.`,
+        ),
+      )
+    }
+  }
+
   if (/\t+/.test(baseClientText) || /[ ]{2,}/.test(baseClientText) || /\n{3,}/.test(baseClientText)) {
     warnings.push(qaWarning('text_quality.excessive_whitespace', 'excessive whitespace detected'))
   }
@@ -356,7 +389,9 @@ function collectContentQaWarnings(
 export function runTalentMapGeneratedSectionQa(params: {
   generated: unknown
   inputSourceChips: SourceChip[]
+  mode?: TalentMapGenerationMode
 }): GeneratedSectionQaResult {
+  const mode = params.mode ?? 'full_section'
   const validation = validateTalentMapGeneratedSection(params.generated)
   if (!validation.ok || !validation.data) {
     return {
@@ -366,7 +401,7 @@ export function runTalentMapGeneratedSectionQa(params: {
     }
   }
 
-  const warnings = collectContentQaWarnings(validation.data, params.inputSourceChips)
+  const warnings = collectContentQaWarnings(validation.data, params.inputSourceChips, mode)
 
   return { ok: true, issues: [], warnings, data: validation.data }
 }

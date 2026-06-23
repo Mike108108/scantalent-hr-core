@@ -797,6 +797,8 @@ export function isOpenAiSectionParseError(error: unknown): error is OpenAiSectio
 export function buildOpenAiParseFailureContentJson(params: {
   message: string
   diagnostics: Record<string, unknown>
+  schema_name?: string
+  generation_mode?: 'standard_snapshot' | 'full_section'
 }): Record<string, unknown> {
   const errorKind =
     typeof params.diagnostics.error_kind === 'string'
@@ -808,6 +810,8 @@ export function buildOpenAiParseFailureContentJson(params: {
     error_kind: errorKind,
     message: params.message,
     parse_diagnostics: params.diagnostics,
+    ...(params.schema_name ? { schema_name: params.schema_name } : {}),
+    ...(params.generation_mode ? { generation_mode: params.generation_mode } : {}),
   }
 }
 

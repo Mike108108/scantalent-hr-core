@@ -160,6 +160,11 @@ export function buildStandardSnapshotInputForAi(params: {
   }
 }
 
+function toStandardSnapshotOpenAiInput(input: Record<string, unknown>): Record<string, unknown> {
+  const { source_chips: _backendSourceChips, ...openAiInput } = input
+  return openAiInput
+}
+
 export function resolveSectionGenerationInputForPreset(params: {
   sanitizedInput: SanitizedSectionInput
   sourceChips: SourceChip[]
@@ -173,9 +178,18 @@ export function resolveSectionGenerationInputForPreset(params: {
 } {
   if (params.modelPreset.id === 'standard') {
     if (isStandardSnapshotInput(params.sanitizedInput)) {
+      const sourceChips = Array.isArray(params.sanitizedInput.source_chips)
+        ? params.sanitizedInput.source_chips
+        : params.sourceChips
+
       return {
-        inputForOpenAi: params.sanitizedInput,
-        persistedSectionInput: params.sanitizedInput,
+        inputForOpenAi: toStandardSnapshotOpenAiInput(
+          params.sanitizedInput as Record<string, unknown>,
+        ),
+        persistedSectionInput: {
+          ...params.sanitizedInput,
+          source_chips: sourceChips,
+        },
         inputBundleMode: 'standard_snapshot_input_v1',
         generationMode: 'standard_snapshot',
       }
@@ -189,7 +203,10 @@ export function resolveSectionGenerationInputForPreset(params: {
 
     return {
       inputForOpenAi: standardInput,
-      persistedSectionInput: standardInput,
+      persistedSectionInput: {
+        ...standardInput,
+        source_chips: params.sourceChips,
+      },
       inputBundleMode: 'standard_snapshot_input_v1',
       generationMode: 'standard_snapshot',
     }

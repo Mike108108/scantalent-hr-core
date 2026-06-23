@@ -137,6 +137,9 @@ export type ReportGenerationMeta = {
   estimatedCostUsd: string
   depthProfileId: string
   depthProfileLabel: string
+  generationMode: string
+  openaiSchemaName: string
+  inputBundleMode: string
   sourceIntegritySummary: string
 }
 
@@ -206,6 +209,15 @@ export function resolveReportGenerationMeta(report: TalentMapSectionReport): Rep
       typeof generationMeta?.depth_profile_label === 'string'
         ? generationMeta.depth_profile_label
         : NOT_AVAILABLE,
+    generationMode:
+      generationMeta?.generation_mode ??
+      (typeof usage?.generation_mode === 'string' ? usage.generation_mode : NOT_AVAILABLE),
+    openaiSchemaName:
+      generationMeta?.openai_schema_name ??
+      (typeof usage?.openai_schema_name === 'string' ? usage.openai_schema_name : NOT_AVAILABLE),
+    inputBundleMode:
+      generationMeta?.input_bundle_mode ??
+      (typeof usage?.input_bundle_mode === 'string' ? usage.input_bundle_mode : NOT_AVAILABLE),
     sourceIntegritySummary,
   }
 }
@@ -378,6 +390,15 @@ export function buildTalentMapSectionReportMarkdown(report: TalentMapSectionRepo
       : []),
     ...(meta.depthProfileLabel !== NOT_AVAILABLE
       ? [formatMarkdownListField('depth_profile_label', meta.depthProfileLabel)]
+      : []),
+    ...(meta.generationMode !== NOT_AVAILABLE
+      ? [formatMarkdownListField('generation_mode', meta.generationMode)]
+      : []),
+    ...(meta.openaiSchemaName !== NOT_AVAILABLE
+      ? [formatMarkdownListField('openai_schema_name', meta.openaiSchemaName)]
+      : []),
+    ...(meta.inputBundleMode !== NOT_AVAILABLE
+      ? [formatMarkdownListField('input_bundle_mode', meta.inputBundleMode)]
       : []),
     ...(meta.sourceIntegritySummary !== NOT_AVAILABLE
       ? [formatMarkdownListField('source_integrity', meta.sourceIntegritySummary)]

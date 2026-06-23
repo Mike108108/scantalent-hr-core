@@ -146,6 +146,7 @@ function rebuildSourceChipsFromValidKeys(params: {
 export function enforceGeneratedSectionSourceIntegrity(params: {
   section: TalentMapGeneratedSection
   inputSourceChips: SourceChip[]
+  mode?: 'standard_snapshot' | 'full_section'
 }): {
   section: TalentMapGeneratedSection
   warnings: TalentMapGeneratedSectionQualityFlag[]
@@ -167,6 +168,7 @@ export function enforceGeneratedSectionSourceIntegrity(params: {
   }
 } {
   const { inputSourceChips } = params
+  const isStandardSnapshot = params.mode === 'standard_snapshot'
   const { allowedKeys, byFullKey, allowedKeysByRawElementKey } =
     buildAllowedKeysIndex(inputSourceChips)
 
@@ -319,17 +321,6 @@ export function enforceGeneratedSectionSourceIntegrity(params: {
     warnings.push(integrityWarning('source_integrity.removed_unknown_sources', details.join(', ')))
   }
 
-  if (normalizedCount > 0) {
-    const uniqueNormalizedPairs = dedupePreserveOrder([
-      ...normalized.source_chips,
-      ...normalized.pro_source_logic,
-      ...normalized.summary_source_element_keys,
-    ])
-    warnings.push(
-      integrityWarning('source_integrity.normalized_source_keys', uniqueNormalizedPairs.join(', ')),
-    )
-  }
-
   if (rebuiltSourceChips) {
     warnings.push(
       integrityWarning(
@@ -339,7 +330,9 @@ export function enforceGeneratedSectionSourceIntegrity(params: {
     )
   }
 
-  if (section.source_chips.length === 0 || section.pro.source_logic.length === 0) {
+  if (section.source_chips.length === 0) {
+    warnings.push(integrityWarning('source_integrity.empty_after_cleanup', 'empty source references after cleanup'))
+  } else if (!isStandardSnapshot && section.pro.source_logic.length === 0) {
     warnings.push(integrityWarning('source_integrity.empty_after_cleanup', 'empty source references after cleanup'))
   }
 

@@ -20,6 +20,11 @@ export type TalentMapGeneratedSectionGenerationMeta = {
   estimated_cost_usd: number | null
   depth_profile_id: string
   depth_profile_label: string
+  generation_mode?: 'standard_snapshot' | 'full_section'
+  openai_schema_name?:
+    | 'talent_map_standard_snapshot_v1_0'
+    | 'talent_map_generated_section_v1_1'
+  input_bundle_mode?: 'standard_snapshot_input_v1' | 'full_section_input_v1'
   source_integrity?: TalentMapGeneratedSectionSourceIntegrityMeta
 }
 

@@ -3,8 +3,6 @@ import { getTalentMapModelPreset } from '../../src/lib/talentMapModelPresets'
 import {
   buildErrorSummaryForSynthesis,
   buildProcessingAttemptUsageJson,
-  buildUsageJson,
-  enrichWorkModeSectionInputForGeneration,
   jsonResponse,
   prepareWorkModeSectionInput,
   resolveFunctionOrigin,
@@ -12,6 +10,8 @@ import {
   upsertProcessingLayerReport,
   WORK_MODE_SECTION_KEY,
 } from '../lib/talentMapSectionGeneration'
+import { resolveSectionGenerationInputForPreset } from '../../src/lib/talentMapStandardSnapshotInput'
+import { getTalentMapSectionDefinition } from '../../src/lib/talentMapSynthesisContract'
 import { AuthError, getSupabaseAdmin, readBearerAuthorizationHeader, verifyBearerUser } from '../lib/supabaseAdmin'
 
 type GenerateSectionPayload = {
@@ -153,14 +153,17 @@ export const handler: Handler = async (event) => {
     }
 
     const startedAt = new Date().toISOString()
-    const enrichedSectionInput = enrichWorkModeSectionInputForGeneration({
+    const sectionDefinition = getTalentMapSectionDefinition(WORK_MODE_SECTION_KEY)
+    const resolvedInput = resolveSectionGenerationInputForPreset({
       sanitizedInput: preparedInput.inputBundleJson.section_input,
       sourceChips: preparedInput.sectionInput.source_chips,
       modelPreset,
+      sectionGoal: sectionDefinition.section_goal,
     })
     const inputBundleJson = {
       ...preparedInput.inputBundleJson,
-      section_input: enrichedSectionInput,
+      section_input: resolvedInput.persistedSectionInput,
+      input_bundle_mode: resolvedInput.inputBundleMode,
       model_preset_id: modelPreset.id,
       model_preset_fallback_used: modelPresetFallbackUsed,
       async_generation: true,

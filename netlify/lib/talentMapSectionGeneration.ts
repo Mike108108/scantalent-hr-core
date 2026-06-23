@@ -17,6 +17,19 @@ import {
   getTalentMapModelPreset,
   type TalentMapModelPreset,
 } from '../../src/lib/talentMapModelPresets'
+import {
+  adaptStandardSnapshotToGeneratedSection,
+  cleanStandardSnapshotText,
+  validateTalentMapStandardSnapshot,
+  type TalentMapGenerationMode,
+  type TalentMapInputBundleMode,
+  type TalentMapOpenAiSchemaName,
+} from '../../src/lib/talentMapStandardSnapshotContract'
+import {
+  buildTalentMapStandardSnapshotSystemPrompt,
+  TALENT_MAP_STANDARD_SNAPSHOT_OPENAI_JSON_SCHEMA,
+} from '../../src/lib/talentMapStandardSnapshotOpenAiSchema'
+import { resolveSectionGenerationInputForPreset } from '../../src/lib/talentMapStandardSnapshotInput'
 import { buildTalentMapSectionInputAudit } from '../../src/lib/talentMapSectionInputAudit'
 import {
   buildOpenAiParseFailureContentJson,
@@ -24,7 +37,6 @@ import {
   buildOpenAiIncompleteMaxOutputTokensDiagnostics,
   buildOpenAiResponsePreview,
   buildTalentMapSectionSystemPrompt,
-  enrichSectionInputForOpenAi,
   extractOpenAiResponseDiagnostics,
   extractOpenAiResponseText,
   extractOpenAiUsage,
@@ -102,6 +114,9 @@ export function buildUsageJson(params: {
   asyncGeneration?: boolean
   startedAt?: string
   finishedAt?: string
+  generationMode?: TalentMapGenerationMode
+  openaiSchemaName?: TalentMapOpenAiSchemaName
+  inputBundleMode?: TalentMapInputBundleMode
 }) {
   return {
     ...(params.openAiUsage ?? {}),
@@ -115,6 +130,9 @@ export function buildUsageJson(params: {
       ? { max_output_tokens: params.modelPreset.max_output_tokens }
       : {}),
     internal_credit_cost: params.modelPreset.internal_credit_cost,
+    ...(params.generationMode ? { generation_mode: params.generationMode } : {}),
+    ...(params.openaiSchemaName ? { openai_schema_name: params.openaiSchemaName } : {}),
+    ...(params.inputBundleMode ? { input_bundle_mode: params.inputBundleMode } : {}),
     ...(params.asyncGeneration ? { async_generation: true } : {}),
     ...(params.startedAt ? { started_at: params.startedAt } : {}),
     ...(params.finishedAt ? { finished_at: params.finishedAt } : {}),
@@ -160,6 +178,10 @@ export function buildEvidenceJson(sectionInput: {
 function resolveOpenAiCallErrorContext(
   error: unknown,
   modelPreset: TalentMapModelPreset,
+  generationContext?: {
+    generationMode?: TalentMapGenerationMode
+    openaiSchemaName?: TalentMapOpenAiSchemaName
+  },
 ): {
   message: string
   usage: Record<string, unknown> | null
@@ -180,6 +202,8 @@ function resolveOpenAiCallErrorContext(
       contentJson: buildOpenAiParseFailureContentJson({
         message: error.message,
         diagnostics: error.diagnostics,
+        schema_name: generationContext?.openaiSchemaName,
+        generation_mode: generationContext?.generationMode,
       }),
       qualityFlags: [
         error.message,
@@ -202,9 +226,14 @@ function resolveOpenAiCallErrorContext(
   }
 }
 
-export async function callOpenAiForSection(
+async function callOpenAiWithJsonSchema(
   enrichedInput: unknown,
   modelPreset: TalentMapModelPreset,
+  params: {
+    systemPrompt: string
+    schemaName: TalentMapOpenAiSchemaName
+    schema: Record<string, unknown>
+  },
 ): Promise<{
   parsed: unknown
   model: string
@@ -217,8 +246,6 @@ export async function callOpenAiForSection(
     throw new Error('OPENAI_API_KEY is not configured.')
   }
 
-  const depthProfile = getTalentMapDepthProfile(modelPreset.depth_profile_id)
-  const systemPrompt = buildTalentMapSectionSystemPrompt({ depthProfile })
   const userPayloadText = JSON.stringify(enrichedInput)
 
   const requestBody: Record<string, unknown> = {
@@ -235,7 +262,7 @@ export async function callOpenAiForSection(
         content: [
           {
             type: 'input_text',
-            text: systemPrompt,
+            text: params.systemPrompt,
           },
         ],
       },
@@ -252,9 +279,9 @@ export async function callOpenAiForSection(
     text: {
       format: {
         type: 'json_schema',
-        name: 'talent_map_generated_section_v1_1',
+        name: params.schemaName,
         strict: true,
-        schema: TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA,
+        schema: params.schema,
       },
     },
   }
@@ -314,6 +341,7 @@ export async function callOpenAiForSection(
         openai_response_diagnostics: openAiDiagnostics,
         model_preset_id: modelPreset.id,
         model_preset_label: modelPreset.ui_label,
+        openai_schema_name: params.schemaName,
       },
       usage,
       model: modelPreset.model,
@@ -356,6 +384,7 @@ export async function callOpenAiForSection(
         openai_response_diagnostics: openAiDiagnostics,
         model_preset_id: modelPreset.id,
         model_preset_label: modelPreset.ui_label,
+        openai_schema_name: params.schemaName,
       },
       usage,
       model: modelPreset.model,
@@ -371,6 +400,43 @@ export async function callOpenAiForSection(
     diagnostics: openAiDiagnostics,
     parse_strategy: parseResult.parse_strategy,
   }
+}
+
+export async function callOpenAiForSection(
+  enrichedInput: unknown,
+  modelPreset: TalentMapModelPreset,
+): Promise<{
+  parsed: unknown
+  model: string
+  usage: Record<string, unknown> | null
+  diagnostics: Record<string, unknown>
+  parse_strategy: string
+}> {
+  const depthProfile = getTalentMapDepthProfile(modelPreset.depth_profile_id)
+  const systemPrompt = buildTalentMapSectionSystemPrompt({ depthProfile })
+
+  return callOpenAiWithJsonSchema(enrichedInput, modelPreset, {
+    systemPrompt,
+    schemaName: 'talent_map_generated_section_v1_1',
+    schema: TALENT_MAP_SECTION_OPENAI_JSON_SCHEMA as unknown as Record<string, unknown>,
+  })
+}
+
+export async function callOpenAiForStandardSnapshot(
+  enrichedInput: unknown,
+  modelPreset: TalentMapModelPreset,
+): Promise<{
+  parsed: unknown
+  model: string
+  usage: Record<string, unknown> | null
+  diagnostics: Record<string, unknown>
+  parse_strategy: string
+}> {
+  return callOpenAiWithJsonSchema(enrichedInput, modelPreset, {
+    systemPrompt: buildTalentMapStandardSnapshotSystemPrompt(),
+    schemaName: 'talent_map_standard_snapshot_v1_0',
+    schema: TALENT_MAP_STANDARD_SNAPSHOT_OPENAI_JSON_SCHEMA as unknown as Record<string, unknown>,
+  })
 }
 
 export async function upsertProcessingLayerReport(params: {
@@ -513,12 +579,13 @@ export function enrichWorkModeSectionInputForGeneration(params: {
   sanitizedInput: ReturnType<typeof buildSanitizedSectionInputForAi>
   sourceChips: SourceChip[]
   modelPreset: TalentMapModelPreset
+  sectionGoal: string
 }) {
-  const depthProfile = getTalentMapDepthProfile(params.modelPreset.depth_profile_id)
-  return enrichSectionInputForOpenAi({
-    sectionInput: params.sanitizedInput,
-    depthProfile,
+  return resolveSectionGenerationInputForPreset({
+    sanitizedInput: params.sanitizedInput,
     sourceChips: params.sourceChips,
+    modelPreset: params.modelPreset,
+    sectionGoal: params.sectionGoal,
   })
 }
 
@@ -671,26 +738,39 @@ export async function runBackgroundSectionGeneration(params: {
     ? sanitizedInput.source_chips
     : []
 
-  const enrichedInput = enrichWorkModeSectionInputForGeneration({
+  const sectionDefinition = getTalentMapSectionDefinition(WORK_MODE_SECTION_KEY)
+  const resolvedInput = resolveSectionGenerationInputForPreset({
     sanitizedInput: sanitizedInput as ReturnType<typeof buildSanitizedSectionInputForAi>,
     sourceChips,
     modelPreset,
+    sectionGoal: sectionDefinition.section_goal,
   })
 
   const inputBundleJson = {
     ...inputBundleRecord,
     model_preset_id: modelPreset.id,
     model_preset_fallback_used: modelPresetFallbackUsed,
-    section_input: enrichedInput,
+    input_bundle_mode: resolvedInput.inputBundleMode,
+    section_input: resolvedInput.persistedSectionInput,
   }
 
   const evidenceJson = report.evidence_json ?? {}
+  const openaiSchemaName: TalentMapOpenAiSchemaName =
+    resolvedInput.generationMode === 'standard_snapshot'
+      ? 'talent_map_standard_snapshot_v1_0'
+      : 'talent_map_generated_section_v1_1'
 
   let openAiResult: Awaited<ReturnType<typeof callOpenAiForSection>>
   try {
-    openAiResult = await callOpenAiForSection(enrichedInput, modelPreset)
+    openAiResult =
+      resolvedInput.generationMode === 'standard_snapshot'
+        ? await callOpenAiForStandardSnapshot(resolvedInput.inputForOpenAi, modelPreset)
+        : await callOpenAiForSection(resolvedInput.inputForOpenAi, modelPreset)
   } catch (error) {
-    const errorContext = resolveOpenAiCallErrorContext(error, modelPreset)
+    const errorContext = resolveOpenAiCallErrorContext(error, modelPreset, {
+      generationMode: resolvedInput.generationMode,
+      openaiSchemaName,
+    })
     const usageJson = buildUsageJson({
       openAiUsage: errorContext.usage,
       modelPreset,
@@ -698,6 +778,9 @@ export async function runBackgroundSectionGeneration(params: {
       asyncGeneration: true,
       startedAt,
       finishedAt: new Date().toISOString(),
+      generationMode: resolvedInput.generationMode,
+      openaiSchemaName,
+      inputBundleMode: resolvedInput.inputBundleMode,
     })
 
     const estimatedCostUsd = estimateOpenAiCostUsd({
@@ -727,6 +810,9 @@ export async function runBackgroundSectionGeneration(params: {
     asyncGeneration: true,
     startedAt,
     finishedAt: new Date().toISOString(),
+    generationMode: resolvedInput.generationMode,
+    openaiSchemaName,
+    inputBundleMode: resolvedInput.inputBundleMode,
   })
 
   const estimatedCostUsd = estimateOpenAiCostUsd({
@@ -735,36 +821,76 @@ export async function runBackgroundSectionGeneration(params: {
     preset: modelPreset,
   })
 
-  const schemaValidation = validateTalentMapGeneratedSection(openAiResult.parsed)
-  if (!schemaValidation.ok || !schemaValidation.data) {
-    const schemaIssues =
-      schemaValidation.issues.length > 0
-        ? schemaValidation.issues
-        : ['Generated section JSON is invalid.']
-    await markLayerReportError({
-      reportId: params.reportId,
-      inputBundleJson,
-      evidenceJson,
-      contentJson: openAiResult.parsed,
-      qualityFlags: schemaIssues,
-      model: openAiResult.model,
-      usageJson,
-      estimatedCostUsd,
-      generationError: schemaIssues.join('; '),
-    })
-    return
-  }
+  let cleanedSection: TalentMapGeneratedSection
 
-  const cleanedSection = cleanGeneratedSectionText(schemaValidation.data)
+  if (resolvedInput.generationMode === 'standard_snapshot') {
+    const snapshotValidation = validateTalentMapStandardSnapshot(openAiResult.parsed)
+    if (!snapshotValidation.ok || !snapshotValidation.data) {
+      const schemaIssues =
+        snapshotValidation.issues.length > 0
+          ? snapshotValidation.issues
+          : ['Generated standard snapshot JSON is invalid.']
+      await markLayerReportError({
+        reportId: params.reportId,
+        inputBundleJson,
+        evidenceJson,
+        contentJson: {
+          ...(typeof openAiResult.parsed === 'object' && openAiResult.parsed
+            ? (openAiResult.parsed as Record<string, unknown>)
+            : {}),
+          schema_name: openaiSchemaName,
+          generation_mode: resolvedInput.generationMode,
+        },
+        qualityFlags: schemaIssues,
+        model: openAiResult.model,
+        usageJson,
+        estimatedCostUsd,
+        generationError: schemaIssues.join('; '),
+      })
+      return
+    }
+
+    const cleanedSnapshot = cleanStandardSnapshotText(snapshotValidation.data)
+    cleanedSection = cleanGeneratedSectionText(
+      adaptStandardSnapshotToGeneratedSection({
+        snapshot: cleanedSnapshot,
+        inputSourceChips: sourceChips,
+      }),
+    )
+  } else {
+    const schemaValidation = validateTalentMapGeneratedSection(openAiResult.parsed)
+    if (!schemaValidation.ok || !schemaValidation.data) {
+      const schemaIssues =
+        schemaValidation.issues.length > 0
+          ? schemaValidation.issues
+          : ['Generated section JSON is invalid.']
+      await markLayerReportError({
+        reportId: params.reportId,
+        inputBundleJson,
+        evidenceJson,
+        contentJson: openAiResult.parsed,
+        qualityFlags: schemaIssues,
+        model: openAiResult.model,
+        usageJson,
+        estimatedCostUsd,
+        generationError: schemaIssues.join('; '),
+      })
+      return
+    }
+
+    cleanedSection = cleanGeneratedSectionText(schemaValidation.data)
+  }
 
   const sourceIntegrityResult = enforceGeneratedSectionSourceIntegrity({
     section: cleanedSection,
     inputSourceChips: sourceChips,
+    mode: resolvedInput.generationMode,
   })
 
   const qaResult = runTalentMapGeneratedSectionQa({
     generated: sourceIntegrityResult.section,
     inputSourceChips: sourceChips,
+    mode: resolvedInput.generationMode,
   })
 
   const depthProfile = getTalentMapDepthProfile(modelPreset.depth_profile_id)
@@ -785,21 +911,26 @@ export async function runBackgroundSectionGeneration(params: {
       estimated_cost_usd: estimatedCostUsd,
       depth_profile_id: depthProfile.id,
       depth_profile_label: depthProfile.ui_label,
+      generation_mode: resolvedInput.generationMode,
+      openai_schema_name: openaiSchemaName,
+      input_bundle_mode: resolvedInput.inputBundleMode,
       source_integrity: sourceIntegrityResult.stats,
     },
   }
 
   const baseMarkdown =
-    modelPreset.id === 'standard'
+    resolvedInput.generationMode === 'standard_snapshot'
       ? renderGeneratedSectionStandardSnapshotMarkdown(generatedSection)
       : renderGeneratedSectionBaseMarkdown(generatedSection)
 
   const proMarkdown =
-    modelPreset.id === 'standard' ? null : renderGeneratedSectionProMarkdown(generatedSection)
+    resolvedInput.generationMode === 'standard_snapshot'
+      ? null
+      : renderGeneratedSectionProMarkdown(generatedSection)
 
   const qualityFlags = [...sourceIntegrityResult.warnings, ...qaResult.warnings]
   if (
-    modelPreset.id === 'standard' &&
+    resolvedInput.generationMode === 'standard_snapshot' &&
     resolveStandardSnapshotParagraph(generatedSection).length < MIN_STANDARD_SNAPSHOT_CHARS
   ) {
     qualityFlags.push('standard_snapshot_too_short')

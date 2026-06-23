@@ -1,6 +1,7 @@
 import { getAccessTokenForProtectedRequest } from './auth'
 import { getSupabaseClient } from './supabaseClient'
 import type { TalentMapGeneratedSection } from './talentMapGeneratedSectionContract'
+import type { SupportedGeneratedSectionKey } from './talentMapGeneratedSections'
 import type { TalentMapModelPresetId } from './talentMapModelPresets'
 import {
   buildSectionGenerationErrorPresentation,
@@ -61,7 +62,7 @@ export type GenerateTalentMapSectionResponse =
       ok: true
       status: 'processing'
       report_id: string
-      section_key: 'work_mode_and_entry'
+      section_key: SupportedGeneratedSectionKey
       model_preset_id: TalentMapModelPresetId
       report: TalentMapSectionReport
     }
@@ -176,7 +177,7 @@ function buildFailureFromBackendResponse(params: {
 export async function generateTalentMapSection(
   payload: {
     chart_id: string
-    section_key: 'work_mode_and_entry'
+    section_key: SupportedGeneratedSectionKey
     model_preset_id: TalentMapModelPresetId
   },
   options?: {
@@ -247,7 +248,7 @@ export async function getTalentMapSectionGenerationStatus(
   params: {
     report_id?: string
     chart_id?: string
-    section_key?: 'work_mode_and_entry'
+    section_key?: SupportedGeneratedSectionKey
   },
   options?: {
     accessToken?: string | null

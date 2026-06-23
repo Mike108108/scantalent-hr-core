@@ -38,6 +38,10 @@ import {
   buildSectionGenerationErrorPresentation,
 } from '../../lib/talentMapSectionErrors'
 import { useAuth } from '../../lib/auth'
+import {
+  SUPPORTED_GENERATED_SECTION_KEYS,
+  type SupportedGeneratedSectionKey,
+} from '../../lib/talentMapGeneratedSections'
 import type { TalentMapSectionKey } from '../../lib/talentMapSections'
 import {
   getChartElementCounts,
@@ -211,6 +215,11 @@ type CandidateWorkspaceContextValue = {
   sectionGenerationLoading: boolean
   sectionGenerationError: string | null
   sectionGenerationTechnicalError: string | null
+  activeGeneratingSectionKey: SupportedGeneratedSectionKey | null
+  handleGenerateTalentMapSection: (
+    sectionKey: SupportedGeneratedSectionKey,
+    modelPresetId?: TalentMapModelPresetId,
+  ) => Promise<void>
   handleGenerateWorkModeAndEntrySection: (modelPresetId: TalentMapModelPresetId) => Promise<void>
   refreshSectionReports: () => Promise<void>
   drawerSelection: ElementDrawerSelection | null
@@ -255,11 +264,13 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
   const [sectionGenerationTechnicalError, setSectionGenerationTechnicalError] = useState<
     string | null
   >(null)
+  const [activeGeneratingSectionKey, setActiveGeneratingSectionKey] =
+    useState<SupportedGeneratedSectionKey | null>(null)
   const bundleFetchAttemptedRef = useRef<string | null>(null)
   const sectionPollAbortRef = useRef(0)
   const activePollingReportIdRef = useRef<string | null>(null)
 
-  const pollWorkModeSectionUntilComplete = useCallback(async (reportId: string) => {
+  const pollTalentMapSectionUntilComplete = useCallback(async (reportId: string) => {
     if (activePollingReportIdRef.current === reportId) {
       return null
     }
@@ -287,7 +298,7 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
 
         setSectionReports((prev) => ({
           ...prev,
-          work_mode_and_entry: statusResult.report,
+          [statusResult.report.layer_key]: statusResult.report,
         }))
 
         if (statusResult.report.status === 'ready' || statusResult.report.status === 'error') {
@@ -434,20 +445,30 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     void refreshSectionReports()
   }, [chart?.id, refreshSectionReports])
 
+  const processingSectionReport = useMemo(() => {
+    for (const sectionKey of SUPPORTED_GENERATED_SECTION_KEYS) {
+      const report = sectionReports[sectionKey]
+      if (report?.status === 'processing') {
+        return report
+      }
+    }
+    return null
+  }, [sectionReports])
+
   useEffect(() => {
-    const workModeReport = sectionReports.work_mode_and_entry
-    if (!workModeReport || workModeReport.status !== 'processing') {
+    if (!processingSectionReport) {
       return
     }
 
     let cancelled = false
     setSectionGenerationLoading(true)
+    setActiveGeneratingSectionKey(processingSectionReport.layer_key as SupportedGeneratedSectionKey)
     setSectionGenerationError(null)
     setSectionGenerationTechnicalError(null)
 
     void (async () => {
       try {
-        const finalReport = await pollWorkModeSectionUntilComplete(workModeReport.id)
+        const finalReport = await pollTalentMapSectionUntilComplete(processingSectionReport.id)
         if (cancelled || !finalReport) {
           return
         }
@@ -477,6 +498,7 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
       } finally {
         if (!cancelled) {
           setSectionGenerationLoading(false)
+          setActiveGeneratingSectionKey(null)
         }
       }
     })()
@@ -485,7 +507,12 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
       cancelled = true
       sectionPollAbortRef.current += 1
     }
-  }, [sectionReports.work_mode_and_entry?.id, sectionReports.work_mode_and_entry?.status, pollWorkModeSectionUntilComplete, session?.access_token])
+  }, [
+    processingSectionReport?.id,
+    processingSectionReport?.status,
+    pollTalentMapSectionUntilComplete,
+    session?.access_token,
+  ])
 
   const updateField = useCallback((field: keyof FormValues, value: string) => {
     setValues((prev) => ({ ...prev, [field]: value }))
@@ -643,13 +670,17 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     }
   }, [chart?.id])
 
-  const handleGenerateWorkModeAndEntrySection = useCallback(
-    async (modelPresetId: TalentMapModelPresetId = DEFAULT_TALENT_MAP_MODEL_PRESET_ID) => {
+  const handleGenerateTalentMapSection = useCallback(
+    async (
+      sectionKey: SupportedGeneratedSectionKey,
+      modelPresetId: TalentMapModelPresetId = DEFAULT_TALENT_MAP_MODEL_PRESET_ID,
+    ) => {
       if (!chart?.id) {
         return
       }
 
       setSectionGenerationLoading(true)
+      setActiveGeneratingSectionKey(sectionKey)
       setSectionGenerationError(null)
       setSectionGenerationTechnicalError(null)
 
@@ -657,7 +688,7 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
         const result = await generateTalentMapSection(
           {
             chart_id: chart.id,
-            section_key: 'work_mode_and_entry',
+            section_key: sectionKey,
             model_preset_id: modelPresetId,
           },
           { accessToken: session?.access_token },
@@ -665,12 +696,13 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
 
         if (!result.ok) {
           setSectionGenerationLoading(false)
+          setActiveGeneratingSectionKey(null)
           setSectionGenerationError(result.presentation.userMessage)
           setSectionGenerationTechnicalError(result.presentation.technicalDetails)
           if (result.report) {
             setSectionReports((prev) => ({
               ...prev,
-              work_mode_and_entry: result.report,
+              [sectionKey]: result.report,
             }))
           } else {
             await refreshSectionReports()
@@ -680,10 +712,11 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
 
         setSectionReports((prev) => ({
           ...prev,
-          work_mode_and_entry: result.report,
+          [sectionKey]: result.report,
         }))
       } catch (error) {
         setSectionGenerationLoading(false)
+        setActiveGeneratingSectionKey(null)
         if (isSectionGenerationErrorPresentation(error)) {
           setSectionGenerationTechnicalError(error.technicalDetails)
           setSectionGenerationError(error.userMessage)
@@ -699,6 +732,13 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
       }
     },
     [chart?.id, refreshSectionReports, session?.access_token],
+  )
+
+  const handleGenerateWorkModeAndEntrySection = useCallback(
+    async (modelPresetId: TalentMapModelPresetId = DEFAULT_TALENT_MAP_MODEL_PRESET_ID) => {
+      await handleGenerateTalentMapSection('work_mode_and_entry', modelPresetId)
+    },
+    [handleGenerateTalentMapSection],
   )
 
   const normalizedChart = useMemo(() => parseNormalizedChart(chart), [chart])
@@ -758,6 +798,8 @@ export function CandidateWorkspaceProvider({ children }: { children: ReactNode }
     sectionGenerationLoading,
     sectionGenerationError,
     sectionGenerationTechnicalError,
+    activeGeneratingSectionKey,
+    handleGenerateTalentMapSection,
     handleGenerateWorkModeAndEntrySection,
     refreshSectionReports,
     drawerSelection,

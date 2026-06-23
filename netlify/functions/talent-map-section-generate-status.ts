@@ -1,8 +1,11 @@
 import type { Handler } from '@netlify/functions'
 import {
+  SUPPORTED_GENERATED_SECTION_KEYS,
+  isSupportedGeneratedSectionKey,
+} from '../../src/lib/talentMapGeneratedSections'
+import {
   jsonResponse,
   TALENT_MAP_SECTION_GENERATION_CORS_HEADERS,
-  WORK_MODE_SECTION_KEY,
 } from '../lib/talentMapSectionGeneration'
 import { AuthError, getSupabaseAdmin, readBearerAuthorizationHeader, verifyBearerUser } from '../lib/supabaseAdmin'
 
@@ -24,7 +27,7 @@ export const handler: Handler = async (event) => {
     const query = event.queryStringParameters ?? {}
     const reportId = query.report_id?.trim()
     const chartId = query.chart_id?.trim()
-    const sectionKey = query.section_key?.trim()
+    const sectionKeyRaw = query.section_key?.trim()
 
     const admin = getSupabaseAdmin()
 
@@ -32,18 +35,22 @@ export const handler: Handler = async (event) => {
 
     if (reportId) {
       reportQuery = reportQuery.eq('id', reportId)
-    } else if (chartId && sectionKey) {
-      if (sectionKey !== WORK_MODE_SECTION_KEY) {
+    } else if (chartId && sectionKeyRaw) {
+      if (!isSupportedGeneratedSectionKey(sectionKeyRaw)) {
         return jsonResponse(400, {
           ok: false,
           error_kind: 'technical',
-          error: 'Only work_mode_and_entry is supported in Stage 4-F0.1.',
+          error: 'Unsupported section_key for Stage 4-F0.2.',
+          diagnostics: {
+            requested_section_key: sectionKeyRaw,
+            supported_section_keys: SUPPORTED_GENERATED_SECTION_KEYS,
+          },
         })
       }
 
       reportQuery = reportQuery
         .eq('chart_id', chartId)
-        .eq('layer_key', sectionKey)
+        .eq('layer_key', sectionKeyRaw)
         .order('updated_at', { ascending: false })
         .limit(1)
     } else {
@@ -109,7 +116,7 @@ export const handler: Handler = async (event) => {
       error: message,
       diagnostics: {
         stage: 'status_unexpected_catch',
-        section_key: WORK_MODE_SECTION_KEY,
+        supported_section_keys: SUPPORTED_GENERATED_SECTION_KEYS,
       },
     })
   }

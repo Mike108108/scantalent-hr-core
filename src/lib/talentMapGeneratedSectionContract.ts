@@ -1,4 +1,9 @@
-import type { TalentMapSectionKey } from './talentMapSections'
+import {
+  getSupportedGeneratedSectionTitle,
+  isSupportedGeneratedSectionKey,
+  SUPPORTED_GENERATED_SECTION_KEYS,
+  type SupportedGeneratedSectionKey,
+} from './talentMapGeneratedSections'
 import type { TalentMapPresetWorkflowRole } from './talentMapModelPresets'
 
 export const TALENT_MAP_GENERATED_SECTION_SCHEMA_VERSION = 'talent_map_section_v1_1' as const
@@ -46,8 +51,8 @@ export type TalentMapGeneratedSectionSourceLogicEntry = {
 
 export type TalentMapGeneratedSection = {
   schema_version: typeof TALENT_MAP_GENERATED_SECTION_SCHEMA_VERSION
-  section_key: 'work_mode_and_entry'
-  section_title: 'Рабочий формат и вход в задачи'
+  section_key: SupportedGeneratedSectionKey
+  section_title: string
 
   base: {
     headline: string
@@ -213,12 +218,12 @@ export function validateTalentMapGeneratedSection(value: unknown): {
     issues.push(`schema_version must be "${TALENT_MAP_GENERATED_SECTION_SCHEMA_VERSION}".`)
   }
 
-  if (record.section_key !== 'work_mode_and_entry') {
-    issues.push('section_key must be "work_mode_and_entry".')
-  }
-
-  if (record.section_title !== 'Рабочий формат и вход в задачи') {
-    issues.push('section_title must be "Рабочий формат и вход в задачи".')
+  if (!isSupportedGeneratedSectionKey(record.section_key)) {
+    issues.push(`section_key must be one of: ${SUPPORTED_GENERATED_SECTION_KEYS.join(', ')}.`)
+  } else if (record.section_title !== getSupportedGeneratedSectionTitle(record.section_key)) {
+    issues.push(
+      `section_title must be "${getSupportedGeneratedSectionTitle(record.section_key)}".`,
+    )
   }
 
   if (!record.base || typeof record.base !== 'object') {
@@ -521,8 +526,4 @@ export function renderGeneratedSectionProMarkdown(section: TalentMapGeneratedSec
   ].join('\n')
 }
 
-export function isSupportedGenerationSectionKey(
-  sectionKey: TalentMapSectionKey,
-): sectionKey is 'work_mode_and_entry' {
-  return sectionKey === 'work_mode_and_entry'
-}
+export { isSupportedGeneratedSectionKey as isSupportedGenerationSectionKey } from './talentMapGeneratedSections'
